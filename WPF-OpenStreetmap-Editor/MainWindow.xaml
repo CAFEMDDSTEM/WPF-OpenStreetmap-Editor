@@ -1,0 +1,158 @@
+<Window x:Class="WPF_OpenStreetmap_Editor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF_OpenStreetmap_Editor"
+        mc:Ignorable="d"
+        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" KeyDown="Window_KeyDown">
+    <Grid>
+        <!-- 顶部菜单行：先定义行（RowDefinitions），第1行为菜单，第2行为小按钮行，第3行为主内容 -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 顶部使用 StackPanel 横向排列按钮，按钮透明无边框，黑色字体 -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Height="36" VerticalAlignment="Top" Background="Transparent">
+            <Button x:Name="FileButton" Content="文件" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="新建" Click="New_Click" />
+                        <MenuItem Header="打开" Click="Open_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="EditButton" Content="编辑" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="显示" Click="Show_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="ViewButton" Content="视图" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="显示" Click="Show_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="ProjectButton" Content="项目" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="显示" Click="Show_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="ToolsButton" Content="工具" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="图层" Click="Layer_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="WindowButton" Content="窗口" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="显示" Click="Show_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <Button x:Name="HelpButton" Content="帮助" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="显示" Click="Show_Click" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+        </StackPanel>
+
+        <!-- 在菜单下再加一行小的正方形按钮 T1..T9 -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Height="44" VerticalAlignment="Top" Background="Transparent" Margin="4,4,4,4">
+            <Button Content="T1" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T2" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T3" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T4" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T5" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T6" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T7" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T8" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            <Button Content="T9" Width="36" Height="36" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+        </StackPanel>
+
+        <!-- 主内容区：分为左侧工具栏、中间主区、右侧输出区 -->
+        <Grid Grid.Row="2" Background="White">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 左侧垂直正方形按钮 T1..T9 -->
+            <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="4">
+                <Button Content="T1" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T2" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T3" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T4" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T5" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T6" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T7" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T8" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+                <Button Content="T9" Width="44" Height="44" Margin="2" Background="Transparent" BorderThickness="0" Foreground="Black"/>
+            </StackPanel>
+
+            <!-- 中间主区域：包含 URL 输入和地图渲染区域 -->
+            <Grid Grid.Column="1" Background="WhiteSmoke">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
+                    <TextBlock VerticalAlignment="Center" Margin="0,0,6,0">地图 URL:</TextBlock>
+                    <TextBox x:Name="MapUrlTextBox" Width="520" VerticalAlignment="Center" />
+                    <TextBlock VerticalAlignment="Center" Margin="6,0,6,0">缩放:</TextBlock>
+                    <TextBox x:Name="ZoomTextBox" Width="48" VerticalAlignment="Center" Text="2" IsReadOnly="True" HorizontalContentAlignment="Center" />
+                    <Button x:Name="ZoomInButton" Content="+" Width="28" Height="22" Margin="4,0,0,0" Click="ZoomIn_Click" />
+                    <Button x:Name="ZoomOutButton" Content="-" Width="28" Height="22" Margin="2,0,0,0" Click="ZoomOut_Click" />
+                    <Button Content="加载地图" Margin="6,0,0,0" Click="LoadMapButton_Click" />
+                </StackPanel>
+
+                <!-- 直接在 Canvas 上渲染瓦片图片，通过 HTTP 下载并缓存 -->
+                <Border Grid.Row="1" Margin="6" BorderBrush="LightGray" BorderThickness="1">
+                    <ScrollViewer x:Name="MapScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="MapCanvas" Background="LightGray"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                MouseWheel="MapCanvas_MouseWheel"
+                                MouseLeftButtonDown="MapCanvas_MouseLeftButtonDown"
+                                MouseLeftButtonUp="MapCanvas_MouseLeftButtonUp"
+                                MouseMove="MapCanvas_MouseMove" />
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <!-- 右侧输出区：上表格（DataGrid），下编辑视图（TextBox 模拟文件编辑） -->
+            <Grid Grid.Column="2" Margin="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" Background="White">
+                    <DataGrid AutoGenerateColumns="True" HeadersVisibility="Column" />
+                </Border>
+
+                <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" Background="White" Margin="0,6,0,0">
+                    <TextBox Text="文件/编辑 区域（占位）" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="White" BorderThickness="0"/>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
