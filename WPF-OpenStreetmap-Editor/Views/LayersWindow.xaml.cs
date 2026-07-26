@@ -29,7 +29,7 @@ namespace WPF_OpenStreetmap_Editor.Views {
                     bool hasWmts = LayerTypeComboBox.Items.Cast<object>().OfType<ComboBoxItem>().Any(ci => (ci.Content?.ToString() ?? "") == "WMTS");
                     if (!hasWmts) {
                         LayerTypeComboBox.Items.Add(new ComboBoxItem { Content = "WMTS" });
-                    }
+        }
                 }
             } catch { }
         }
@@ -62,6 +62,7 @@ namespace WPF_OpenStreetmap_Editor.Views {
                 MessageBox.Show("请选择一个图层以加载", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+
             var item = LayersListBox.SelectedItem.ToString();
             // 提取类型和 URL，格式为 [TYPE] URL
             var type = "";
