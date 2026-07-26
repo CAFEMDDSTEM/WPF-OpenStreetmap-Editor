@@ -122,6 +122,8 @@
                     <TextBox x:Name="ZoomTextBox" Width="48" VerticalAlignment="Center" Text="2" IsReadOnly="True" HorizontalContentAlignment="Center" />
                     <Button x:Name="ZoomInButton" Content="+" Width="28" Height="22" Margin="4,0,0,0" Click="ZoomIn_Click" />
                     <Button x:Name="ZoomOutButton" Content="-" Width="28" Height="22" Margin="2,0,0,0" Click="ZoomOut_Click" />
+                    <TextBlock VerticalAlignment="Center" Margin="8,0,6,0">Token:</TextBlock>
+                    <TextBox x:Name="AccessTokenTextBox" Width="200" VerticalAlignment="Center" ToolTip="用于替换 {access_token} 占位" />
                     <Button Content="加载地图" Margin="6,0,0,0" Click="LoadMapButton_Click" />
                 </StackPanel>
 

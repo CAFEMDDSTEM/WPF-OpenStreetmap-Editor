@@ -23,6 +23,7 @@
 
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right" Margin="0,6,0,0">
             <Button Content="添加" Width="80" Click="AddLayer_Click" Margin="0,0,6,0" />
+            <Button Content="删除选中" Width="80" Click="RemoveLayer_Click" Margin="0,0,6,0" />
             <Button Content="加载选中" Width="100" Click="LoadSelected_Click" />
         </StackPanel>
     </Grid>
