@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:WPF_OpenStreetmap_Editor.Controls"
         xmlns:iconPacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Lucide"
         mc:Ignorable="d"
-        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" KeyDown="Window_KeyDown"
+        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" PreviewKeyDown="Window_KeyDown"
         Background="{DynamicResource Theme.WindowBackgroundBrush}"
         Foreground="{DynamicResource Theme.TextBrush}"
         UseLayoutRounding="True"
@@ -37,6 +37,16 @@
                 <MenuItem Header="另存为..." Click="SaveAs_Click" />
             </MenuItem>
             <MenuItem Header="编辑">
+                <MenuItem Header="撤销" InputGestureText="Ctrl+Z" Click="Undo_Click" />
+                <MenuItem Header="重做" InputGestureText="Ctrl+Y" Click="Redo_Click" />
+                <Separator />
+                <MenuItem Header="复制选定对象" InputGestureText="Ctrl+C" Click="CopySelected_Click" />
+                <MenuItem Header="粘贴对象" InputGestureText="Ctrl+V" Click="PasteFeatures_Click" />
+                <MenuItem Header="创建选定对象副本" InputGestureText="Ctrl+Shift+D" Click="DuplicateSelected_Click" />
+                <MenuItem Header="旋转选定对象" InputGestureText="R" Click="RotateSelected_Click" />
+                <MenuItem Header="移动选定对象" InputGestureText="M" Click="MoveSelected_Click" />
+                <MenuItem Header="直角化选定对象" InputGestureText="Q" Click="OrthogonalizeSelected_Click" />
+                <Separator />
                 <MenuItem Header="删除选定对象" InputGestureText="Del" Click="DeleteSelected_Click" />
                 <MenuItem Header="隐藏选定对象" InputGestureText="H" Click="HideSelected_Click" />
                 <MenuItem Header="显示全部对象" Click="ShowAllFeatures_Click" />

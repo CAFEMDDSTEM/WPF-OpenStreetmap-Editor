@@ -9,6 +9,8 @@ public sealed class OsmAccount {
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string DisplayName { get; set; } = "";
     public string ApiBaseUrl { get; set; } = OsmApiClient.DefaultApiBaseUrl;
+    public OsmAuthenticationMethod AuthenticationMethod { get; set; } = OsmAuthenticationMethod.OAuth2;
+    public string UserName { get; set; } = "";
     public bool IsActive { get; set; }
 }
 
@@ -46,12 +48,26 @@ public sealed class OsmAccountStore {
 
     public OsmAccount? GetActive() => Load().FirstOrDefault(static account => account.IsActive);
 
-    public string? GetAccessToken(OsmAccount account) => _credentialStore.Read(GetCredentialTarget(account.Id));
+    public OsmAccountCredential? GetCredential(OsmAccount account) {
+        var secret = _credentialStore.Read(GetCredentialTarget(account.Id));
+        return string.IsNullOrWhiteSpace(secret)
+            ? null
+            : new OsmAccountCredential(account.AuthenticationMethod, account.UserName, secret);
+    }
 
-    public void SaveAccount(OsmAccount account, string? accessToken) {
+    public bool HasCredential(OsmAccount account) => GetCredential(account) is not null;
+
+    public string? GetAccessToken(OsmAccount account) {
+        return account.AuthenticationMethod == OsmAuthenticationMethod.OAuth2
+            ? _credentialStore.Read(GetCredentialTarget(account.Id))
+            : null;
+    }
+
+    public void SaveAccount(OsmAccount account, string? credentialSecret) {
         Validate(account);
         var accounts = Load().ToList();
         var existingIndex = accounts.FindIndex(candidate => candidate.Id == account.Id);
+        var existing = existingIndex >= 0 ? accounts[existingIndex] : null;
         if (existingIndex >= 0) accounts[existingIndex] = account;
         else accounts.Add(account);
         if (account.IsActive || accounts.Count == 1) {
@@ -59,8 +75,10 @@ public sealed class OsmAccountStore {
         }
         EnsureSingleActive(accounts);
         SaveMetadata(accounts);
-        if (!string.IsNullOrWhiteSpace(accessToken)) {
-            _credentialStore.Write(GetCredentialTarget(account.Id), account.DisplayName, accessToken.Trim());
+        if (!string.IsNullOrWhiteSpace(credentialSecret)) {
+            _credentialStore.Write(GetCredentialTarget(account.Id), GetCredentialUserName(account), NormalizeSecret(account, credentialSecret));
+        } else if (HasCredentialShapeChanged(existing, account)) {
+            _credentialStore.Delete(GetCredentialTarget(account.Id));
         }
     }
 
@@ -82,10 +100,31 @@ public sealed class OsmAccountStore {
         if (string.IsNullOrWhiteSpace(account.DisplayName) || account.DisplayName.Trim().Length > 100) {
             throw new InvalidDataException("账号名称长度必须为 1-100 个字符。");
         }
+        if (!Enum.IsDefined(account.AuthenticationMethod)) {
+            throw new InvalidDataException("OSM 认证方式无效。");
+        }
+        if (account.AuthenticationMethod == OsmAuthenticationMethod.BasicPassword &&
+            (string.IsNullOrWhiteSpace(account.UserName) || account.UserName.Trim().Length > 100)) {
+            throw new InvalidDataException("OSM 用户名长度必须为 1-100 个字符。");
+        }
         if (!Uri.TryCreate(account.ApiBaseUrl, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))) {
             throw new InvalidDataException("OSM API 地址必须使用 HTTPS；本机测试地址可以使用 HTTP。");
         }
+    }
+
+    private static string NormalizeSecret(OsmAccount account, string secret) {
+        return account.AuthenticationMethod == OsmAuthenticationMethod.OAuth2 ? secret.Trim() : secret;
+    }
+
+    private static string GetCredentialUserName(OsmAccount account) {
+        return account.AuthenticationMethod == OsmAuthenticationMethod.BasicPassword ? account.UserName.Trim() : account.DisplayName;
+    }
+
+    private static bool HasCredentialShapeChanged(OsmAccount? existing, OsmAccount account) {
+        return existing is not null &&
+            (existing.AuthenticationMethod != account.AuthenticationMethod ||
+                !string.Equals(existing.UserName, account.UserName, StringComparison.Ordinal));
     }
 
     private void SaveMetadata(IReadOnlyList<OsmAccount> accounts) {
@@ -150,7 +189,7 @@ public sealed class WindowsCredentialStore : ICredentialStore {
     }
 
     private static void EnsureWindows() {
-        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("OSM 令牌需要 Windows 凭据库。");
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("OSM 凭据需要 Windows 凭据库。");
     }
 
     private static void ZeroMemory(IntPtr pointer, int length) {

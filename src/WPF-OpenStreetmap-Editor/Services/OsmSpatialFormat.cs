@@ -30,6 +30,7 @@ internal static class OsmSpatialFormat {
     }
 
     public static void WriteXml(MapDocument document, string path, CancellationToken ct) {
+        var dataset = OsmDocumentSync.Synchronize(document);
         var settings = new XmlWriterSettings {
             Encoding = new UTF8Encoding(false),
             Indent = true,
@@ -41,57 +42,19 @@ internal static class OsmSpatialFormat {
         writer.WriteAttributeString("version", "0.6");
         writer.WriteAttributeString("generator", "WPF-OpenStreetmap-Editor");
 
-        var nextNodeId = -1L;
-        var nextWayId = -1L;
-        var writtenNodeIds = new HashSet<long>();
-        foreach (var feature in document.Features.Where(static item => item.GeometryType == MapGeometryType.Point)) {
+        foreach (var node in dataset.Nodes.Values.OrderBy(static node => node.Id)) {
             ct.ThrowIfCancellationRequested();
-            foreach (var part in feature.Parts.Where(static part => part.Count > 0)) {
-                var id = feature.Osm is { PrimitiveType: OsmPrimitiveType.Node } metadata
-                    ? metadata.Id
-                    : nextNodeId--;
-                if (writtenNodeIds.Add(id)) {
-                    WriteNode(writer, id, feature.Osm?.Version ?? 1, part[0], feature.Attributes);
-                }
-            }
+            WriteNode(writer, node.Id, node.Version, node.Point, node.Tags);
         }
 
-        foreach (var feature in document.Features.Where(static item => item.GeometryType != MapGeometryType.Point)) {
+        foreach (var way in dataset.Ways.Values.OrderBy(static way => way.Id)) {
             ct.ThrowIfCancellationRequested();
-            foreach (var part in feature.Parts.Where(static part => part.Count > 1)) {
-                var nodeIds = new List<long>(part.Count);
-                var originalNodes = feature.Osm?.NodeReferences;
-                for (var i = 0; i < part.Count; i++) {
-                    var point = part[i];
-                    if (i == part.Count - 1 && point == part[0] && nodeIds.Count > 0) {
-                        nodeIds.Add(nodeIds[0]);
-                        continue;
-                    }
-                    var originalNode = originalNodes is not null && i < originalNodes.Count &&
-                        originalNodes[i].Point == point
-                            ? originalNodes[i]
-                            : null;
-                    var nodeId = originalNode?.Id ?? nextNodeId--;
-                    nodeIds.Add(nodeId);
-                    if (writtenNodeIds.Add(nodeId)) {
-                        WriteNode(writer, nodeId, originalNode?.Version ?? 1, point, null);
-                    }
-                }
+            WriteWay(writer, way);
+        }
 
-                writer.WriteStartElement("way");
-                var wayId = feature.Osm is { PrimitiveType: OsmPrimitiveType.Way } metadata
-                    ? metadata.Id
-                    : nextWayId--;
-                writer.WriteAttributeString("id", wayId.ToString(CultureInfo.InvariantCulture));
-                writer.WriteAttributeString("version", (feature.Osm?.Version ?? 1).ToString(CultureInfo.InvariantCulture));
-                foreach (var nodeId in nodeIds) {
-                    writer.WriteStartElement("nd");
-                    writer.WriteAttributeString("ref", nodeId.ToString(CultureInfo.InvariantCulture));
-                    writer.WriteEndElement();
-                }
-                WriteTags(writer, feature.Attributes);
-                writer.WriteEndElement();
-            }
+        foreach (var relation in dataset.Relations.Values.OrderBy(static relation => relation.Id)) {
+            ct.ThrowIfCancellationRequested();
+            WriteRelation(writer, relation);
         }
 
         writer.WriteEndElement();
@@ -105,7 +68,8 @@ internal static class OsmSpatialFormat {
         CancellationToken ct,
         string stage) {
         var document = new MapDocument();
-        var nodes = new Dictionary<long, OsmNodeReference>();
+        var dataset = new OsmDataset();
+        document.Osm = dataset;
         var count = 0;
 
         foreach (var item in source) {
@@ -113,56 +77,42 @@ internal static class OsmSpatialFormat {
             count++;
             switch (item) {
                 case Node node when node.Id.HasValue && node.Longitude.HasValue && node.Latitude.HasValue:
-                    if (nodes.Count >= options.MaxCoordinates) {
+                    if (dataset.Nodes.Count >= options.MaxCoordinates) {
                         throw new SpatialDataLimitException($"OSM 文件超过安全导入上限 {options.MaxCoordinates:N0} 个节点。请下载或裁剪更小的区域。");
                     }
                     var point = new GeoPoint(node.Longitude.Value, node.Latitude.Value);
                     if (!point.IsValid) break;
-                    nodes[node.Id.Value] = new OsmNodeReference(node.Id.Value, node.Version ?? 1, point);
-                    if (node.Tags?.Count > 0) {
-                        AddFeature(document, options, new MapFeature {
-                            Id = $"osm-node-{node.Id.Value}",
-                            GeometryType = MapGeometryType.Point,
-                            Parts = [[point]],
-                            Attributes = ReadTags(node.Tags),
-                            Osm = new OsmFeatureMetadata {
-                                PrimitiveType = OsmPrimitiveType.Node,
-                                Id = node.Id.Value,
-                                Version = node.Version ?? 1
-                            }
-                        });
-                    }
+                    var osmNode = new OsmNode {
+                        Id = node.Id.Value,
+                        Version = node.Version ?? 1,
+                        Point = point,
+                        Tags = ReadTags(node.Tags)
+                    };
+                    dataset.Nodes[osmNode.Id] = osmNode;
+                    if (osmNode.Tags.Count > 0) AddFeature(document, options, OsmDocumentSync.CreateNodeFeature(osmNode));
                     break;
                 case Way way when way.Id.HasValue && way.Nodes is { Length: > 1 }:
-                    var nodeReferences = new List<OsmNodeReference>(way.Nodes.Length);
-                    var points = new List<GeoPoint>(way.Nodes.Length);
-                    foreach (var nodeId in way.Nodes) {
-                        if (!nodes.TryGetValue(nodeId, out var nodeReference)) continue;
-
-                        nodeReferences.Add(nodeReference);
-                        points.Add(nodeReference.Point);
-                    }
-                    if (points.Count < 2) {
+                    var osmWay = new OsmWay {
+                        Id = way.Id.Value,
+                        Version = way.Version ?? 1,
+                        NodeIds = way.Nodes.ToList(),
+                        Tags = ReadTags(way.Tags)
+                    };
+                    dataset.Ways[osmWay.Id] = osmWay;
+                    var feature = OsmDocumentSync.CreateWayFeature(dataset, osmWay);
+                    if (feature is null) {
                         document.SkippedFeatureCount++;
                         break;
                     }
-                    var attributes = ReadTags(way.Tags);
-                    var isClosed = points.Count > 3 && points[0] == points[^1];
-                    AddFeature(document, options, new MapFeature {
-                        Id = $"osm-way-{way.Id.Value}",
-                        GeometryType = isClosed ? MapGeometryType.Polygon : MapGeometryType.LineString,
-                        Parts = [points],
-                        Attributes = attributes,
-                        Osm = new OsmFeatureMetadata {
-                            PrimitiveType = OsmPrimitiveType.Way,
-                            Id = way.Id.Value,
-                            Version = way.Version ?? 1,
-                            NodeReferences = nodeReferences
-                        }
-                    });
+                    AddFeature(document, options, feature);
                     break;
-                case Relation:
-                    document.SkippedFeatureCount++;
+                case Relation relation when relation.Id.HasValue:
+                    dataset.Relations[relation.Id.Value] = new OsmRelation {
+                        Id = relation.Id.Value,
+                        Version = relation.Version ?? 1,
+                        Members = ReadMembers(relation.Members),
+                        Tags = ReadTags(relation.Tags)
+                    };
                     break;
             }
 
@@ -171,6 +121,11 @@ internal static class OsmSpatialFormat {
             }
         }
 
+        foreach (var relation in dataset.Relations.Values.OrderBy(static relation => relation.Id)) {
+            var feature = OsmDocumentSync.CreateRelationFeature(dataset, relation);
+            if (feature is not null) AddFeature(document, options, feature);
+        }
+        dataset.NormalizeTemporaryIds();
         return document;
     }
 
@@ -203,6 +158,34 @@ internal static class OsmSpatialFormat {
         writer.WriteEndElement();
     }
 
+    private static void WriteWay(XmlWriter writer, OsmWay way) {
+        writer.WriteStartElement("way");
+        writer.WriteAttributeString("id", way.Id.ToString(CultureInfo.InvariantCulture));
+        writer.WriteAttributeString("version", way.Version.ToString(CultureInfo.InvariantCulture));
+        foreach (var nodeId in way.NodeIds) {
+            writer.WriteStartElement("nd");
+            writer.WriteAttributeString("ref", nodeId.ToString(CultureInfo.InvariantCulture));
+            writer.WriteEndElement();
+        }
+        WriteTags(writer, way.Tags);
+        writer.WriteEndElement();
+    }
+
+    private static void WriteRelation(XmlWriter writer, OsmRelation relation) {
+        writer.WriteStartElement("relation");
+        writer.WriteAttributeString("id", relation.Id.ToString(CultureInfo.InvariantCulture));
+        writer.WriteAttributeString("version", relation.Version.ToString(CultureInfo.InvariantCulture));
+        foreach (var member in relation.Members) {
+            writer.WriteStartElement("member");
+            writer.WriteAttributeString("type", FormatMemberType(member.Type));
+            writer.WriteAttributeString("ref", member.Id.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("role", member.Role);
+            writer.WriteEndElement();
+        }
+        WriteTags(writer, relation.Tags);
+        writer.WriteEndElement();
+    }
+
     private static void WriteTags(XmlWriter writer, IReadOnlyDictionary<string, string>? attributes) {
         if (attributes is null) return;
         foreach (var attribute in attributes.OrderBy(static item => item.Key, StringComparer.Ordinal)) {
@@ -211,5 +194,44 @@ internal static class OsmSpatialFormat {
             writer.WriteAttributeString("v", attribute.Value);
             writer.WriteEndElement();
         }
+    }
+
+    private static List<OsmRelationMember> ReadMembers(RelationMember[]? members) {
+        if (members is null || members.Length == 0) return [];
+
+        var result = new List<OsmRelationMember>(members.Length);
+        foreach (var member in members) {
+            if (TryConvertMemberType(member.Type, out var type)) {
+                result.Add(new OsmRelationMember(type, member.Id, member.Role ?? ""));
+            }
+        }
+
+        return result;
+    }
+
+    private static bool TryConvertMemberType(OsmGeoType type, out OsmRelationMemberType memberType) {
+        switch (type) {
+            case OsmGeoType.Node:
+                memberType = OsmRelationMemberType.Node;
+                return true;
+            case OsmGeoType.Way:
+                memberType = OsmRelationMemberType.Way;
+                return true;
+            case OsmGeoType.Relation:
+                memberType = OsmRelationMemberType.Relation;
+                return true;
+            default:
+                memberType = default;
+                return false;
+        }
+    }
+
+    private static string FormatMemberType(OsmRelationMemberType type) {
+        return type switch {
+            OsmRelationMemberType.Node => "node",
+            OsmRelationMemberType.Way => "way",
+            OsmRelationMemberType.Relation => "relation",
+            _ => throw new InvalidDataException($"Unsupported OSM relation member type: {type}.")
+        };
     }
 }

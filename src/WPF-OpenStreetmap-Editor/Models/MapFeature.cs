@@ -8,7 +8,8 @@ public enum MapGeometryType {
 
 public enum OsmPrimitiveType {
     Node,
-    Way
+    Way,
+    Relation
 }
 
 public sealed class OsmFeatureMetadata {
@@ -24,7 +25,7 @@ public sealed class MapFeature {
     private GeoBounds? _cachedBounds;
     private int? _cachedCoordinateCount;
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
-    public MapGeometryType GeometryType { get; init; }
+    public MapGeometryType GeometryType { get; set; }
     public List<List<GeoPoint>> Parts { get; init; } = [];
     public Dictionary<string, string> Attributes { get; init; } = new(StringComparer.Ordinal);
     public OsmFeatureMetadata? Osm { get; set; }

@@ -91,6 +91,7 @@ public static class ThemeService {
                 ? catalog.Themes.First(theme => theme.Id == (systemMode == SystemThemeMode.Dark ? DarkThemeId : LightThemeId))
                 : selectedTheme;
             ApplyColors(Application.Current.Resources, effectiveTheme.Colors);
+            ApplyMapStyle(Application.Current.Resources, effectiveTheme.MapStyle, effectiveTheme.BaseTheme);
             ApplyWindowBackground(Application.Current.Resources, effectiveTheme);
             _usesDarkColors = effectiveTheme.BaseTheme == "dark";
         }
@@ -141,6 +142,71 @@ public static class ThemeService {
         resources["Theme.ImageOverlayBrush"] = SystemColors.WindowBrush;
         resources["Theme.ImageOverlayTextBrush"] = SystemColors.WindowTextBrush;
         resources["Theme.WindowBackgroundBrush"] = SystemColors.WindowBrush;
+        ApplyHighContrastMapStyle(resources);
+    }
+
+    private static void ApplyMapStyle(ResourceDictionary resources, ThemeMapStyle? mapStyle, string baseTheme) {
+        var style = ThemeMapStyle.Complete(mapStyle, baseTheme);
+
+        SetAreaStyle(resources, "GenericArea", style.GenericArea!);
+        SetAreaStyle(resources, "Water", style.Water!);
+        SetAreaStyle(resources, "Farmland", style.Farmland!);
+        SetAreaStyle(resources, "Forest", style.Forest!);
+        SetAreaStyle(resources, "Park", style.Park!);
+        SetAreaStyle(resources, "BuiltArea", style.BuiltArea!);
+        SetAreaStyle(resources, "Building", style.Building!);
+
+        SetLineStyle(resources, "GenericLine", style.GenericLine!);
+        SetLineStyle(resources, "Boundary", style.Boundary!);
+        SetLineStyle(resources, "Waterway", style.Waterway!);
+        SetLineStyle(resources, "Rail", style.Rail!);
+        SetLineStyle(resources, "Path", style.Path!);
+        SetLineStyle(resources, "LocalRoad", style.LocalRoad!);
+        SetLineStyle(resources, "SecondaryRoad", style.SecondaryRoad!);
+        SetLineStyle(resources, "PrimaryRoad", style.PrimaryRoad!);
+        SetLineStyle(resources, "Motorway", style.Motorway!);
+
+        SetPointStyle(resources, "GenericPoint", style.GenericPoint!);
+        SetPointStyle(resources, "Poi", style.Poi!);
+        SetPointStyle(resources, "FoodPoint", style.FoodPoint!);
+        SetPointStyle(resources, "ParkingPoint", style.ParkingPoint!);
+        SetPointStyle(resources, "MedicalPoint", style.MedicalPoint!);
+        SetPointStyle(resources, "EducationPoint", style.EducationPoint!);
+        SetPointStyle(resources, "TransitPoint", style.TransitPoint!);
+        SetPointStyle(resources, "ShopPoint", style.ShopPoint!);
+        SetPointStyle(resources, "TourismPoint", style.TourismPoint!);
+        SetPointStyle(resources, "Place", style.Place!);
+    }
+
+    private static void ApplyHighContrastMapStyle(ResourceDictionary resources) {
+        SetAreaStyle(resources, "GenericArea", SystemColors.ControlBrush, SystemColors.WindowTextBrush, 1.0);
+        SetAreaStyle(resources, "Water", SystemColors.ControlBrush, SystemColors.HighlightBrush, 1.0);
+        SetAreaStyle(resources, "Farmland", SystemColors.ControlBrush, SystemColors.WindowTextBrush, 1.0);
+        SetAreaStyle(resources, "Forest", SystemColors.ControlBrush, SystemColors.WindowTextBrush, 1.0);
+        SetAreaStyle(resources, "Park", SystemColors.ControlBrush, SystemColors.WindowTextBrush, 1.0);
+        SetAreaStyle(resources, "BuiltArea", SystemColors.ControlBrush, SystemColors.WindowTextBrush, 1.0);
+        SetAreaStyle(resources, "Building", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 1.2);
+
+        SetLineStyle(resources, "GenericLine", SystemColors.WindowTextBrush, SystemColors.WindowTextBrush, 1.6, 1.6);
+        SetLineStyle(resources, "Boundary", SystemColors.WindowTextBrush, SystemColors.WindowTextBrush, 1.4, 1.4, [5, 3]);
+        SetLineStyle(resources, "Waterway", SystemColors.HighlightBrush, SystemColors.HighlightBrush, 1.8, 1.8);
+        SetLineStyle(resources, "Rail", SystemColors.WindowTextBrush, SystemColors.WindowBrush, 1.6, 3.4, [8, 3]);
+        SetLineStyle(resources, "Path", SystemColors.WindowTextBrush, SystemColors.WindowTextBrush, 1.4, 1.4, [4, 3]);
+        SetLineStyle(resources, "LocalRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.4, 4.4);
+        SetLineStyle(resources, "SecondaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.0, 5.0);
+        SetLineStyle(resources, "PrimaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.6, 5.6);
+        SetLineStyle(resources, "Motorway", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 4.2, 6.4);
+
+        SetPointStyle(resources, "GenericPoint", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.5, 1.2);
+        SetPointStyle(resources, "Poi", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 4.0, 1.2);
+        SetPointStyle(resources, "FoodPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "ParkingPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "MedicalPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "EducationPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "TransitPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "ShopPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "TourismPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "Place", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 4.5, 1.4);
     }
 
     private static void ApplyWindowBackground(ResourceDictionary resources, ThemeDefinition theme) {
@@ -177,6 +243,75 @@ public static class ThemeService {
 
     private static void SetBrush(ResourceDictionary resources, string key, string colorValue) {
         resources[key] = CreateBrush(colorValue);
+    }
+
+    private static void SetAreaStyle(ResourceDictionary resources, string name, ThemeAreaStyle style) {
+        SetAreaStyle(
+            resources,
+            name,
+            CreateBrush(style.Fill!),
+            CreateBrush(style.Stroke!),
+            style.StrokeWidth ?? 0.0);
+    }
+
+    private static void SetAreaStyle(
+        ResourceDictionary resources,
+        string name,
+        Brush fill,
+        Brush stroke,
+        double strokeWidth) {
+        resources[$"Theme.Map.{name}FillBrush"] = fill;
+        resources[$"Theme.Map.{name}StrokeBrush"] = stroke;
+        resources[$"Theme.Map.{name}StrokeThickness"] = strokeWidth;
+    }
+
+    private static void SetLineStyle(ResourceDictionary resources, string name, ThemeLineStyle style) {
+        SetLineStyle(
+            resources,
+            name,
+            CreateBrush(style.Stroke!),
+            CreateBrush(style.Casing!),
+            style.StrokeWidth ?? 1.0,
+            style.CasingWidth ?? style.StrokeWidth ?? 1.0,
+            style.DashArray ?? Array.Empty<double>());
+    }
+
+    private static void SetLineStyle(
+        ResourceDictionary resources,
+        string name,
+        Brush stroke,
+        Brush casing,
+        double strokeWidth,
+        double casingWidth,
+        double[]? dashArray = null) {
+        resources[$"Theme.Map.{name}StrokeBrush"] = stroke;
+        resources[$"Theme.Map.{name}CasingBrush"] = casing;
+        resources[$"Theme.Map.{name}StrokeThickness"] = strokeWidth;
+        resources[$"Theme.Map.{name}CasingThickness"] = casingWidth;
+        resources[$"Theme.Map.{name}DashArray"] = dashArray ?? Array.Empty<double>();
+    }
+
+    private static void SetPointStyle(ResourceDictionary resources, string name, ThemePointStyle style) {
+        SetPointStyle(
+            resources,
+            name,
+            CreateBrush(style.Fill!),
+            CreateBrush(style.Stroke!),
+            style.Radius ?? 3.5,
+            style.StrokeWidth ?? 1.0);
+    }
+
+    private static void SetPointStyle(
+        ResourceDictionary resources,
+        string name,
+        Brush fill,
+        Brush stroke,
+        double radius,
+        double strokeWidth) {
+        resources[$"Theme.Map.{name}FillBrush"] = fill;
+        resources[$"Theme.Map.{name}StrokeBrush"] = stroke;
+        resources[$"Theme.Map.{name}Radius"] = radius;
+        resources[$"Theme.Map.{name}StrokeThickness"] = strokeWidth;
     }
 
     private static SolidColorBrush CreateBrush(string colorValue) {

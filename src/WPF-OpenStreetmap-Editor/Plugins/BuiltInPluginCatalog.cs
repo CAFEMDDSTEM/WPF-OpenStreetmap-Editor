@@ -3,24 +3,56 @@ using System.Text;
 
 namespace WPF_OpenStreetmap_Editor.Plugins;
 
-public static class BuiltInPluginCatalog {
+public static partial class BuiltInPluginCatalog {
     public const string OsmTransferPluginId = "org.openstreetmap.transfer";
+    public const string BetterImePluginId = "org.wosm.better-ime";
+    public const string BetterImeEnableCommandId = "enable";
     private const string OsmTransferIconFileName = "icon.jpg";
     private const string OsmTransferDescriptionFileName = "description.md";
     private const string OsmTransferIconResourceName =
         "WPF_OpenStreetmap_Editor.Plugins.BuiltIn.OsmTransfer.icon.jpg";
+    private const string BetterImeIconFileName = "icon.jpg";
+    private const string BetterImeDescriptionFileName = "description.md";
+    private const string BetterImeIconResourceName =
+        "WPF_OpenStreetmap_Editor.Plugins.BuiltIn.BetterIme.icon.jpg";
 
     public static void EnsureInstalled(string pluginsDirectory) {
-        var packageDirectory = Path.Combine(pluginsDirectory, OsmTransferPluginId);
+        WriteBuiltInPackage(
+            pluginsDirectory,
+            OsmTransferPluginId,
+            OsmTransferManifest,
+            OsmTransferDescription,
+            OsmTransferIconFileName,
+            OsmTransferDescriptionFileName,
+            OsmTransferIconResourceName);
+        WriteBuiltInPackage(
+            pluginsDirectory,
+            BetterImePluginId,
+            BetterImeManifest,
+            BetterImeDescription,
+            BetterImeIconFileName,
+            BetterImeDescriptionFileName,
+            BetterImeIconResourceName);
+    }
+
+    private static void WriteBuiltInPackage(
+        string pluginsDirectory,
+        string pluginId,
+        string manifest,
+        string description,
+        string iconFileName,
+        string descriptionFileName,
+        string iconResourceName) {
+        var packageDirectory = Path.Combine(pluginsDirectory, pluginId);
         var manifestPath = Path.Combine(packageDirectory, PluginManifestReader.ManifestFileName);
         Directory.CreateDirectory(packageDirectory);
-        WriteTextIfChanged(manifestPath, OsmTransferManifest);
+        WriteTextIfChanged(manifestPath, manifest);
         WriteTextIfChanged(
-            Path.Combine(packageDirectory, OsmTransferDescriptionFileName),
-            OsmTransferDescription);
+            Path.Combine(packageDirectory, descriptionFileName),
+            description);
         WriteEmbeddedResourceIfChanged(
-            Path.Combine(packageDirectory, OsmTransferIconFileName),
-            OsmTransferIconResourceName);
+            Path.Combine(packageDirectory, iconFileName),
+            iconResourceName);
     }
 
     private static void WriteTextIfChanged(string path, string content) {

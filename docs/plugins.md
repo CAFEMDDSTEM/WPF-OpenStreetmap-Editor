@@ -101,10 +101,10 @@ or directory packages containing symbolic links/reparse points, are rejected.
 ```
 
 `openUrl` accepts only absolute HTTP/HTTPS URLs. `showMessage` accepts `title`
-and `message`. `addImagery` accepts `type` and a required `url`. The built-in
-OpenStreetMap transfer addon also uses the host-owned actions `downloadOsm`,
-`uploadOsm`, and `manageOsmAccounts`; these actions do not accept arbitrary
-arguments or executable code.
+and `message`. `addImagery` accepts `type` and a required `url`. Built-in
+addons also use host-owned actions such as `downloadOsm`, `uploadOsm`,
+`manageOsmAccounts`, and `enableNonTextInputImeGuard`; these actions do not
+accept arbitrary arguments or executable code.
 
 Toolbar contributions use `location: 'main'`, a valid
 `MahApps.Metro.IconPacks.Lucide` icon identifier such as `Download`, a tooltip,
@@ -123,8 +123,15 @@ Tools menu commands for:
 
 The host implements those actions directly. The addon manifest only wires UI
 commands to host-owned behavior; it does not contain network or credential
-code. OSM account metadata is stored in `%LOCALAPPDATA%`, while bearer tokens
-are stored in Windows Credential Manager.
+code. OSM account metadata is stored in `%LOCALAPPDATA%`, while account
+passwords and OAuth access tokens are stored in Windows Credential Manager.
+
+## Built-in Better IME
+
+WOSM installs `org.wosm.better-ime` as a built-in addon package. On main-window
+startup it enables the host-owned IME guard, which disables IME while keyboard
+focus is outside editable text fields and leaves text boxes, password boxes,
+and editable combo boxes available for normal text entry.
 
 ## Process bridge
 

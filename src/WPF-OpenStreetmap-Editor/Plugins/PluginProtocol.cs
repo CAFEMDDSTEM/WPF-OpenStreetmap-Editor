@@ -10,6 +10,7 @@ public static class PluginActionTypes {
     public const string ShowMessage = "showMessage";
     public const string OpenUrl = "openUrl";
     public const string AddImagery = "addImagery";
+    public const string EnableNonTextInputImeGuard = "enableNonTextInputImeGuard";
     public const string ManageOsmAccounts = "manageOsmAccounts";
     public const string DownloadOsm = "downloadOsm";
     public const string UploadOsm = "uploadOsm";

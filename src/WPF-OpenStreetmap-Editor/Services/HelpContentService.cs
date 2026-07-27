@@ -52,7 +52,9 @@ internal static class HelpContentService {
                 new HelpSection("快捷键", [
                     "F1 打开本帮助窗口。",
                     "Ctrl+S 保存地图。",
+                    "Ctrl+C 复制选定对象，Ctrl+V 粘贴对象，Ctrl+Z 撤销。",
                     "A 进入画线模式，S 进入选择模式，V 进入框选模式。",
+                    "R 进入旋转模式，M 进入移动模式，Q 直角化选定对象，Ctrl+Shift+D 创建选定对象副本。",
                     "Insert 在地图中心添加节点，Delete 删除选定对象，H 隐藏选定对象。"
                 ])
             ],

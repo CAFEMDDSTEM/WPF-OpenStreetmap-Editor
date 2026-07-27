@@ -15,47 +15,25 @@ public sealed record OsmChangeBuildResult(
     int ModifyCount,
     int DeleteCount,
     IReadOnlyList<OsmObjectReference> References,
-    IReadOnlyList<OsmWayNodePlan> WayNodePlans) {
+    IReadOnlyList<OsmWayNodePlan> WayNodePlans,
+    OsmDataset Dataset) {
     public int TotalCount => CreateCount + ModifyCount + DeleteCount;
 }
 
 public static class OsmChangeSerializer {
     public static OsmChangeBuildResult Build(MapDocument document, long changesetId) {
         ArgumentNullException.ThrowIfNull(document);
+        foreach (var feature in document.Features) ValidateFeature(feature);
+
+        var current = OsmDocumentSync.Synchronize(document);
+        var original = GetOriginalDataset(document);
         var create = new XElement("create");
         var modify = new XElement("modify");
         var delete = new XElement("delete", new XAttribute("if-unused", "true"));
-        var references = new List<OsmObjectReference>();
-        var wayNodePlans = new List<OsmWayNodePlan>();
-        var nextNodeId = -1L;
-        var nextWayId = -1L;
-        var createCount = 0;
-        var modifyCount = 0;
-        var deleteCount = 0;
 
-        foreach (var feature in document.Features) {
-            ValidateFeature(feature);
-            if (feature.Osm is null) {
-                WriteCreatedFeature(create, feature, changesetId, ref nextNodeId, ref nextWayId, references, wayNodePlans);
-                createCount++;
-                continue;
-            }
-
-            if (document.OriginalFeatures.TryGetValue(feature.Id, out var original) && FeaturesEqual(feature, original)) continue;
-            WriteModifiedFeature(create, modify, feature, changesetId, ref nextNodeId, references, wayNodePlans);
-            modifyCount++;
-        }
-
-        foreach (var feature in document.GetDeletedOriginalFeatures().Where(static item => item.Osm is not null)) {
-            var metadata = feature.Osm!;
-            delete.Add(new XElement(
-                metadata.PrimitiveType == OsmPrimitiveType.Node ? "node" : "way",
-                new XAttribute("id", metadata.Id),
-                new XAttribute("version", metadata.Version),
-                new XAttribute("changeset", changesetId)));
-            deleteCount++;
-        }
-
+        var createCount = WriteCreates(create, current, original, changesetId);
+        var modifyCount = WriteModifies(modify, current, original, changesetId);
+        var deleteCount = WriteDeletes(delete, current, original, changesetId);
         var root = new XElement(
             "osmChange",
             new XAttribute("version", "0.6"),
@@ -63,16 +41,23 @@ public static class OsmChangeSerializer {
         if (create.HasElements) root.Add(create);
         if (modify.HasElements) root.Add(modify);
         if (delete.HasElements) root.Add(delete);
+
+        var references = CreateFeatureReferences(document);
+        var wayNodePlans = CreateWayNodePlans(document, current);
         return new OsmChangeBuildResult(
             new XDocument(new XDeclaration("1.0", "utf-8", null), root).ToString(),
             createCount,
             modifyCount,
             deleteCount,
             references,
-            wayNodePlans);
+            wayNodePlans,
+            current.Clone());
     }
 
     public static void ApplyDiffResult(MapDocument document, OsmChangeBuildResult build, string responseXml) {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(build);
+
         var response = XDocument.Parse(responseXml, LoadOptions.None);
         var diffMappings = response.Root?.Elements()
             .Select(element => new {
@@ -85,119 +70,261 @@ public static class OsmChangeSerializer {
             .ToDictionary(
                 item => (item.Type, item.OldId!.Value),
                 item => (Id: item.NewId!.Value, Version: item.NewVersion!.Value)) ?? [];
-        var references = build.References.ToDictionary(
-            reference => (reference.Type, reference.OldId),
-            reference => reference);
-        foreach (var (key, mapping) in diffMappings) {
-            if (!references.TryGetValue(key, out var reference)) continue;
-            var existingNodeReferences = reference.Feature.Osm?.NodeReferences.ToList() ?? [];
-            reference.Feature.Osm = new OsmFeatureMetadata {
-                PrimitiveType = key.Type == "node" ? OsmPrimitiveType.Node : OsmPrimitiveType.Way,
-                Id = mapping.Id,
-                Version = mapping.Version,
-                NodeReferences = existingNodeReferences
-            };
-        }
-        foreach (var plan in build.WayNodePlans) {
-            if (plan.Feature.Osm is not { PrimitiveType: OsmPrimitiveType.Way } metadata) continue;
-            var oldReferences = metadata.NodeReferences
-                .GroupBy(static reference => reference.Id)
-                .ToDictionary(static group => group.Key, static group => group.First());
-            var updatedReferences = new List<OsmNodeReference>(plan.NodeIds.Count);
-            for (var i = 0; i < plan.NodeIds.Count; i++) {
-                var oldId = plan.NodeIds[i];
-                (long Id, int Version)? created = null;
-                if (oldId < 0) {
-                    if (!diffMappings.TryGetValue(("node", oldId), out var mapping)) {
-                        throw new InvalidDataException($"OSM API 未返回新节点 {oldId} 的映射。");
-                    }
-                    created = mapping;
-                }
-                var id = created?.Id ?? oldId;
-                var version = created?.Version ?? oldReferences.GetValueOrDefault(oldId)?.Version ?? 1;
-                updatedReferences.Add(new OsmNodeReference(id, version, plan.Feature.Parts[0][i]));
-            }
-            metadata.NodeReferences = updatedReferences;
-        }
+
+        var dataset = build.Dataset.Clone();
+        ApplyMappingsToDataset(dataset, diffMappings);
+        EnsureNoUnmappedTemporaryIds(dataset);
+        document.Osm = dataset;
+        UpdateFeatureMetadata(document, dataset, diffMappings);
         document.MarkClean();
     }
 
-    private static void WriteCreatedFeature(
-        XElement create,
-        MapFeature feature,
-        long changesetId,
-        ref long nextNodeId,
-        ref long nextWayId,
-        List<OsmObjectReference> references,
-        List<OsmWayNodePlan> wayNodePlans) {
-        if (feature.GeometryType == MapGeometryType.Point) {
-            var id = nextNodeId--;
-            create.Add(CreateNode(id, 1, changesetId, feature.Parts[0][0], feature.Attributes));
-            references.Add(new OsmObjectReference("node", id, feature));
-            return;
-        }
-
-        var nodeIds = WriteWayNodes(create, feature.Parts[0], null, changesetId, ref nextNodeId);
-        var wayId = nextWayId--;
-        create.Add(CreateWay(wayId, 1, changesetId, nodeIds, feature.Attributes));
-        references.Add(new OsmObjectReference("way", wayId, feature));
-        wayNodePlans.Add(new OsmWayNodePlan(feature, nodeIds));
+    private static OsmDataset GetOriginalDataset(MapDocument document) {
+        return document.OriginalOsm?.Clone() ??
+            OsmDocumentSync.CreateDatasetFromFeatures(document.OriginalFeatures.Values);
     }
 
-    private static void WriteModifiedFeature(
-        XElement create,
-        XElement modify,
-        MapFeature feature,
-        long changesetId,
-        ref long nextNodeId,
-        List<OsmObjectReference> references,
-        List<OsmWayNodePlan> wayNodePlans) {
-        var metadata = feature.Osm!;
-        if (metadata.PrimitiveType == OsmPrimitiveType.Node && feature.GeometryType == MapGeometryType.Point) {
-            modify.Add(CreateNode(metadata.Id, metadata.Version, changesetId, feature.Parts[0][0], feature.Attributes));
-            references.Add(new OsmObjectReference("node", metadata.Id, feature));
-            return;
-        }
-        if (metadata.PrimitiveType != OsmPrimitiveType.Way || feature.GeometryType == MapGeometryType.Point) {
-            throw new InvalidDataException($"要素 {feature.Id} 的 OSM 类型与当前几何不匹配。");
+    private static int WriteCreates(XElement create, OsmDataset current, OsmDataset original, long changesetId) {
+        var count = 0;
+        foreach (var node in current.Nodes.Values
+            .Where(static node => node.Id < 0)
+            .OrderBy(static node => node.Id)) {
+            create.Add(CreateNode(node.Id, node.Version, changesetId, node.Point, node.Tags));
+            count++;
         }
 
-        var nodeIds = WriteWayNodes(
-            create,
-            feature.Parts[0],
-            metadata.NodeReferences,
-            changesetId,
-            ref nextNodeId);
-        modify.Add(CreateWay(metadata.Id, metadata.Version, changesetId, nodeIds, feature.Attributes));
-        references.Add(new OsmObjectReference("way", metadata.Id, feature));
-        wayNodePlans.Add(new OsmWayNodePlan(feature, nodeIds));
+        foreach (var way in current.Ways.Values
+            .Where(static way => way.Id < 0)
+            .OrderBy(static way => way.Id)) {
+            create.Add(CreateWay(way.Id, way.Version, changesetId, way.NodeIds, way.Tags));
+            count++;
+        }
+
+        foreach (var relation in current.Relations.Values
+            .Where(static relation => relation.Id < 0)
+            .OrderBy(static relation => relation.Id)) {
+            create.Add(CreateRelation(relation.Id, relation.Version, changesetId, relation.Members, relation.Tags));
+            count++;
+        }
+
+        return count;
     }
 
-    private static List<long> WriteWayNodes(
-        XElement create,
-        IReadOnlyList<GeoPoint> points,
-        IReadOnlyList<OsmNodeReference>? originalNodes,
-        long changesetId,
-        ref long nextNodeId) {
-        var nodeIds = new List<long>(points.Count);
-        long? firstNodeId = null;
-        for (var i = 0; i < points.Count; i++) {
-            if (i == points.Count - 1 && points.Count > 2 && points[i] == points[0] && firstNodeId.HasValue) {
-                nodeIds.Add(firstNodeId.Value);
-                continue;
-            }
-            if (originalNodes is not null && i < originalNodes.Count && points[i] == originalNodes[i].Point) {
-                var existingNodeId = originalNodes[i].Id;
-                firstNodeId ??= existingNodeId;
-                nodeIds.Add(existingNodeId);
-                continue;
-            }
-            var nodeId = nextNodeId--;
-            firstNodeId ??= nodeId;
-            nodeIds.Add(nodeId);
-            create.Add(CreateNode(nodeId, 1, changesetId, points[i], null));
+    private static int WriteModifies(XElement modify, OsmDataset current, OsmDataset original, long changesetId) {
+        var count = 0;
+        foreach (var node in current.Nodes.Values
+            .Where(node => node.Id >= 0 &&
+                (!original.Nodes.TryGetValue(node.Id, out var originalNode) ||
+                    !NodesEqual(node, originalNode)))
+            .OrderBy(static node => node.Id)) {
+            modify.Add(CreateNode(node.Id, node.Version, changesetId, node.Point, node.Tags));
+            count++;
         }
-        return nodeIds;
+
+        foreach (var way in current.Ways.Values
+            .Where(way => way.Id >= 0 &&
+                (!original.Ways.TryGetValue(way.Id, out var originalWay) ||
+                    !WaysEqual(way, originalWay)))
+            .OrderBy(static way => way.Id)) {
+            modify.Add(CreateWay(way.Id, way.Version, changesetId, way.NodeIds, way.Tags));
+            count++;
+        }
+
+        foreach (var relation in current.Relations.Values
+            .Where(relation => relation.Id >= 0 &&
+                (!original.Relations.TryGetValue(relation.Id, out var originalRelation) ||
+                    !RelationsEqual(relation, originalRelation)))
+            .OrderBy(static relation => relation.Id)) {
+            modify.Add(CreateRelation(relation.Id, relation.Version, changesetId, relation.Members, relation.Tags));
+            count++;
+        }
+
+        return count;
+    }
+
+    private static int WriteDeletes(XElement delete, OsmDataset current, OsmDataset original, long changesetId) {
+        var count = 0;
+        foreach (var relation in original.Relations.Values
+            .Where(relation => !current.Relations.ContainsKey(relation.Id))
+            .OrderByDescending(static relation => relation.Id)) {
+            delete.Add(CreateDeletedPrimitive("relation", relation.Id, relation.Version, changesetId));
+            count++;
+        }
+
+        foreach (var way in original.Ways.Values
+            .Where(way => !current.Ways.ContainsKey(way.Id))
+            .OrderByDescending(static way => way.Id)) {
+            delete.Add(CreateDeletedPrimitive("way", way.Id, way.Version, changesetId));
+            count++;
+        }
+
+        foreach (var node in original.Nodes.Values
+            .Where(node => !current.Nodes.ContainsKey(node.Id))
+            .OrderByDescending(static node => node.Id)) {
+            delete.Add(CreateDeletedPrimitive("node", node.Id, node.Version, changesetId));
+            count++;
+        }
+
+        return count;
+    }
+
+    private static IReadOnlyList<OsmObjectReference> CreateFeatureReferences(MapDocument document) {
+        return document.Features
+            .Where(static feature => feature.Osm is not null)
+            .Select(static feature => new OsmObjectReference(
+                FormatPrimitiveType(feature.Osm!.PrimitiveType),
+                feature.Osm.Id,
+                feature))
+            .ToList();
+    }
+
+    private static IReadOnlyList<OsmWayNodePlan> CreateWayNodePlans(MapDocument document, OsmDataset dataset) {
+        return document.Features
+            .Where(static feature => feature.Osm?.PrimitiveType == OsmPrimitiveType.Way)
+            .Select(feature => dataset.Ways.TryGetValue(feature.Osm!.Id, out var way)
+                ? new OsmWayNodePlan(feature, way.NodeIds.ToList())
+                : null)
+            .OfType<OsmWayNodePlan>()
+            .ToList();
+    }
+
+    private static void ApplyMappingsToDataset(
+        OsmDataset dataset,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        var nodeIdMap = ApplyNodeMappings(dataset, mappings);
+        var wayIdMap = ApplyWayMappings(dataset, mappings);
+        var relationIdMap = ApplyRelationMappings(dataset, mappings);
+
+        foreach (var way in dataset.Ways.Values) {
+            way.NodeIds = way.NodeIds
+                .Select(nodeId => nodeIdMap.GetValueOrDefault(nodeId, nodeId))
+                .ToList();
+        }
+
+        foreach (var relation in dataset.Relations.Values) {
+            relation.Members = relation.Members
+                .Select(member => member.Type switch {
+                    OsmRelationMemberType.Node => member with { Id = nodeIdMap.GetValueOrDefault(member.Id, member.Id) },
+                    OsmRelationMemberType.Way => member with { Id = wayIdMap.GetValueOrDefault(member.Id, member.Id) },
+                    OsmRelationMemberType.Relation => member with { Id = relationIdMap.GetValueOrDefault(member.Id, member.Id) },
+                    _ => member
+                })
+                .ToList();
+        }
+
+        dataset.NormalizeTemporaryIds();
+    }
+
+    private static Dictionary<long, long> ApplyNodeMappings(
+        OsmDataset dataset,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        var idMap = new Dictionary<long, long>();
+        foreach (var oldId in dataset.Nodes.Keys.ToList()) {
+            if (!mappings.TryGetValue(("node", oldId), out var mapping)) continue;
+
+            var node = dataset.Nodes[oldId];
+            dataset.Nodes.Remove(oldId);
+            node.Id = mapping.Id;
+            node.Version = mapping.Version;
+            dataset.Nodes[node.Id] = node;
+            idMap[oldId] = node.Id;
+        }
+
+        return idMap;
+    }
+
+    private static Dictionary<long, long> ApplyWayMappings(
+        OsmDataset dataset,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        var idMap = new Dictionary<long, long>();
+        foreach (var oldId in dataset.Ways.Keys.ToList()) {
+            if (!mappings.TryGetValue(("way", oldId), out var mapping)) continue;
+
+            var way = dataset.Ways[oldId];
+            dataset.Ways.Remove(oldId);
+            way.Id = mapping.Id;
+            way.Version = mapping.Version;
+            dataset.Ways[way.Id] = way;
+            idMap[oldId] = way.Id;
+        }
+
+        return idMap;
+    }
+
+    private static Dictionary<long, long> ApplyRelationMappings(
+        OsmDataset dataset,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        var idMap = new Dictionary<long, long>();
+        foreach (var oldId in dataset.Relations.Keys.ToList()) {
+            if (!mappings.TryGetValue(("relation", oldId), out var mapping)) continue;
+
+            var relation = dataset.Relations[oldId];
+            dataset.Relations.Remove(oldId);
+            relation.Id = mapping.Id;
+            relation.Version = mapping.Version;
+            dataset.Relations[relation.Id] = relation;
+            idMap[oldId] = relation.Id;
+        }
+
+        return idMap;
+    }
+
+    private static void EnsureNoUnmappedTemporaryIds(OsmDataset dataset) {
+        var temporaryNodeId = dataset.Nodes.Keys.FirstOrDefault(static id => id < 0);
+        if (temporaryNodeId < 0) throw new InvalidDataException($"OSM API did not return a mapping for new node {temporaryNodeId}.");
+
+        var temporaryWayId = dataset.Ways.Keys.FirstOrDefault(static id => id < 0);
+        if (temporaryWayId < 0) throw new InvalidDataException($"OSM API did not return a mapping for new way {temporaryWayId}.");
+
+        var temporaryRelationId = dataset.Relations.Keys.FirstOrDefault(static id => id < 0);
+        if (temporaryRelationId < 0) throw new InvalidDataException($"OSM API did not return a mapping for new relation {temporaryRelationId}.");
+    }
+
+    private static void UpdateFeatureMetadata(
+        MapDocument document,
+        OsmDataset dataset,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        foreach (var feature in document.Features) {
+            if (feature.Osm is null) continue;
+
+            var typeName = FormatPrimitiveType(feature.Osm.PrimitiveType);
+            if (mappings.TryGetValue((typeName, feature.Osm.Id), out var mapping)) {
+                feature.Osm.Id = mapping.Id;
+                feature.Osm.Version = mapping.Version;
+            }
+
+            switch (feature.Osm.PrimitiveType) {
+                case OsmPrimitiveType.Node when dataset.Nodes.TryGetValue(feature.Osm.Id, out var node):
+                    feature.Osm.Version = node.Version;
+                    if (feature.Parts.Count == 1 && feature.Parts[0].Count > 0) feature.Parts[0][0] = node.Point;
+                    feature.Attributes.Clear();
+                    foreach (var tag in node.Tags) feature.Attributes[tag.Key] = tag.Value;
+                    feature.InvalidateGeometry();
+                    break;
+                case OsmPrimitiveType.Way when dataset.Ways.TryGetValue(feature.Osm.Id, out var way):
+                    feature.Osm.Version = way.Version;
+                    feature.Osm.NodeReferences = OsmDocumentSync.CreateNodeReferences(dataset, way.NodeIds);
+                    if (feature.Osm.NodeReferences.Count >= 2) {
+                        feature.Parts.Clear();
+                        feature.Parts.Add(feature.Osm.NodeReferences.Select(static reference => reference.Point).ToList());
+                        feature.GeometryType = feature.Osm.NodeReferences.Count > 3 &&
+                            feature.Osm.NodeReferences[0].Point == feature.Osm.NodeReferences[^1].Point
+                                ? MapGeometryType.Polygon
+                                : MapGeometryType.LineString;
+                        feature.InvalidateGeometry();
+                    }
+                    feature.Attributes.Clear();
+                    foreach (var tag in way.Tags) feature.Attributes[tag.Key] = tag.Value;
+                    break;
+                case OsmPrimitiveType.Relation when dataset.Relations.TryGetValue(feature.Osm.Id, out var relation):
+                    feature.Osm.Version = relation.Version;
+                    feature.Attributes.Clear();
+                    foreach (var tag in relation.Tags) feature.Attributes[tag.Key] = tag.Value;
+                    break;
+            }
+        }
+
+        document.InvalidateSpatialIndex();
     }
 
     private static XElement CreateNode(
@@ -233,6 +360,34 @@ public static class OsmChangeSerializer {
         return way;
     }
 
+    private static XElement CreateRelation(
+        long id,
+        int version,
+        long changesetId,
+        IEnumerable<OsmRelationMember> members,
+        IReadOnlyDictionary<string, string> attributes) {
+        var relation = new XElement(
+            "relation",
+            new XAttribute("id", id),
+            new XAttribute("version", version),
+            new XAttribute("changeset", changesetId));
+        relation.Add(members.Select(member => new XElement(
+            "member",
+            new XAttribute("type", FormatMemberType(member.Type)),
+            new XAttribute("ref", member.Id),
+            new XAttribute("role", member.Role))));
+        AddTags(relation, attributes);
+        return relation;
+    }
+
+    private static XElement CreateDeletedPrimitive(string type, long id, int version, long changesetId) {
+        return new XElement(
+            type,
+            new XAttribute("id", id),
+            new XAttribute("version", version),
+            new XAttribute("changeset", changesetId));
+    }
+
     private static void AddTags(XElement element, IReadOnlyDictionary<string, string>? attributes) {
         if (attributes is null) return;
         element.Add(attributes
@@ -241,14 +396,30 @@ public static class OsmChangeSerializer {
             .Select(attribute => new XElement("tag", new XAttribute("k", attribute.Key), new XAttribute("v", attribute.Value))));
     }
 
-    private static bool FeaturesEqual(MapFeature left, MapFeature right) {
-        if (left.GeometryType != right.GeometryType || left.Parts.Count != right.Parts.Count ||
-            left.Attributes.Count != right.Attributes.Count) return false;
-        for (var i = 0; i < left.Parts.Count; i++) {
-            if (!left.Parts[i].SequenceEqual(right.Parts[i])) return false;
-        }
-        return left.Attributes.OrderBy(static item => item.Key, StringComparer.Ordinal)
-            .SequenceEqual(right.Attributes.OrderBy(static item => item.Key, StringComparer.Ordinal));
+    private static bool NodesEqual(OsmNode left, OsmNode right) {
+        return left.Version == right.Version &&
+            left.Point == right.Point &&
+            TagsEqual(left.Tags, right.Tags);
+    }
+
+    private static bool WaysEqual(OsmWay left, OsmWay right) {
+        return left.Version == right.Version &&
+            left.NodeIds.SequenceEqual(right.NodeIds) &&
+            TagsEqual(left.Tags, right.Tags);
+    }
+
+    private static bool RelationsEqual(OsmRelation left, OsmRelation right) {
+        return left.Version == right.Version &&
+            left.Members.SequenceEqual(right.Members) &&
+            TagsEqual(left.Tags, right.Tags);
+    }
+
+    private static bool TagsEqual(
+        IReadOnlyDictionary<string, string> left,
+        IReadOnlyDictionary<string, string> right) {
+        return left.Count == right.Count &&
+            left.OrderBy(static item => item.Key, StringComparer.Ordinal)
+                .SequenceEqual(right.OrderBy(static item => item.Key, StringComparer.Ordinal));
     }
 
     private static long? ParseLongAttribute(XElement element, string name) {
@@ -264,12 +435,33 @@ public static class OsmChangeSerializer {
     }
 
     private static void ValidateFeature(MapFeature feature) {
+        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Relation) return;
+
         if (feature.Parts.Count != 1) {
-            throw new InvalidDataException($"要素 {feature.Id} 是多部件几何，请拆分后再上传 OSM。");
+            throw new InvalidDataException($"Feature {feature.Id} has multipart geometry. Split it before uploading to OSM.");
         }
+
         var minimumPoints = feature.GeometryType == MapGeometryType.Point ? 1 : 2;
         if (feature.Parts[0].Count < minimumPoints || feature.Parts[0].Any(static point => !point.IsValid)) {
-            throw new InvalidDataException($"要素 {feature.Id} 的几何无效。");
+            throw new InvalidDataException($"Feature {feature.Id} has invalid geometry.");
         }
+    }
+
+    private static string FormatPrimitiveType(OsmPrimitiveType type) {
+        return type switch {
+            OsmPrimitiveType.Node => "node",
+            OsmPrimitiveType.Way => "way",
+            OsmPrimitiveType.Relation => "relation",
+            _ => throw new InvalidDataException($"Unsupported OSM primitive type: {type}.")
+        };
+    }
+
+    private static string FormatMemberType(OsmRelationMemberType type) {
+        return type switch {
+            OsmRelationMemberType.Node => "node",
+            OsmRelationMemberType.Way => "way",
+            OsmRelationMemberType.Relation => "relation",
+            _ => throw new InvalidDataException($"Unsupported OSM relation member type: {type}.")
+        };
     }
 }

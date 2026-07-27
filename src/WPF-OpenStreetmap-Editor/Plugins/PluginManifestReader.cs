@@ -40,6 +40,7 @@ public sealed partial class PluginManifestReader {
         PluginActionTypes.ShowMessage,
         PluginActionTypes.OpenUrl,
         PluginActionTypes.AddImagery,
+        PluginActionTypes.EnableNonTextInputImeGuard,
         PluginActionTypes.ManageOsmAccounts,
         PluginActionTypes.DownloadOsm,
         PluginActionTypes.UploadOsm

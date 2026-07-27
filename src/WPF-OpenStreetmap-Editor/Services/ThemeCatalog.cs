@@ -172,6 +172,7 @@ public static partial class ThemeCatalog {
                 BackgroundImage = backgroundImage,
                 BackgroundImageOpacity = parsed.BackgroundImageOpacity,
                 Colors = parsed.Colors,
+                MapStyle = parsed.MapStyle,
                 SourcePath = sourcePath
             };
             return true;
@@ -288,6 +289,7 @@ public static partial class ThemeCatalog {
             BackgroundImage = theme.BackgroundImage,
             BackgroundImageOpacity = theme.BackgroundImageOpacity,
             Colors = theme.Colors,
+            MapStyle = theme.MapStyle,
             IsBuiltIn = isBuiltIn,
             SourcePath = theme.SourcePath,
             Icon = icon,
@@ -349,7 +351,123 @@ public static partial class ThemeCatalog {
             return "选中文字与 selection 的对比度必须至少为 4.5:1";
         }
 
+        if (!TryValidateMapStyle(theme.MapStyle, out var mapStyleError)) return mapStyleError;
+
         return "";
+    }
+
+    private static bool TryValidateMapStyle(ThemeMapStyle? mapStyle, out string error) {
+        error = "";
+        if (mapStyle is null) return true;
+
+        var areaStyles = new Dictionary<string, ThemeAreaStyle?> {
+            ["genericArea"] = mapStyle.GenericArea,
+            ["water"] = mapStyle.Water,
+            ["farmland"] = mapStyle.Farmland,
+            ["forest"] = mapStyle.Forest,
+            ["park"] = mapStyle.Park,
+            ["builtArea"] = mapStyle.BuiltArea,
+            ["building"] = mapStyle.Building
+        };
+        foreach (var (name, style) in areaStyles) {
+            if (!TryValidateAreaStyle(name, style, out error)) return false;
+        }
+
+        var lineStyles = new Dictionary<string, ThemeLineStyle?> {
+            ["genericLine"] = mapStyle.GenericLine,
+            ["boundary"] = mapStyle.Boundary,
+            ["waterway"] = mapStyle.Waterway,
+            ["rail"] = mapStyle.Rail,
+            ["path"] = mapStyle.Path,
+            ["localRoad"] = mapStyle.LocalRoad,
+            ["secondaryRoad"] = mapStyle.SecondaryRoad,
+            ["primaryRoad"] = mapStyle.PrimaryRoad,
+            ["motorway"] = mapStyle.Motorway
+        };
+        foreach (var (name, style) in lineStyles) {
+            if (!TryValidateLineStyle(name, style, out error)) return false;
+        }
+
+        var pointStyles = new Dictionary<string, ThemePointStyle?> {
+            ["genericPoint"] = mapStyle.GenericPoint,
+            ["poi"] = mapStyle.Poi,
+            ["foodPoint"] = mapStyle.FoodPoint,
+            ["parkingPoint"] = mapStyle.ParkingPoint,
+            ["medicalPoint"] = mapStyle.MedicalPoint,
+            ["educationPoint"] = mapStyle.EducationPoint,
+            ["transitPoint"] = mapStyle.TransitPoint,
+            ["shopPoint"] = mapStyle.ShopPoint,
+            ["tourismPoint"] = mapStyle.TourismPoint,
+            ["place"] = mapStyle.Place
+        };
+        foreach (var (name, style) in pointStyles) {
+            if (!TryValidatePointStyle(name, style, out error)) return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateAreaStyle(string name, ThemeAreaStyle? style, out string error) {
+        error = "";
+        if (style is null) return true;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.fill", style.Fill, out error)) return false;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.stroke", style.Stroke, out error)) return false;
+        return TryValidateOptionalNumber($"mapStyle.{name}.strokeWidth", style.StrokeWidth, 0, 20, out error);
+    }
+
+    private static bool TryValidateLineStyle(string name, ThemeLineStyle? style, out string error) {
+        error = "";
+        if (style is null) return true;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.stroke", style.Stroke, out error)) return false;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.casing", style.Casing, out error)) return false;
+        if (!TryValidateOptionalNumber($"mapStyle.{name}.strokeWidth", style.StrokeWidth, 0.1, 32, out error)) return false;
+        if (!TryValidateOptionalNumber($"mapStyle.{name}.casingWidth", style.CasingWidth, 0, 40, out error)) return false;
+
+        if (style.DashArray is null) return true;
+        if (style.DashArray.Length > 8) {
+            error = $"mapStyle.{name}.dashArray 最多只能包含 8 个数值";
+            return false;
+        }
+        foreach (var value in style.DashArray) {
+            if (!double.IsFinite(value) || value <= 0 || value > 128) {
+                error = $"mapStyle.{name}.dashArray 的数值必须在 0 到 128 之间";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidatePointStyle(string name, ThemePointStyle? style, out string error) {
+        error = "";
+        if (style is null) return true;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.fill", style.Fill, out error)) return false;
+        if (!TryValidateOptionalColor($"mapStyle.{name}.stroke", style.Stroke, out error)) return false;
+        if (!TryValidateOptionalNumber($"mapStyle.{name}.radius", style.Radius, 1, 24, out error)) return false;
+        return TryValidateOptionalNumber($"mapStyle.{name}.strokeWidth", style.StrokeWidth, 0, 12, out error);
+    }
+
+    private static bool TryValidateOptionalColor(string name, string? value, out string error) {
+        error = "";
+        if (string.IsNullOrWhiteSpace(value)) return true;
+        if (ColorRegex().IsMatch(value.Trim())) return true;
+
+        error = $"{name} 必须是 #RRGGBB 颜色";
+        return false;
+    }
+
+    private static bool TryValidateOptionalNumber(
+        string name,
+        double? value,
+        double minimum,
+        double maximum,
+        out string error) {
+        error = "";
+        if (!value.HasValue) return true;
+        if (double.IsFinite(value.Value) && value.Value >= minimum && value.Value <= maximum) return true;
+
+        error = $"{name} 必须在 {minimum:R} 到 {maximum:R} 之间";
+        return false;
     }
 
     private static bool HasValidLength(string? value, int minimum, int maximum) {

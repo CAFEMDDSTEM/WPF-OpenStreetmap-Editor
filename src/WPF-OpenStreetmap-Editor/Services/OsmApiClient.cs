@@ -2,7 +2,6 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Xml.Linq;
 using WPF_OpenStreetmap_Editor.Models;
@@ -78,7 +77,17 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         string apiBaseUrl,
         string accessToken,
         CancellationToken ct = default) {
-        using var request = CreateAuthorizedRequest(HttpMethod.Get, apiBaseUrl, "api/0.6/user/details", accessToken);
+        return await GetUserDisplayNameAsync(
+            apiBaseUrl,
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", accessToken),
+            ct);
+    }
+
+    public async Task<string> GetUserDisplayNameAsync(
+        string apiBaseUrl,
+        OsmAccountCredential credential,
+        CancellationToken ct = default) {
+        using var request = CreateAuthorizedRequest(HttpMethod.Get, apiBaseUrl, "api/0.6/user/details", credential);
         using var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         var xml = XDocument.Parse(await response.Content.ReadAsStringAsync(ct));
@@ -90,13 +99,43 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         string accessToken,
         string comment,
         CancellationToken ct = default) {
-        var body = new XDocument(new XElement(
-            "osm",
-            new XElement(
-                "changeset",
-                new XElement("tag", new XAttribute("k", "created_by"), new XAttribute("v", "WPF-OpenStreetmap-Editor")),
-                new XElement("tag", new XAttribute("k", "comment"), new XAttribute("v", comment))))).ToString();
-        using var request = CreateAuthorizedRequest(HttpMethod.Put, apiBaseUrl, "api/0.6/changeset/create", accessToken, body);
+        return await CreateChangesetAsync(
+            apiBaseUrl,
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", accessToken),
+            comment,
+            source: null,
+            reviewRequested: false,
+            ct);
+    }
+
+    public async Task<long> CreateChangesetAsync(
+        string apiBaseUrl,
+        OsmAccountCredential credential,
+        string comment,
+        CancellationToken ct = default) {
+        return await CreateChangesetAsync(apiBaseUrl, credential, comment, source: null, reviewRequested: false, ct);
+    }
+
+    public async Task<long> CreateChangesetAsync(
+        string apiBaseUrl,
+        OsmAccountCredential credential,
+        string comment,
+        string? source = null,
+        bool reviewRequested = false,
+        CancellationToken ct = default) {
+        var changeset = new XElement(
+            "changeset",
+            new XElement("tag", new XAttribute("k", "created_by"), new XAttribute("v", "WPF-OpenStreetmap-Editor")),
+            new XElement("tag", new XAttribute("k", "comment"), new XAttribute("v", comment)));
+        if (!string.IsNullOrWhiteSpace(source)) {
+            changeset.Add(new XElement("tag", new XAttribute("k", "source"), new XAttribute("v", source.Trim())));
+        }
+        if (reviewRequested) {
+            changeset.Add(new XElement("tag", new XAttribute("k", "review_requested"), new XAttribute("v", "yes")));
+        }
+
+        var body = new XDocument(new XElement("osm", changeset)).ToString();
+        using var request = CreateAuthorizedRequest(HttpMethod.Put, apiBaseUrl, "api/0.6/changeset/create", credential, body);
         using var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         var text = (await response.Content.ReadAsStringAsync(ct)).Trim();
@@ -111,11 +150,25 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         long changesetId,
         string changeXml,
         CancellationToken ct = default) {
+        return await UploadChangesAsync(
+            apiBaseUrl,
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", accessToken),
+            changesetId,
+            changeXml,
+            ct);
+    }
+
+    public async Task<string> UploadChangesAsync(
+        string apiBaseUrl,
+        OsmAccountCredential credential,
+        long changesetId,
+        string changeXml,
+        CancellationToken ct = default) {
         using var request = CreateAuthorizedRequest(
             HttpMethod.Post,
             apiBaseUrl,
             $"api/0.6/changeset/{changesetId}/upload",
-            accessToken,
+            credential,
             changeXml);
         using var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
@@ -127,11 +180,23 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         string accessToken,
         long changesetId,
         CancellationToken ct = default) {
+        await CloseChangesetAsync(
+            apiBaseUrl,
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", accessToken),
+            changesetId,
+            ct);
+    }
+
+    public async Task CloseChangesetAsync(
+        string apiBaseUrl,
+        OsmAccountCredential credential,
+        long changesetId,
+        CancellationToken ct = default) {
         using var request = CreateAuthorizedRequest(
             HttpMethod.Put,
             apiBaseUrl,
             $"api/0.6/changeset/{changesetId}/close",
-            accessToken);
+            credential);
         using var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
     }
@@ -180,11 +245,10 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         HttpMethod method,
         string apiBaseUrl,
         string relativePath,
-        string accessToken,
+        OsmAccountCredential credential,
         string? body = null) {
-        if (string.IsNullOrWhiteSpace(accessToken)) throw new InvalidDataException("OSM 账号缺少访问令牌。");
         var request = new HttpRequestMessage(method, CreateUri(apiBaseUrl, relativePath));
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        credential.ApplyTo(request);
         request.Headers.UserAgent.ParseAdd("WPF-OpenStreetmap-Editor/0.1");
         if (body is not null) request.Content = new StringContent(body, new UTF8Encoding(false), "text/xml");
         return request;

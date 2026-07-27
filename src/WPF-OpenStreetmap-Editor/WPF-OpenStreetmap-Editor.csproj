@@ -10,6 +10,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>0.1.0</Version>
     <StartupObject>WPF_OpenStreetmap_Editor.Program</StartupObject>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
   </PropertyGroup>
 
@@ -20,6 +21,8 @@
     <EmbeddedResource Include="Themes\BuiltIn\**\*.*" />
     <EmbeddedResource Include="Assets\StartupMap.jpg"
                       LogicalName="WPF_OpenStreetmap_Editor.Plugins.BuiltIn.OsmTransfer.icon.jpg" />
+    <EmbeddedResource Include="Assets\StartupMap.jpg"
+                      LogicalName="WPF_OpenStreetmap_Editor.Plugins.BuiltIn.BetterIme.icon.jpg" />
   </ItemGroup>
 
   <ItemGroup>

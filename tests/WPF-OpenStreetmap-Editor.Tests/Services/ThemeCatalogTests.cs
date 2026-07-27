@@ -68,6 +68,61 @@ public class ThemeCatalogTests {
         }
     }
 
+    [Fact]
+    public void Read_AcceptsPartialMapStyleOverrides() {
+        var root = CreateTestDirectory();
+
+        try {
+            var json = CreateValidThemeJson("community.map-style")
+                .Replace(
+                    "  \"colors\": {",
+                    """
+                      "mapStyle": {
+                        "water": { "fill": "#ABCDEF", "stroke": "#123456", "strokeWidth": 1.25 },
+                        "motorway": { "stroke": "#E892A2", "casing": "#DC2A67", "strokeWidth": 4, "casingWidth": 6 },
+                        "foodPoint": { "fill": "#FFF3BF", "stroke": "#8C5A00", "radius": 5 }
+                      },
+                      "colors": {
+                    """,
+                    StringComparison.Ordinal);
+            WriteLoosePackage(root, json);
+
+            var theme = ThemeCatalog.Read(Path.Combine(root, "theme.json"));
+
+            Assert.Equal("#ABCDEF", theme.MapStyle?.Water?.Fill);
+            Assert.Equal(6, theme.MapStyle?.Motorway?.CasingWidth);
+            Assert.Equal(5, theme.MapStyle?.FoodPoint?.Radius);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public void TryRead_RejectsInvalidMapStyleValues() {
+        var root = CreateTestDirectory();
+
+        try {
+            var json = CreateValidThemeJson("community.invalid-map-style")
+                .Replace(
+                    "  \"colors\": {",
+                    """
+                      "mapStyle": {
+                        "motorway": { "stroke": "red", "strokeWidth": -1 }
+                      },
+                      "colors": {
+                    """,
+                    StringComparison.Ordinal);
+            WriteLoosePackage(root, json);
+
+            var loaded = ThemeCatalog.TryRead(Path.Combine(root, "theme.json"), out _, out var error);
+
+            Assert.False(loaded);
+            Assert.Contains("mapStyle.motorway.stroke", error);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
     [Theory]
     [InlineData("icon.png")]
     [InlineData("README.md")]

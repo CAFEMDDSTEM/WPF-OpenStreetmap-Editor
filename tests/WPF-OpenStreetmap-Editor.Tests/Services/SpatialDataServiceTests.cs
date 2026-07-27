@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
+using System.Xml.Linq;
 using OsmSharp;
 using OsmSharp.Streams;
 using WPF_OpenStreetmap_Editor.Models;
@@ -63,6 +64,47 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task SaveAsync_OsmXmlReusesOriginalWayNodesAfterInsertedPoint() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "saved.osm");
+        try {
+            var first = new GeoPoint(1, 1);
+            var inserted = new GeoPoint(1.5, 1.5);
+            var second = new GeoPoint(2, 2);
+            var third = new GeoPoint(3, 3);
+            var document = new MapDocument();
+            document.Features.Add(new MapFeature {
+                Id = "osm-way-10",
+                GeometryType = MapGeometryType.LineString,
+                Parts = [[first, inserted, second, third]],
+                Osm = new OsmFeatureMetadata {
+                    PrimitiveType = OsmPrimitiveType.Way,
+                    Id = 10,
+                    Version = 4,
+                    NodeReferences = [
+                        new OsmNodeReference(1, 1, first),
+                        new OsmNodeReference(2, 1, second),
+                        new OsmNodeReference(3, 1, third)
+                    ]
+                }
+            });
+
+            await SpatialDataService.SaveAsync(document, path);
+            var xml = XDocument.Load(path);
+
+            var nodeIds = xml.Descendants("node")
+                .Select(element => element.Attribute("id")!.Value);
+            var createdNodeId = Assert.Single(nodeIds, static id => id.StartsWith("-"));
+            var wayNodeIds = xml.Descendants("way").Single().Elements("nd")
+                .Select(element => element.Attribute("ref")!.Value)
+                .ToArray();
+            Assert.Equal(["1", createdNodeId, "2", "3"], wayNodeIds);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
     public async Task ImportAsync_OsmXmlResolvesWaysAndMetadata() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "map.osm");
@@ -84,6 +126,74 @@ public class SpatialDataServiceTests {
             Assert.Equal(1, node.Osm!.Id);
             Assert.Equal(4, way.Osm!.Version);
             Assert.Equal(3, way.Parts[0].Count);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public async Task ImportAsync_OsmXmlPreservesRelationsInDataset() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "relations.osm");
+        try {
+            File.WriteAllText(path, """
+                <osm version="0.6">
+                  <node id="1" lat="1.30" lon="103.80" version="1" />
+                  <node id="2" lat="1.31" lon="103.81" version="1" />
+                  <node id="3" lat="1.32" lon="103.82" version="1" />
+                  <way id="10" version="2"><nd ref="1"/><nd ref="2"/><nd ref="3"/><nd ref="1"/></way>
+                  <relation id="20" version="3">
+                    <member type="way" ref="10" role="outer" />
+                    <tag k="type" v="multipolygon" />
+                    <tag k="name" v="Test area" />
+                  </relation>
+                </osm>
+                """);
+
+            var document = await SpatialDataService.ImportAsync(path);
+
+            Assert.NotNull(document.Osm);
+            Assert.Equal(3, document.Osm!.Nodes.Count);
+            Assert.Single(document.Osm.Ways);
+            var relation = Assert.Single(document.Osm.Relations.Values);
+            var member = Assert.Single(relation.Members);
+            Assert.Equal(OsmRelationMemberType.Way, member.Type);
+            Assert.Equal(10, member.Id);
+            Assert.Equal("outer", member.Role);
+            Assert.Equal(0, document.SkippedFeatureCount);
+            Assert.Contains(document.Features, feature => feature.Osm?.PrimitiveType == OsmPrimitiveType.Relation);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_OsmXmlWritesDatasetRelations() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "relations.osm");
+        try {
+            var document = new MapDocument {
+                Osm = new OsmDataset()
+            };
+            document.Osm.Nodes[1] = new OsmNode { Id = 1, Version = 1, Point = new GeoPoint(103.8, 1.3) };
+            document.Osm.Nodes[2] = new OsmNode { Id = 2, Version = 1, Point = new GeoPoint(103.9, 1.4) };
+            document.Osm.Ways[10] = new OsmWay { Id = 10, Version = 2, NodeIds = [1, 2] };
+            document.Osm.Relations[20] = new OsmRelation {
+                Id = 20,
+                Version = 3,
+                Members = [new OsmRelationMember(OsmRelationMemberType.Way, 10, "route")],
+                Tags = new Dictionary<string, string> { ["type"] = "route" }
+            };
+
+            await SpatialDataService.SaveAsync(document, path);
+            var xml = XDocument.Load(path);
+
+            var relation = Assert.Single(xml.Descendants("relation"));
+            Assert.Equal("20", relation.Attribute("id")!.Value);
+            var member = Assert.Single(relation.Elements("member"));
+            Assert.Equal("way", member.Attribute("type")!.Value);
+            Assert.Equal("10", member.Attribute("ref")!.Value);
+            Assert.Equal("route", member.Attribute("role")!.Value);
         } finally {
             DeleteTestDirectory(root);
         }

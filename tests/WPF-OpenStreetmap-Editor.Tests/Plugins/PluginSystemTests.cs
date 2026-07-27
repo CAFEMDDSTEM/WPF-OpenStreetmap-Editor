@@ -231,6 +231,24 @@ public class PluginSystemTests {
     }
 
     [Fact]
+    public async Task PluginHost_LoadsBuiltInBetterImeAddon() {
+        using var testDirectory = new TestDirectory();
+        var pluginsDirectory = Path.Combine(testDirectory.Path, "Plugins");
+        await using var host = new PluginHost(pluginsDirectory, Path.Combine(testDirectory.Path, "state.json"));
+
+        await host.ReloadAsync();
+        var result = await host.ExecuteCommandAsync(
+            BuiltInPluginCatalog.BetterImePluginId,
+            BuiltInPluginCatalog.BetterImeEnableCommandId);
+
+        var plugin = Assert.Single(host.Plugins, plugin => plugin.Id == BuiltInPluginCatalog.BetterImePluginId);
+        Assert.Equal(PluginLoadStatus.Loaded, plugin.Status);
+        Assert.Equal("Better IME For WOSM", plugin.Name);
+        var action = Assert.Single(result.Actions);
+        Assert.Equal(PluginActionTypes.EnableNonTextInputImeGuard, action.Type);
+    }
+
+    [Fact]
     public async Task PluginHost_ExchangesJsonRpcWithProcessPlugin() {
         using var source = new TestDirectory();
         using var destination = new TestDirectory();

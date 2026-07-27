@@ -74,6 +74,26 @@ Include the `assets` directory in `Compress-Archive -Path` when the manifest dec
 
 All colors are required and must use opaque `#RRGGBB`. WOSM requires at least a 4.5:1 contrast ratio for normal text, muted text, accent text, and selected text against their corresponding backgrounds. Unknown manifest properties are rejected.
 
+`mapStyle` is optional. When omitted, WOSM uses its built-in OpenStreetMap-like vector rendering palette. A theme can override only the map feature styles it wants to change:
+
+```json
+{
+  "mapStyle": {
+    "water": { "fill": "#AAD3DF", "stroke": "#72B4C7", "strokeWidth": 0.9 },
+    "building": { "fill": "#D9D0C9", "stroke": "#B5A99F", "strokeWidth": 0.9 },
+    "motorway": { "stroke": "#E892A2", "casing": "#DC2A67", "strokeWidth": 4.0, "casingWidth": 6.0 },
+    "path": { "stroke": "#D27C5D", "dashArray": [4, 3] },
+    "foodPoint": { "fill": "#FFF3BF", "stroke": "#8C5A00", "radius": 5.0 }
+  }
+}
+```
+
+Area style keys are `genericArea`, `water`, `farmland`, `forest`, `park`, `builtArea`, and `building`. Area styles support `fill`, `stroke`, and `strokeWidth`.
+
+Line style keys are `genericLine`, `boundary`, `waterway`, `rail`, `path`, `localRoad`, `secondaryRoad`, `primaryRoad`, and `motorway`. Line styles support `stroke`, `casing`, `strokeWidth`, `casingWidth`, and `dashArray`.
+
+Point style keys are `genericPoint`, `poi`, `foodPoint`, `parkingPoint`, `medicalPoint`, `educationPoint`, `transitPoint`, `shopPoint`, `tourismPoint`, and `place`. Point styles support `fill`, `stroke`, `radius`, and `strokeWidth`. WOSM chooses point symbols from OSM tags such as `amenity=restaurant`, `amenity=parking`, `amenity=hospital`, `amenity=school`, `shop=*`, `tourism=*`, and `place=*`; third-party themes control their styling but cannot execute code or load remote icon resources.
+
 `backgroundImage` is optional and must point to a package-relative PNG or JPEG file. Its opacity must be between 0 and 0.35. Backgrounds are limited to 8 MB, 4096 pixels on either side, and 8,388,608 total pixels. WOSM re-encodes installed images as PNG.
 
 ## Package safety

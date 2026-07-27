@@ -14,6 +14,9 @@ public sealed class ThemeDefinition {
     public double BackgroundImageOpacity { get; init; } = 0.18;
     public ThemeColors Colors { get; init; } = new();
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ThemeMapStyle? MapStyle { get; init; }
+
     [JsonIgnore]
     public bool IsBuiltIn { get; init; }
 

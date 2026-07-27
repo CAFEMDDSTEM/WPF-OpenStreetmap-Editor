@@ -151,22 +151,22 @@ public sealed class CliApplication {
         var store = ShouldLoadAccountStore(command) ? _accountStoreFactory() : null;
         var activeAccount = store?.GetActive();
         var apiBaseUrl = ResolveApiBaseUrl(command, activeAccount);
-        var accessToken = ResolveAccessToken(command, store, activeAccount);
-        if (string.IsNullOrWhiteSpace(accessToken)) {
-            throw new CliArgumentException("Real OSM upload requires --token, --token-env, OSM_ACCESS_TOKEN, or an active WOSM account token.");
+        var credential = ResolveCredential(command, store, activeAccount);
+        if (credential is null) {
+            throw new CliArgumentException("Real OSM upload requires --token, --token-env, OSM_ACCESS_TOKEN, or an active WOSM account credential.");
         }
 
         var api = new OsmApiClient(_httpClient);
         long? changesetId = null;
         try {
-            changesetId = await api.CreateChangesetAsync(apiBaseUrl, accessToken, command.Comment, ct);
+            changesetId = await api.CreateChangesetAsync(apiBaseUrl, credential, command.Comment, ct);
             var changes = BuildChanges(document, changesetId.Value);
-            var response = await api.UploadChangesAsync(apiBaseUrl, accessToken, changesetId.Value, changes.Xml, ct);
+            var response = await api.UploadChangesAsync(apiBaseUrl, credential, changesetId.Value, changes.Xml, ct);
             OsmChangeSerializer.ApplyDiffResult(document, changes, response);
             WriteChangeSummary(changes, $"Uploaded OSM changes to changeset {changesetId.Value.ToString(CultureInfo.InvariantCulture)}.");
         } finally {
             if (changesetId.HasValue) {
-                await api.CloseChangesetAsync(apiBaseUrl, accessToken, changesetId.Value, CancellationToken.None);
+                await api.CloseChangesetAsync(apiBaseUrl, credential, changesetId.Value, CancellationToken.None);
             }
         }
 
@@ -264,6 +264,8 @@ public sealed class CliApplication {
         foreach (var feature in document.Features) {
             feature.Osm = null;
         }
+        document.Osm = null;
+        document.ClearOsmHistory();
         document.IsDirty = true;
     }
 
@@ -280,19 +282,23 @@ public sealed class CliApplication {
             : activeAccount?.ApiBaseUrl ?? OsmApiClient.DefaultApiBaseUrl;
     }
 
-    private static string? ResolveAccessToken(
+    private static OsmAccountCredential? ResolveCredential(
         CliCommandLine command,
         OsmAccountStore? store,
         OsmAccount? activeAccount) {
-        if (!string.IsNullOrWhiteSpace(command.AccessToken)) return command.AccessToken.Trim();
+        if (!string.IsNullOrWhiteSpace(command.AccessToken)) {
+            return new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", command.AccessToken.Trim());
+        }
 
         var envName = string.IsNullOrWhiteSpace(command.AccessTokenEnvironmentVariable)
             ? DefaultTokenEnvironmentVariable
             : command.AccessTokenEnvironmentVariable;
         var envToken = Environment.GetEnvironmentVariable(envName);
-        if (!string.IsNullOrWhiteSpace(envToken)) return envToken.Trim();
+        if (!string.IsNullOrWhiteSpace(envToken)) {
+            return new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", envToken.Trim());
+        }
 
-        return activeAccount is null ? null : store?.GetAccessToken(activeAccount);
+        return activeAccount is null ? null : store?.GetCredential(activeAccount);
     }
 
     private static string GetHelpText() {
@@ -317,7 +323,7 @@ public sealed class CliApplication {
               --treat-input-as-new      Ignore imported OSM ids and upload selected features as creates.
               --force                   Allow output file overwrite.
 
-            OSM upload is a real write. It requires --yes, --comment, and an access token from
+            OSM upload is a real write. It requires --yes, --comment, and a credential from
             --token, --token-env, OSM_ACCESS_TOKEN, or the active WOSM account.
             """;
     }

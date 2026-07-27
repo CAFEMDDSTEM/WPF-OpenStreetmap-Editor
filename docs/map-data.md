@@ -8,7 +8,7 @@ or the built-in OpenStreetMap transfer addon.
 
 | Format | Import | Save | Notes |
 | --- | --- | --- | --- |
-| OpenStreetMap XML (`.osm`) | Yes | Yes | Preserves node/way IDs and versions for later OSM change uploads. Relations are skipped for now. |
+| OpenStreetMap XML (`.osm`) | Yes | Yes | Preserves node, way, and relation IDs, versions, topology, and memberships for later OSM change uploads. |
 | OpenStreetMap PBF (`.pbf`) | Yes | No | Import-only; save as OSM XML or another supported export format. |
 | Shapefile (`.shp`, `.dbf`, `.shx`) | Yes | No | Choose any companion file; WOSM loads the same-named `.shp`, optional `.dbf`, `.cpg`, and `.prj`. |
 | GeoJSON (`.geojson`, `.json`) | Yes | Yes | Reads FeatureCollection, Feature, geometry, and geometry collection inputs. |
@@ -59,13 +59,14 @@ To upload to OSM:
 4. Enter a changeset comment and confirm the upload preview.
 
 Uploads are built from the current document as OSM API 0.6 changes. WOSM
-currently handles nodes and ways; multipart features must be split before
-upload. The configured API base URL must use HTTPS, except loopback test
-servers may use HTTP.
+preserves OSM nodes, ways, and relations in a shared dataset; feature geometry
+is synchronized back to shared node identities before upload. Multipart
+non-relation features must be split before upload. The configured API base URL
+must use HTTPS, except loopback test servers may use HTTP.
 
 Account metadata is written to `osm.accounts.json` under local application
-data. Access tokens are stored separately in Windows Credential Manager and
-are not written to the JSON metadata file.
+data. Account passwords and OAuth access tokens are stored separately in
+Windows Credential Manager and are not written to the JSON metadata file.
 
 ## CLI workflows
 
@@ -96,9 +97,9 @@ preview changeset id when needed.
 
 `upload` can submit selected data to OSM, but it is deliberately guarded because
 it writes to the live API. Real uploads require `--yes`, `--comment`, and a
-token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM
-account. Use `--dry-run` before a real upload; add `--output preview.osc` to
-write the generated OSM change XML:
+credential from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active
+WOSM account. Use `--dry-run` before a real upload; add `--output preview.osc`
+to write the generated OSM change XML:
 
 ```powershell
 dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- upload --input data.geojson --dry-run --output preview.osc

@@ -8,7 +8,6 @@ namespace WPF_OpenStreetmap_Editor.Controls;
 public sealed class VectorLayerElement : FrameworkElement {
     private const double RenderOverscanPixels = 768;
     private const double PanRebaseThresholdPixels = RenderOverscanPixels * 0.5;
-    private const double SimplifyDistanceSquared = 0.64;
     private const double CoordinateTolerance = 1e-12;
     private const double PixelTolerance = 0.5;
 
@@ -110,35 +109,8 @@ public sealed class VectorLayerElement : FrameworkElement {
             _drawPanOffsetY);
         LastPlan = VectorRenderPlanner.Create(_document, GetBufferedViewportBounds(viewport));
 
-        var normalBrush = FindBrush("Theme.TextBrush", SystemColors.WindowTextBrush);
-        var selectedBrush = FindBrush("Theme.AccentBrush", SystemColors.HighlightBrush);
-        var fillBrush = FindBrush("Theme.SelectionBrush", SystemColors.HighlightBrush).CloneCurrentValue();
-        fillBrush.Opacity = 0.3;
-        fillBrush.Freeze();
-        var normalPen = new Pen(normalBrush, 1.5);
-        var selectedPen = new Pen(selectedBrush, 3);
-        normalPen.Freeze();
-        selectedPen.Freeze();
-
-        foreach (var feature in LastPlan.Features) {
-            var pen = feature.IsSelected ? selectedPen : normalPen;
-            foreach (var part in feature.Parts) {
-                if (part.Count == 0) continue;
-                if (feature.GeometryType == MapGeometryType.Point) {
-                    foreach (var point in part) {
-                        var screen = projection.GeoToScreen(point);
-                        drawingContext.DrawEllipse(feature.IsSelected ? selectedBrush : normalBrush, null, screen, 3.5, 3.5);
-                    }
-                    continue;
-                }
-
-                var geometry = CreateGeometry(part, feature.GeometryType == MapGeometryType.Polygon, projection);
-                drawingContext.DrawGeometry(
-                    feature.GeometryType == MapGeometryType.Polygon ? fillBrush : null,
-                    pen,
-                    geometry);
-            }
-        }
+        var palette = VectorRenderPalette.Create(key => TryFindResource(key));
+        VectorLayerRenderer.Render(drawingContext, LastPlan.Features, projection, palette);
     }
 
     private GeoBounds GetBufferedViewportBounds(Size viewport) {
@@ -160,40 +132,12 @@ public sealed class VectorLayerElement : FrameworkElement {
             Math.Max(topLeft.Latitude, bottomRight.Latitude));
     }
 
-    private StreamGeometry CreateGeometry(
-        IReadOnlyList<GeoPoint> part,
-        bool closed,
-        GeoViewportProjection projection) {
-        var geometry = new StreamGeometry();
-        using (var context = geometry.Open()) {
-            var first = projection.GeoToScreen(part[0]);
-            var lastEmitted = first;
-            context.BeginFigure(first, closed, closed);
-            for (var i = 1; i < part.Count; i++) {
-                var screen = projection.GeoToScreen(part[i]);
-                var isLast = i == part.Count - 1;
-                if (!isLast && (screen - lastEmitted).LengthSquared < SimplifyDistanceSquared) {
-                    continue;
-                }
-
-                context.LineTo(screen, true, false);
-                lastEmitted = screen;
-            }
-        }
-        geometry.Freeze();
-        return geometry;
-    }
-
     private void ApplyPanTransform() {
         var offsetX = _panOffsetX - _drawPanOffsetX;
         var offsetY = _panOffsetY - _drawPanOffsetY;
         RenderTransform = AreClose(offsetX, 0, PixelTolerance) && AreClose(offsetY, 0, PixelTolerance)
             ? Transform.Identity
             : new TranslateTransform(offsetX, offsetY);
-    }
-
-    private Brush FindBrush(string key, Brush fallback) {
-        return TryFindResource(key) as Brush ?? fallback;
     }
 
     internal static bool RequiresDrawingRefreshCore(

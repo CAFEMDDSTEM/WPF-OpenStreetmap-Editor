@@ -19,7 +19,58 @@ public class OsmAccountStoreTests {
 
             Assert.Equal("Second", store.GetActive()!.DisplayName);
             Assert.Equal("secret-token", store.GetAccessToken(first));
+            Assert.Equal("other-token", store.GetCredential(second)!.Secret);
             Assert.DoesNotContain("secret-token", File.ReadAllText(path), StringComparison.Ordinal);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public void SaveAccount_StoresBasicPasswordAsCredentialOnly() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "accounts.json");
+        var credentials = new MemoryCredentialStore();
+        try {
+            var store = new OsmAccountStore(path, credentials);
+            var account = new OsmAccount {
+                Id = "basic",
+                DisplayName = "Alice",
+                AuthenticationMethod = OsmAuthenticationMethod.BasicPassword,
+                UserName = "alice",
+                IsActive = true
+            };
+
+            store.SaveAccount(account, " password with space ");
+
+            var active = store.GetActive()!;
+            Assert.Equal(OsmAuthenticationMethod.BasicPassword, active.AuthenticationMethod);
+            Assert.Equal("alice", active.UserName);
+            Assert.Equal(" password with space ", store.GetCredential(active)!.Secret);
+            Assert.DoesNotContain("password with space", File.ReadAllText(path), StringComparison.Ordinal);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public void SaveAccount_ClearsCredentialWhenAuthenticationShapeChangesWithoutNewSecret() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "accounts.json");
+        var credentials = new MemoryCredentialStore();
+        try {
+            var store = new OsmAccountStore(path, credentials);
+            store.SaveAccount(new OsmAccount { Id = "same", DisplayName = "Alice", IsActive = true }, "oauth-token");
+
+            store.SaveAccount(new OsmAccount {
+                Id = "same",
+                DisplayName = "Alice",
+                AuthenticationMethod = OsmAuthenticationMethod.BasicPassword,
+                UserName = "alice",
+                IsActive = true
+            }, null);
+
+            Assert.False(store.HasCredential(store.GetActive()!));
         } finally {
             DeleteTestDirectory(root);
         }

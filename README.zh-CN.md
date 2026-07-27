@@ -81,7 +81,7 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 - `Cache/tiles/`：下载的瓦片图片
 - `layers.json`：已保存的图层 URL
 - `settings.json`：影像和应用设置
-- `osm.accounts.json`：OSM 账号元数据；访问令牌单独存储在 Windows 凭据库
+- `osm.accounts.json`：OSM 账号元数据；密码和 OAuth 访问令牌单独存储在 Windows 凭据库
 - `Plugins/` 与 `plugins.state.json`：已安装插件和原生插件信任状态
 - `Themes/`：已安装的第三方主题
 - `window_state.json`：保存的窗口位置和大小

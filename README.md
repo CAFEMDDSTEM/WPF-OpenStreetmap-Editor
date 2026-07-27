@@ -119,7 +119,7 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- upload --input map.geojson --dry-run --output preview.osc
 ```
 
-Real OSM uploads require `--yes`, `--comment`, and an access token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM account.
+Real OSM uploads require `--yes`, `--comment`, and a credential from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM account.
 
 ## Tile Service Notes
 
@@ -132,7 +132,7 @@ The application writes runtime data under `%LOCALAPPDATA%\WPF-OpenStreetmap-Edit
 - `Cache/tiles/` for downloaded tile images
 - `layers.json` for saved layer URLs
 - `settings.json` for imagery and application settings
-- `osm.accounts.json` for OSM account metadata; access tokens are stored separately in Windows Credential Manager
+- `osm.accounts.json` for OSM account metadata; passwords and OAuth access tokens are stored separately in Windows Credential Manager
 - `Plugins/` and `plugins.state.json` for installed plugins and native-plugin trust state
 - `Themes/` for installed third-party themes
 - `window_state.json` for the saved window position and size
