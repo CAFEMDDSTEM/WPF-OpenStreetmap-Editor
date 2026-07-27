@@ -122,15 +122,6 @@ public sealed class TileSourcePreset {
                 IsKnownSource = true,
                 AttributionText = "Map data © OpenStreetMap contributors, SRTM | Map style © OpenTopoMap (CC-BY-SA)",
                 AttributionUrl = "https://opentopomap.org/about"
-            },
-            new() {
-                Name = "Bing aerial imagery",
-                Source = "bing[1,22]:https://www.bing.com/maps/",
-                MapMaxZoom = GeoConverter.MaxZoom,
-                ImageMaxZoom = GeoConverter.MaxZoom,
-                IsKnownSource = true,
-                AttributionText = "Microsoft Bing",
-                AttributionUrl = "https://www.microsoft.com/maps/product/terms.html"
             }
         ];
     }
@@ -251,12 +242,6 @@ public static class AppSettingsService {
 
     public static void EnsureDefaults(AppSettings settings) {
         var defaults = TileSourcePreset.CreateDefaults();
-        var bingPreset = defaults.FirstOrDefault(static source =>
-            source.Source.StartsWith("bing:", StringComparison.OrdinalIgnoreCase) ||
-            source.Source.StartsWith("bing[", StringComparison.OrdinalIgnoreCase));
-        if (bingPreset is not null) {
-            MigrateLegacyBingSources(settings, bingPreset);
-        }
 
         foreach (var preset in defaults) {
             var existing = settings.TileSources.FirstOrDefault(source => SourcesMatch(source.Source, preset.Source));
@@ -328,26 +313,6 @@ public static class AppSettingsService {
         settings.ActiveLayerId = settings.GetActiveLayer()?.Id ?? "";
         settings.ActiveSourceName = settings.GetSourceForLayer(settings.GetActiveLayer())?.Name ??
             settings.GetActiveSource().Name;
-    }
-
-    private static void MigrateLegacyBingSources(AppSettings settings, TileSourcePreset bingPreset) {
-        foreach (var source in settings.TileSources.Where(static source =>
-            source.Source.Contains("virtualearth.net/tiles/", StringComparison.OrdinalIgnoreCase))) {
-            var oldName = source.Name;
-            var oldSource = source.Source;
-            source.Source = bingPreset.Source;
-            source.MapMaxZoom = bingPreset.MapMaxZoom;
-            source.ImageMaxZoom = bingPreset.ImageMaxZoom;
-            source.IsKnownSource = true;
-            source.AttributionText = bingPreset.AttributionText;
-            source.AttributionUrl = bingPreset.AttributionUrl;
-
-            foreach (var layer in settings.ImageLayers.Where(layer =>
-                layer.SourceName == oldName || string.Equals(layer.Source, oldSource, StringComparison.Ordinal))) {
-                layer.SourceName = source.Name;
-                layer.Source = source.Source;
-            }
-        }
     }
 
     public static void EnsureSinglePrimaryLayer(AppSettings settings) {

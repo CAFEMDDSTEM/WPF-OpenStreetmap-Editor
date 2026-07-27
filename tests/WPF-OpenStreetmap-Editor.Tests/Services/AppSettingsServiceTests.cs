@@ -97,20 +97,20 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
-    public void CreateDefaults_ProvidesOpenStreetMapAttributionAndMetadataBackedBing() {
+    public void CreateDefaults_ProvidesOpenStreetMapAttributionWithoutBing() {
         var sources = TileSourcePreset.CreateDefaults();
 
         var osm = Assert.Single(sources, source => source.Name == "OpenStreetMap（标准）");
         Assert.Equal("© OpenStreetMap contributors", osm.AttributionText);
         Assert.Equal("https://www.openstreetmap.org/copyright", osm.AttributionUrl);
-        var bing = Assert.Single(sources, source => source.Name == "Bing aerial imagery");
-        Assert.Equal("bing[1,22]:https://www.bing.com/maps/", bing.Source);
-        Assert.DoesNotContain("virtualearth.net", bing.Source, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(string.Empty, bing.AccessToken);
+        Assert.DoesNotContain(sources, source =>
+            source.Source.StartsWith("bing:", StringComparison.OrdinalIgnoreCase) ||
+            source.Source.StartsWith("bing[", StringComparison.OrdinalIgnoreCase) ||
+            source.Source.Contains("virtualearth.net", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void EnsureDefaults_MigratesLegacyDirectBingSourceAndLayerToMarker() {
+    public void EnsureDefaults_DoesNotRewriteLegacyBingSourceAndLayer() {
         const string legacySource = "xyz:https://ecn.t0.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=1";
         var settings = new AppSettings {
             ActiveSourceName = "Legacy Bing",
@@ -136,13 +136,14 @@ public class AppSettingsServiceTests {
 
         AppSettingsService.EnsureDefaults(settings);
 
-        var bing = Assert.Single(settings.TileSources, source =>
-            source.Source == "bing[1,22]:https://www.bing.com/maps/");
+        var bing = Assert.Single(settings.TileSources, source => source.Name == "Legacy Bing");
         var layer = Assert.Single(settings.ImageLayers);
         Assert.Equal(bing.Name, layer.SourceName);
-        Assert.Equal(bing.Source, layer.Source);
+        Assert.Equal(legacySource, bing.Source);
+        Assert.Equal(legacySource, layer.Source);
         Assert.DoesNotContain(settings.TileSources, source =>
-            source.Source.Contains("virtualearth.net/tiles/", StringComparison.OrdinalIgnoreCase));
+            source.Source.StartsWith("bing:", StringComparison.OrdinalIgnoreCase) ||
+            source.Source.StartsWith("bing[", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
