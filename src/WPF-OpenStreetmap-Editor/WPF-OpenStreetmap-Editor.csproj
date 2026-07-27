@@ -7,11 +7,26 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>0.1.0-beta.1</Version>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\StartupMap.jpg" />
+    <EmbeddedResource Include="..\..\LICENSE.txt"
+                      LogicalName="WPF_OpenStreetmap_Editor.LICENSE.txt" />
+    <EmbeddedResource Include="Themes\BuiltIn\**\*.*" />
+    <EmbeddedResource Include="Assets\StartupMap.jpg"
+                      LogicalName="WPF_OpenStreetmap_Editor.Plugins.BuiltIn.OsmTransfer.icon.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Json5Core" Version="1.0.12" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Lucide" Version="6.2.1" />
+    <PackageReference Include="OsmSharp" Version="6.2.0" />
+    <PackageReference Include="ProjNET" Version="2.1.0" />
+    <PackageReference Include="SharpCompress" Version="0.50.1" />
   </ItemGroup>
 
 </Project>
