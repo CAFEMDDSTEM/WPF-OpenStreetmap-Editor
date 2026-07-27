@@ -3,32 +3,56 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
+using MahApps.Metro.IconPacks;
+using Microsoft.Win32;
 using WPF_OpenStreetmap_Editor.Controls;
+using WPF_OpenStreetmap_Editor.Models;
+using WPF_OpenStreetmap_Editor.Plugins;
 using WPF_OpenStreetmap_Editor.Services;
 
 namespace WPF_OpenStreetmap_Editor;
 
 public partial class MainWindow : Window {
+    private readonly PluginHost? _pluginHost;
+    private readonly IReadOnlyList<PluginActionRequest> _startupPluginActions;
+    private readonly AppUpdateCheckResult? _startupUpdateCheck;
+    private readonly List<MenuItem> _pluginMenuItems = [];
+    private readonly OsmAccountStore _osmAccountStore = new();
     private WindowState _lastNonMinimizedWindowState = WindowState.Normal;
     private double _centerLon;
     private double _centerLat;
     private bool _isPanning;
+    private bool _isUpdatingFeatureSelection;
     private bool _isUpdatingLayerList;
+    private bool _isUpdatingLayerDetails;
+    private Point _layerDragStart;
+    private MapImageLayer? _draggedLayer;
+    private EditorMode _editorMode = EditorMode.Select;
+    private MapDocument? _document;
+    private MapFeature? _draftLine;
+    private Point? _boxSelectionStart;
+    private GeoBounds? _selectionBounds;
+    private readonly HashSet<MapFeature> _selectedFeatures = [];
+    private MouseButton? _panButton;
     private Point _panStart;
     private double _panOffsetX;
     private double _panOffsetY;
     private CancellationTokenSource? _renderCts;
     private CancellationTokenSource? _renderDebounceCts;
+    private CancellationTokenSource? _layerStackRefreshCts;
     private CancellationTokenSource? _tileSourceCts;
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
@@ -41,9 +65,6 @@ public partial class MainWindow : Window {
     private double _lastPanPrefetchOffsetX;
     private double _lastPanPrefetchOffsetY;
     private DateTime _lastPanPrefetchAt = DateTime.MinValue;
-    private static readonly TileMemoryCache TileCache = new(MaxTileCache, MaxTileCacheBytes);
-    private const int MaxTileCache = 768;
-    private const long MaxTileCacheBytes = 192L * 1024 * 1024;
     private const int RenderTileBuffer = 0;
     private const int PrefetchTileBuffer = 1;
     private const int MaxPrefetchTiles = 24;
@@ -51,12 +72,24 @@ public partial class MainWindow : Window {
     private const int MaxConcurrentTileLoads = 8;
     private const int WheelRenderDelayMilliseconds = 180;
     private const int ResizeRenderDelayMilliseconds = 120;
+    private const int LayerStackRefreshDelayMilliseconds = 160;
     private const int PanPrefetchIntervalMilliseconds = 140;
     private const double PanPrefetchDistance = GeoConverter.TileSize * 0.75;
     private static readonly SemaphoreSlim TileThrottle = new(MaxConcurrentTileLoads, MaxConcurrentTileLoads);
+    private static readonly HttpClient OsmHttpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
 
-    public MainWindow() {
+    public MainWindow() : this(null, null, null) {
+    }
+
+    public MainWindow(
+        PluginHost? pluginHost,
+        IReadOnlyList<PluginActionRequest>? startupPluginActions = null,
+        AppUpdateCheckResult? startupUpdateCheck = null) {
+        _pluginHost = pluginHost;
+        _startupPluginActions = startupPluginActions ?? [];
+        _startupUpdateCheck = startupUpdateCheck;
         InitializeComponent();
+        ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
         RefreshImageryMenu();
         RefreshLayerList(_settings.GetActiveLayer());
@@ -64,18 +97,72 @@ public partial class MainWindow : Window {
         WindowStartupService.ApplyStartupState(this);
         _lastNonMinimizedWindowState = WindowState;
         StateChanged += Window_StateChanged;
+        Closing += MainWindow_Closing;
         Closing += (_, _) => WindowStartupService.Save(
             WindowStartupService.GetStateToSave(WindowState, _lastNonMinimizedWindowState));
         Closed += (_, _) => {
             _tileSourceCts?.Cancel();
+            _layerStackRefreshCts?.Cancel();
             _renderDebounceCts?.Cancel();
             _renderCts?.Cancel();
-            TileCache.Clear();
+            TileImageLoader.Shared.Clear();
             DisposeTileLayers(_tileLayers);
             _tileLayers = [];
         };
 
-        Loaded += (_, _) => RefreshRenderedLayerFromStack(_settings.GetActiveLayer());
+        Loaded += MainWindow_Loaded;
+        SetEditorMode(EditorMode.Select);
+        UpdateDocumentUi();
+    }
+
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e) {
+        RefreshRenderedLayerFromStack(_settings.GetActiveLayer());
+        UpdateVectorLayer();
+        RefreshPluginMenus();
+        RefreshPluginToolbar();
+        try {
+            await ApplyPluginActionsAsync(_startupPluginActions);
+            if (_pluginHost is not null) {
+                var actions = await _pluginHost.PublishAsync(PluginHooks.MainWindowLoaded, new {
+                    title = Title
+                });
+                await ApplyPluginActionsAsync(actions);
+            }
+        } catch (Exception ex) {
+            Logger.Error("Failed to publish the main-window plugin hook", ex);
+        }
+
+        _ = Dispatcher.InvokeAsync(ShowStartupUpdateNotification, DispatcherPriority.ApplicationIdle);
+    }
+
+    private void ShowStartupUpdateNotification() {
+        if (_startupUpdateCheck?.IsUpdateAvailable != true ||
+            _startupUpdateCheck.LatestRelease is not { } latest) {
+            return;
+        }
+
+        var response = MessageBox.Show(
+            $"发现新版本 {latest.Version}。\n当前版本：{_startupUpdateCheck.CurrentVersion}\n\n是否打开下载页面？",
+            "发现更新",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information,
+            MessageBoxResult.Yes);
+        if (response != MessageBoxResult.Yes) return;
+
+        var uri = TryCreateWebUri(latest.ReleaseUrl);
+        if (uri is null) return;
+
+        try {
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        } catch (Exception ex) {
+            Logger.Error("Failed to open update release page", ex);
+        }
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
+        if (!ConfirmDiscardChanges("退出前尚有未保存的地图修改。是否放弃这些修改？")) {
+            e.Cancel = true;
+        }
     }
 
     private void Window_StateChanged(object? sender, EventArgs e) {
@@ -222,7 +309,6 @@ public partial class MainWindow : Window {
                 }
                 UpdateSourceSummary(activeContext.Service.MapMaxZoom, activeContext.Service.ImageMaxZoom);
             } else if (_activeImageLayer is not null) {
-                ActiveSourceTextBlock.Text = $"{_activeImageLayer.Name}（图源不可用）";
                 ZoomLimitTextBlock.Text = "";
             }
             RefreshLayerList(_activeImageLayer);
@@ -437,26 +523,13 @@ public partial class MainWindow : Window {
             var shift = requestedZoom - zoom;
             var candidateX = shift == 0 ? tileX : tileX >> shift;
             var candidateY = shift == 0 ? tileY : tileY >> shift;
-            var tileKey = GetTileCacheKey(context.Service.CacheIdentity, zoom, candidateX, candidateY);
-            if (TileCache.TryGetValue(tileKey, out var cached)) {
-                return new LoadedTile(cached, zoom, candidateX, candidateY, zoom < requestedZoom);
-            }
-
             await TileThrottle.WaitAsync(ct).ConfigureAwait(false);
             try {
-                if (TileCache.TryGetValue(tileKey, out cached)) {
-                    return new LoadedTile(cached, zoom, candidateX, candidateY, zoom < requestedZoom);
-                }
-
-                var bytes = await context.Service
-                    .GetTileBytesAsync(zoom, candidateX, candidateY, context.Source.AccessToken, ct)
+                var source = await TileImageLoader.Shared
+                    .LoadAsync(context.Service, zoom, candidateX, candidateY, context.Source.AccessToken, ct)
                     .ConfigureAwait(false);
-                if (bytes is null || ct.IsCancellationRequested) continue;
-
-                var source = LoadTileImage(bytes);
                 if (source is null) continue;
 
-                TileCache.Add(tileKey, source);
                 return new LoadedTile(source, zoom, candidateX, candidateY, zoom < requestedZoom);
             } finally {
                 TileThrottle.Release();
@@ -464,10 +537,6 @@ public partial class MainWindow : Window {
         }
 
         return null;
-    }
-
-    private static string GetTileCacheKey(string sourceKey, int z, int tileX, int tileY) {
-        return $"{sourceKey}|{z}/{tileX}/{tileY}";
     }
 
     private async Task ApplyTileSourceAsync(
@@ -662,6 +731,7 @@ public partial class MainWindow : Window {
             offsetY = TileRenderLayout.SnapToDevicePixel(offsetY, dpi.DpiScaleY);
             layer.Element.RenderTransform = new MatrixTransform(scale, 0, 0, scale, offsetX, offsetY);
         }
+        UpdateVectorLayer();
     }
 
     private IEnumerable<MapLayer> GetVisibleLayers() {
@@ -670,28 +740,101 @@ public partial class MainWindow : Window {
         if (_stagingLayer is not null && !ReferenceEquals(_stagingLayer, _activeLayer)) yield return _stagingLayer;
     }
 
-    private static BitmapSource? LoadTileImage(byte[] data) {
+    private void New_Click(object sender, RoutedEventArgs e) {
+        if (!ConfirmDiscardChanges("当前地图尚未保存。是否放弃修改并新建地图？")) return;
+
+        _document = new MapDocument();
+        _document.MarkClean();
+        _selectionBounds = null;
+        _draftLine = null;
+        SetSelectedFeatures([]);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private async void Open_Click(object sender, RoutedEventArgs e) {
+        if (!ConfirmDiscardChanges("当前地图尚未保存。是否放弃修改并打开其他文件？")) return;
+
+        var dialog = new OpenFileDialog {
+            Title = "导入地图数据",
+            Filter = SpatialDataService.OpenFileFilter,
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        await ImportDocumentAsync(dialog.FileName);
+    }
+
+    private async void Save_Click(object sender, RoutedEventArgs e) {
+        await SaveDocumentAsync(forceSaveAs: false);
+    }
+
+    private async void SaveAs_Click(object sender, RoutedEventArgs e) {
+        await SaveDocumentAsync(forceSaveAs: true);
+    }
+
+    private async Task ImportDocumentAsync(string path) {
         try {
-            using var ms = new MemoryStream(data);
-            var source = new BitmapImage();
-            source.BeginInit();
-            source.CacheOption = BitmapCacheOption.OnLoad;
-            source.StreamSource = ms;
-            source.EndInit();
-            source.Freeze();
-            return source;
+            IsEnabled = false;
+            DocumentStatusTextBlock.Text = $"正在导入 {Path.GetFileName(path)}...";
+            var progress = new Progress<SpatialImportProgress>(update =>
+                DocumentStatusTextBlock.Text = $"{update.Stage}：{update.FeaturesRead:N0} 个要素");
+            var document = await SpatialDataService.ImportAsync(path, progress: progress);
+            _document = document;
+            _selectionBounds = null;
+            _draftLine = null;
+            SetSelectedFeatures([]);
+            FitDocumentToViewport();
+            RefreshFeatureList();
+            UpdateVectorLayer();
+            UpdateDocumentUi();
         } catch (Exception ex) {
-            Logger.Error("Failed to decode image bytes", ex);
-            return null;
+            Logger.Error($"Failed to import spatial data '{path}'", ex);
+            MessageBox.Show(ex.Message, "无法导入地图数据", MessageBoxButton.OK, MessageBoxImage.Error);
+        } finally {
+            IsEnabled = true;
         }
     }
 
-    private void New_Click(object sender, RoutedEventArgs e) {
-        MessageBox.Show("新建 被点击", "文件", MessageBoxButton.OK, MessageBoxImage.Information);
+    private async Task SaveDocumentAsync(bool forceSaveAs) {
+        if (_document is null) {
+            MessageBox.Show("当前没有可保存的地图数据。", "保存地图", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var path = forceSaveAs || string.IsNullOrWhiteSpace(_document.SourcePath) ||
+            _document.SourceFormat is SpatialFileFormat.OsmPbf or SpatialFileFormat.Shapefile or SpatialFileFormat.Kmz
+                ? ChooseSavePath(_document)
+                : _document.SourcePath;
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        try {
+            IsEnabled = false;
+            DocumentStatusTextBlock.Text = $"正在保存 {Path.GetFileName(path)}...";
+            await SpatialDataService.SaveAsync(_document, path);
+            RefreshFeatureList();
+            UpdateDocumentUi();
+        } catch (Exception ex) {
+            Logger.Error($"Failed to save spatial data '{path}'", ex);
+            MessageBox.Show(ex.Message, "无法保存地图", MessageBoxButton.OK, MessageBoxImage.Error);
+        } finally {
+            IsEnabled = true;
+        }
     }
 
-    private void Open_Click(object sender, RoutedEventArgs e) {
-        MessageBox.Show("打开 被点击", "文件", MessageBoxButton.OK, MessageBoxImage.Information);
+    private string? ChooseSavePath(MapDocument document) {
+        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath ?? document.Name);
+        var dialog = new SaveFileDialog {
+            Title = "保存地图",
+            Filter = SpatialDataService.SaveFileFilter,
+            FileName = string.IsNullOrWhiteSpace(baseName) ? "map.geojson" : $"{baseName}.geojson",
+            AddExtension = true,
+            DefaultExt = ".geojson",
+            OverwritePrompt = true
+        };
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
     }
 
     private void Layer_Click(object sender, RoutedEventArgs e) {
@@ -700,16 +843,204 @@ public partial class MainWindow : Window {
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) {
-        var win = new Views.SettingsWindow(_settings) { Owner = this };
+        ShowSettings(Views.SettingsSection.Appearance);
+    }
+
+    private void ImagerySettings_Click(object sender, RoutedEventArgs e) {
+        ShowSettings(Views.SettingsSection.Sources);
+    }
+
+    private void ShowSettings(Views.SettingsSection initialSection) {
+        var win = new Views.SettingsWindow(_settings, initialSection) { Owner = this };
         if (win.ShowDialog() != true) return;
 
         _settings = win.ResultSettings;
         AppSettingsService.EnsureDefaults(_settings);
         AppSettingsService.Save(_settings);
-        TileCache.Clear();
+        ThemeService.ApplyTheme(_settings.ThemeId);
+        TileImageLoader.Shared.Clear();
         RefreshImageryMenu();
         var activeLayer = _settings.GetActiveLayer();
         RefreshRenderedLayerFromStack(activeLayer);
+    }
+
+    private void Plugins_Click(object sender, RoutedEventArgs e) {
+        if (_pluginHost is null) {
+            MessageBox.Show("插件宿主尚未初始化。", "插件", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new Views.PluginsWindow(_pluginHost) { Owner = this };
+        window.ShowDialog();
+        RefreshPluginMenus();
+        RefreshPluginToolbar();
+    }
+
+    private void Help_Click(object sender, RoutedEventArgs e) {
+        ShowHelp();
+    }
+
+    private void ShowHelp() {
+        var window = new Views.HelpWindow { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void RefreshPluginMenus() {
+        foreach (var item in _pluginMenuItems) {
+            ToolsMenuItem.Items.Remove(item);
+        }
+        _pluginMenuItems.Clear();
+
+        if (_pluginHost is null) {
+            PluginContributionsSeparator.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var insertionIndex = ToolsMenuItem.Items.IndexOf(PluginContributionsSeparator);
+        foreach (var contribution in _pluginHost.MenuContributions) {
+            var item = new MenuItem {
+                Header = contribution.Menu.Label,
+                Tag = contribution,
+                ToolTip = contribution.PluginName
+            };
+            item.Click += PluginCommand_Click;
+            ToolsMenuItem.Items.Insert(insertionIndex++, item);
+            _pluginMenuItems.Add(item);
+        }
+
+        PluginContributionsSeparator.Visibility = _pluginMenuItems.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private async void PluginCommand_Click(object sender, RoutedEventArgs e) {
+        if (_pluginHost is null || sender is not MenuItem { Tag: PluginMenuContribution contribution }) return;
+
+        await ExecutePluginCommandAsync(
+            contribution.PluginId,
+            contribution.PluginName,
+            contribution.Menu.Command);
+    }
+
+    private void RefreshPluginToolbar() {
+        PluginToolbarPanel.Children.Clear();
+        if (_pluginHost is null) return;
+
+        foreach (var contribution in _pluginHost.ToolbarContributions
+                     .Where(contribution => string.Equals(
+                         contribution.Toolbar.Location,
+                         "main",
+                         StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(contribution => contribution.Toolbar.Order)
+                     .ThenBy(contribution => contribution.PluginName, StringComparer.CurrentCulture)
+                     .ThenBy(contribution => contribution.Toolbar.Command, StringComparer.Ordinal)) {
+            var toolTip = string.IsNullOrWhiteSpace(contribution.Toolbar.ToolTip)
+                ? contribution.PluginName
+                : contribution.Toolbar.ToolTip;
+            var button = new Button {
+                Width = 34,
+                Height = 34,
+                Margin = new Thickness(2),
+                Padding = new Thickness(0),
+                ToolTip = toolTip,
+                Tag = contribution,
+                Content = CreatePluginToolbarIcon(contribution.Toolbar.Icon)
+            };
+            AutomationProperties.SetName(button, toolTip);
+            button.Click += PluginToolbarCommand_Click;
+            PluginToolbarPanel.Children.Add(button);
+        }
+    }
+
+    private static PackIconLucide CreatePluginToolbarIcon(string icon) {
+        var kind = Enum.TryParse(icon, true, out PackIconLucideKind parsedKind)
+            ? parsedKind
+            : PackIconLucideKind.Puzzle;
+        return new PackIconLucide {
+            Kind = kind,
+            Width = 18,
+            Height = 18
+        };
+    }
+
+    private async void PluginToolbarCommand_Click(object sender, RoutedEventArgs e) {
+        if (sender is not Button { Tag: PluginToolbarContribution contribution }) return;
+
+        await ExecutePluginCommandAsync(
+            contribution.PluginId,
+            contribution.PluginName,
+            contribution.Toolbar.Command);
+    }
+
+    private async Task ExecutePluginCommandAsync(string pluginId, string pluginName, string commandId) {
+        if (_pluginHost is null) return;
+
+        try {
+            var result = await _pluginHost.ExecuteCommandAsync(
+                pluginId,
+                commandId);
+            foreach (var action in result.Actions) {
+                await ApplyPluginActionAsync(pluginName, action);
+            }
+        } catch (Exception ex) {
+            Logger.Error($"Plugin command '{commandId}' failed", ex);
+            MessageBox.Show(ex.Message, pluginName, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task ApplyPluginActionsAsync(IEnumerable<PluginActionRequest> requests) {
+        foreach (var request in requests) {
+            await ApplyPluginActionAsync(request.PluginName, request.Action);
+        }
+    }
+
+    private async Task ApplyPluginActionAsync(string pluginName, PluginActionManifest action) {
+        switch (action.Type) {
+            case PluginActionTypes.ShowMessage:
+                var message = GetPluginArgument(action, "message");
+                var title = GetPluginArgument(action, "title");
+                MessageBox.Show(
+                    message ?? "",
+                    string.IsNullOrWhiteSpace(title) ? pluginName : title,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                break;
+            case PluginActionTypes.OpenUrl:
+                var url = GetPluginArgument(action, "url");
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                    uri.Scheme is not ("http" or "https")) {
+                    throw new InvalidOperationException("插件只能打开 HTTP 或 HTTPS 链接。");
+                }
+                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+                break;
+            case PluginActionTypes.AddImagery:
+                var sourceUrl = GetPluginArgument(action, "url");
+                if (string.IsNullOrWhiteSpace(sourceUrl)) {
+                    throw new InvalidOperationException("addImagery 动作缺少 url。");
+                }
+                LoadLayer(GetPluginArgument(action, "type") ?? "xyz", sourceUrl);
+                break;
+            case PluginActionTypes.ManageOsmAccounts:
+                new Views.OsmAccountsWindow(_osmAccountStore) { Owner = this }.ShowDialog();
+                break;
+            case PluginActionTypes.DownloadOsm:
+                await DownloadOsmSelectionAsync();
+                break;
+            case PluginActionTypes.UploadOsm:
+                await UploadOsmChangesAsync();
+                break;
+            default:
+                throw new InvalidOperationException($"不支持插件动作“{action.Type}”。");
+        }
+    }
+
+    private static string? GetPluginArgument(PluginActionManifest action, string name) {
+        if (action.Arguments.ValueKind != System.Text.Json.JsonValueKind.Object ||
+            !action.Arguments.TryGetProperty(name, out var value) ||
+            value.ValueKind != System.Text.Json.JsonValueKind.String) {
+            return null;
+        }
+        return value.GetString();
     }
 
     private void Show_Click(object sender, RoutedEventArgs e) {
@@ -744,6 +1075,97 @@ public partial class MainWindow : Window {
 
     private void LayerListBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
         if (_isUpdatingLayerList) return;
+
+        UpdateSelectedLayerDetails();
+    }
+
+    private void LayerListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+        _layerDragStart = e.GetPosition(LayerListBox);
+        _draggedLayer = null;
+
+        var source = e.OriginalSource as DependencyObject;
+        if (FindVisualAncestor<ButtonBase>(source) is not null) return;
+        if (FindVisualAncestor<Slider>(source) is not null) return;
+
+        _draggedLayer = FindVisualAncestor<ListBoxItem>(source)?.DataContext as MapImageLayer;
+    }
+
+    private void SelectedLayerVisibilityCheckBox_Click(object sender, RoutedEventArgs e) {
+        if (_isUpdatingLayerDetails || LayerListBox.SelectedItem is not MapImageLayer layer) return;
+
+        layer.IsVisible = SelectedLayerVisibilityCheckBox.IsChecked == true;
+        AppSettingsService.Save(_settings);
+        if (layer.Kind == MapLayerKind.Data) {
+            UpdateVectorLayer();
+            RefreshLayerList(layer);
+            return;
+        }
+
+        RefreshRenderedLayerFromStack(layer);
+    }
+
+    private void LayerOpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+        if (_isUpdatingLayerDetails) return;
+
+        var opacity = Math.Clamp(LayerOpacitySlider.Value / 100.0, 0.0, 1.0);
+        LayerOpacityValueTextBlock.Text = FormatLayerOpacityPercent(opacity);
+        if (LayerListBox.SelectedItem is not MapImageLayer layer) return;
+        if (Math.Abs(layer.Opacity - opacity) < 0.0001) return;
+
+        layer.Opacity = opacity;
+        AppSettingsService.Save(_settings);
+        if (layer.Kind == MapLayerKind.Data) {
+            UpdateVectorLayer();
+            return;
+        }
+
+        ScheduleLayerStackRefresh(layer);
+    }
+
+    private void LayerListBox_PreviewMouseMove(object sender, MouseEventArgs e) {
+        if (e.LeftButton != MouseButtonState.Pressed || _draggedLayer is null) return;
+
+        var position = e.GetPosition(LayerListBox);
+        if (Math.Abs(position.X - _layerDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(position.Y - _layerDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) {
+            return;
+        }
+
+        var layer = _draggedLayer;
+        _draggedLayer = null;
+        DragDrop.DoDragDrop(LayerListBox, new DataObject(typeof(MapImageLayer), layer), DragDropEffects.Move);
+    }
+
+    private void LayerListBox_DragOver(object sender, DragEventArgs e) {
+        e.Effects = e.Data.GetDataPresent(typeof(MapImageLayer))
+            ? DragDropEffects.Move
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void LayerListBox_Drop(object sender, DragEventArgs e) {
+        if (!e.Data.GetDataPresent(typeof(MapImageLayer))) return;
+        if (e.Data.GetData(typeof(MapImageLayer)) is not MapImageLayer layer) return;
+
+        var insertIndex = _settings.ImageLayers.Count;
+        var targetItem = FindVisualAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
+        if (targetItem?.DataContext is MapImageLayer targetLayer) {
+            var targetIndex = _settings.ImageLayers.FindIndex(candidate =>
+                ReferenceEquals(candidate, targetLayer) || candidate.Id == targetLayer.Id);
+            if (targetIndex < 0) return;
+
+            insertIndex = targetIndex;
+            if (e.GetPosition(targetItem).Y > targetItem.ActualHeight / 2.0) {
+                insertIndex++;
+            }
+        }
+
+        if (!AppSettingsService.MoveImageLayer(_settings, layer, insertIndex)) return;
+
+        AppSettingsService.EnsureSinglePrimaryLayer(_settings);
+        AppSettingsService.Save(_settings);
+        RefreshRenderedLayerFromStack(layer);
+        e.Handled = true;
     }
 
     private void PrimaryLayer_Click(object sender, RoutedEventArgs e) {
@@ -836,8 +1258,42 @@ public partial class MainWindow : Window {
         });
     }
 
-    private void Window_KeyDown(object sender, KeyEventArgs e) {
-        if (e.Key == Key.Add || e.Key == Key.OemPlus) {
+    private async void Window_KeyDown(object sender, KeyEventArgs e) {
+        var modifiers = Keyboard.Modifiers;
+        if (modifiers == ModifierKeys.Control && e.Key == Key.S) {
+            await SaveDocumentAsync(forceSaveAs: false);
+            e.Handled = true;
+        } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.Down) {
+            await ExecuteOsmPluginCommandAsync("download");
+            e.Handled = true;
+        } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.Up) {
+            await ExecuteOsmPluginCommandAsync("upload");
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.F1) {
+            ShowHelp();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.A) {
+            SetEditorMode(EditorMode.DrawLine);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.S) {
+            SetEditorMode(EditorMode.Select);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.V) {
+            SetEditorMode(EditorMode.BoxSelect);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Insert) {
+            AddNodeAtCenter();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Delete) {
+            DeleteSelectedFeatures();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.H) {
+            HideSelectedFeatures();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Escape) {
+            CancelActiveInteraction();
+            e.Handled = true;
+        } else if (e.Key == Key.Add || e.Key == Key.OemPlus) {
             ZoomIn_Click(this, new());
             e.Handled = true;
         } else if (e.Key == Key.Subtract || e.Key == Key.OemMinus) {
@@ -863,8 +1319,51 @@ public partial class MainWindow : Window {
     }
 
     private void MapCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+        MapViewport.Focus();
+        if (_isPanning) {
+            e.Handled = true;
+            return;
+        }
+
+        var position = e.GetPosition(MapViewport);
+        if (_editorMode == EditorMode.Select) {
+            SelectFeatureAt(position, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.BoxSelect) {
+            _boxSelectionStart = position;
+            ShowSelectionRectangle(new Rect(position, position));
+            MapViewport.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.DrawLine) {
+            if (e.ClickCount >= 2) FinishDraftLine();
+            else AddDraftLinePoint(position);
+            e.Handled = true;
+            return;
+        }
+
+        BeginPan(position, MouseButton.Left);
+        e.Handled = true;
+    }
+
+    private void MapCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e) {
+        MapViewport.Focus();
+        if (_boxSelectionStart is not null || _isPanning) {
+            e.Handled = true;
+            return;
+        }
+
+        BeginPan(e.GetPosition(MapViewport), MouseButton.Right);
+        e.Handled = true;
+    }
+
+    private void BeginPan(Point position, MouseButton button) {
         _isPanning = true;
-        _panStart = e.GetPosition(MapViewport);
+        _panButton = button;
+        _panStart = position;
         _panOffsetX = 0;
         _panOffsetY = 0;
         _lastPanPrefetchOffsetX = 0;
@@ -872,10 +1371,13 @@ public partial class MainWindow : Window {
         _lastPanPrefetchAt = DateTime.MinValue;
         MapViewport.CaptureMouse();
         Cursor = Cursors.Hand;
-        e.Handled = true;
     }
 
     private void MapCanvas_MouseMove(object sender, MouseEventArgs e) {
+        if (_boxSelectionStart is { } boxStart) {
+            ShowSelectionRectangle(new Rect(boxStart, e.GetPosition(MapViewport)));
+            return;
+        }
         if (!_isPanning) return;
         var pos = e.GetPosition(MapViewport);
         _panOffsetX = pos.X - _panStart.X;
@@ -902,19 +1404,40 @@ public partial class MainWindow : Window {
     }
 
     private void MapCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
-        if (!_isPanning) return;
+        if (_boxSelectionStart is { } boxStart) {
+            var rect = new Rect(boxStart, e.GetPosition(MapViewport));
+            _boxSelectionStart = null;
+            SelectionRectangle.Visibility = Visibility.Collapsed;
+            MapViewport.ReleaseMouseCapture();
+            ApplyBoxSelection(rect, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+            return;
+        }
+        if (!EndPan(MouseButton.Left)) return;
+        e.Handled = true;
+    }
+
+    private void MapCanvas_MouseRightButtonUp(object sender, MouseButtonEventArgs e) {
+        if (!EndPan(MouseButton.Right)) return;
+        e.Handled = true;
+    }
+
+    private bool EndPan(MouseButton button) {
+        if (!_isPanning || _panButton != button) return false;
+
         _isPanning = false;
-        MapViewport.ReleaseMouseCapture();
-        Cursor = Cursors.Arrow;
+        _panButton = null;
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        Cursor = GetEditorModeCursor();
 
         try {
-            if (!int.TryParse(ZoomTextBox.Text, out var zoom)) return;
+            if (!int.TryParse(ZoomTextBox.Text, out var zoom)) return true;
 
             var shiftX = _panOffsetX;
             var shiftY = _panOffsetY;
 
             if (shiftX == 0 && shiftY == 0) {
-                return;
+                return true;
             }
 
             var (oldPx, oldPy) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, zoom);
@@ -937,6 +1460,8 @@ public partial class MainWindow : Window {
             _lastPanPrefetchOffsetX = 0;
             _lastPanPrefetchOffsetY = 0;
         }
+
+        return true;
     }
 
     private void MapViewport_SizeChanged(object sender, SizeChangedEventArgs e) {
@@ -948,15 +1473,446 @@ public partial class MainWindow : Window {
         ScheduleRender(zoom, isExpanding ? 0 : ResizeRenderDelayMilliseconds);
     }
 
+    private void PanTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.Pan);
+
+    private void SelectTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.Select);
+
+    private void BoxSelectTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.BoxSelect);
+
+    private void DrawLineTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.DrawLine);
+
+    private void AddNode_Click(object sender, RoutedEventArgs e) => AddNodeAtCenter();
+
+    private void DeleteSelected_Click(object sender, RoutedEventArgs e) => DeleteSelectedFeatures();
+
+    private void HideSelected_Click(object sender, RoutedEventArgs e) => HideSelectedFeatures();
+
+    private void ShowAllFeatures_Click(object sender, RoutedEventArgs e) {
+        if (_document is null) return;
+        foreach (var feature in _document.Features) feature.IsHidden = false;
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void FeatureDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+        if (_isUpdatingFeatureSelection) return;
+        SetSelectedFeatures(FeatureDataGrid.SelectedItems.Cast<MapFeature>(), updateGrid: false);
+    }
+
+    private void SetEditorMode(EditorMode mode) {
+        if (_editorMode == EditorMode.DrawLine && mode != EditorMode.DrawLine) FinishDraftLine();
+        _editorMode = mode;
+        PanToolButton.ClearValue(Control.BackgroundProperty);
+        SelectToolButton.ClearValue(Control.BackgroundProperty);
+        BoxSelectToolButton.ClearValue(Control.BackgroundProperty);
+        DrawLineToolButton.ClearValue(Control.BackgroundProperty);
+        var activeButton = mode switch {
+            EditorMode.Pan => PanToolButton,
+            EditorMode.Select => SelectToolButton,
+            EditorMode.BoxSelect => BoxSelectToolButton,
+            EditorMode.DrawLine => DrawLineToolButton,
+            _ => SelectToolButton
+        };
+        activeButton.SetResourceReference(Control.BackgroundProperty, "Theme.SelectionBrush");
+        EditorModeTextBlock.Text = mode switch {
+            EditorMode.Pan => "拖动模式",
+            EditorMode.Select => "选择模式 (S)",
+            EditorMode.BoxSelect => "框选工具 (V)",
+            EditorMode.DrawLine => "画线模式 (A)",
+            _ => ""
+        };
+        Cursor = GetEditorModeCursor();
+    }
+
+    private Cursor GetEditorModeCursor() {
+        return _editorMode switch {
+            EditorMode.Pan => Cursors.Hand,
+            EditorMode.DrawLine => Cursors.Cross,
+            EditorMode.BoxSelect => Cursors.Cross,
+            _ => Cursors.Arrow
+        };
+    }
+
+    private void SelectFeatureAt(Point point, bool extendSelection) {
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return;
+        var candidates = VectorLayer.LastPlan?.Features ?? [];
+        var feature = VectorMapInteraction.HitTest(
+            candidates,
+            point,
+            _centerLat,
+            _centerLon,
+            zoom,
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+        if (feature is null) {
+            if (!extendSelection) SetSelectedFeatures([]);
+            return;
+        }
+
+        var selected = extendSelection ? _selectedFeatures.ToList() : [];
+        if (extendSelection && selected.Remove(feature)) SetSelectedFeatures(selected);
+        else {
+            selected.Add(feature);
+            SetSelectedFeatures(selected);
+        }
+    }
+
+    private void ApplyBoxSelection(Rect rect, bool extendSelection) {
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom) || rect.Width < 2 || rect.Height < 2) return;
+        var viewport = new Size(MapViewport.ActualWidth, MapViewport.ActualHeight);
+        var candidates = VectorLayer.LastPlan?.Features ?? [];
+        var selected = VectorMapInteraction.FindWithin(
+            candidates,
+            rect,
+            _centerLat,
+            _centerLon,
+            zoom,
+            viewport).ToList();
+        if (extendSelection) selected.AddRange(_selectedFeatures.Where(feature => !selected.Contains(feature)));
+        SetSelectedFeatures(selected);
+
+        var first = VectorMapInteraction.ScreenToGeo(rect.TopLeft, _centerLat, _centerLon, zoom, viewport);
+        var second = VectorMapInteraction.ScreenToGeo(rect.BottomRight, _centerLat, _centerLon, zoom, viewport);
+        _selectionBounds = new GeoBounds(
+            Math.Min(first.Longitude, second.Longitude),
+            Math.Min(first.Latitude, second.Latitude),
+            Math.Max(first.Longitude, second.Longitude),
+            Math.Max(first.Latitude, second.Latitude));
+        UpdateDocumentUi();
+    }
+
+    private void ShowSelectionRectangle(Rect rect) {
+        Canvas.SetLeft(SelectionRectangle, rect.Left);
+        Canvas.SetTop(SelectionRectangle, rect.Top);
+        SelectionRectangle.Width = rect.Width;
+        SelectionRectangle.Height = rect.Height;
+        SelectionRectangle.Visibility = Visibility.Visible;
+    }
+
+    private void AddDraftLinePoint(Point screenPoint) {
+        EnsureDocument();
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return;
+        var point = VectorMapInteraction.ScreenToGeo(
+            screenPoint,
+            _centerLat,
+            _centerLon,
+            zoom,
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+        if (!point.IsValid) return;
+
+        if (_draftLine is null) {
+            _draftLine = new MapFeature {
+                GeometryType = MapGeometryType.LineString,
+                Parts = [[]]
+            };
+            _document.Features.Add(_draftLine);
+            _document.InvalidateSpatialIndex();
+            SetSelectedFeatures([_draftLine]);
+        }
+        _document.InvalidateSpatialIndex();
+        _draftLine.Parts[0].Add(point);
+        _draftLine.InvalidateGeometry();
+        _document.IsDirty = true;
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void FinishDraftLine() {
+        if (_draftLine is null) return;
+        if (_draftLine.Parts[0].Count < 2 && _document?.Features.Remove(_draftLine) == true) {
+            _document.InvalidateSpatialIndex();
+        }
+        _draftLine = null;
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void AddNodeAtCenter() {
+        EnsureDocument();
+        if (_document is null) return;
+        var feature = new MapFeature {
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(_centerLon, _centerLat)]]
+        };
+        _document.Features.Add(feature);
+        _document.InvalidateSpatialIndex();
+        _document.IsDirty = true;
+        SetSelectedFeatures([feature]);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void DeleteSelectedFeatures() {
+        if (_document is null || _selectedFeatures.Count == 0) return;
+        var answer = MessageBox.Show(
+            $"确定删除选定的 {_selectedFeatures.Count:N0} 个对象吗？",
+            "删除对象",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No);
+        if (answer != MessageBoxResult.Yes) return;
+
+        _document.Features.RemoveAll(_selectedFeatures.Contains);
+        _document.InvalidateSpatialIndex();
+        _document.IsDirty = true;
+        _draftLine = null;
+        SetSelectedFeatures([]);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void HideSelectedFeatures() {
+        if (_document is null || _selectedFeatures.Count == 0) return;
+        foreach (var feature in _selectedFeatures) feature.IsHidden = true;
+        SetSelectedFeatures([]);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void SetSelectedFeatures(IEnumerable<MapFeature> features, bool updateGrid = true) {
+        foreach (var feature in _selectedFeatures) feature.IsSelected = false;
+        _selectedFeatures.Clear();
+        foreach (var feature in features.Distinct()) {
+            feature.IsSelected = true;
+            _selectedFeatures.Add(feature);
+        }
+
+        if (updateGrid) {
+            _isUpdatingFeatureSelection = true;
+            try {
+                FeatureDataGrid.SelectedItems.Clear();
+                foreach (var feature in _selectedFeatures.Take(100)) FeatureDataGrid.SelectedItems.Add(feature);
+                if (_selectedFeatures.Count > 0) FeatureDataGrid.ScrollIntoView(_selectedFeatures.First());
+            } finally {
+                _isUpdatingFeatureSelection = false;
+            }
+        }
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void EnsureDocument() {
+        _document ??= new MapDocument();
+    }
+
+    private void FitDocumentToViewport() {
+        if (_document is null || !_document.Bounds.IsValid) return;
+        var bounds = _document.Bounds;
+        var center = bounds.Center;
+        _centerLon = center.Longitude;
+        _centerLat = GeoConverter.ClampLatitude(center.Latitude);
+        var viewport = new Size(
+            Math.Max(320, MapViewport.ActualWidth),
+            Math.Max(240, MapViewport.ActualHeight));
+        var zoom = VectorMapInteraction.GetFitZoom(bounds, viewport, Math.Min(GeoConverter.MaxZoom, 20));
+        ZoomTextBox.Text = ClampZoom(zoom).ToString();
+        ApplyLayerTransforms();
+        if (_tileLayers.Count > 0) ScheduleRender(zoom, 0);
+    }
+
+    private void RefreshFeatureList() {
+        _isUpdatingFeatureSelection = true;
+        try {
+            FeatureDataGrid.ItemsSource = null;
+            FeatureDataGrid.ItemsSource = _document?.Features;
+        } finally {
+            _isUpdatingFeatureSelection = false;
+        }
+    }
+
+    private void UpdateVectorLayer() {
+        if (VectorLayer is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return;
+
+        var dataLayer = GetVectorDataLayer();
+        var opacity = dataLayer?.IsVisible == false
+            ? 0.0
+            : Math.Clamp(dataLayer?.Opacity ?? 1.0, 0.0, 1.0);
+        VectorLayer.Opacity = opacity;
+        VectorLayer.Visibility = opacity <= 0 ? Visibility.Hidden : Visibility.Visible;
+        VectorLayer.UpdateView(_document, _centerLat, _centerLon, zoom, _panOffsetX, _panOffsetY);
+    }
+
+    private MapImageLayer? GetVectorDataLayer() {
+        return _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data && layer.IsPrimary) ??
+            _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data);
+    }
+
+    private void UpdateDocumentUi() {
+        var total = _document?.Features.Count ?? 0;
+        var hidden = _document?.Features.Count(static feature => feature.IsHidden) ?? 0;
+        FeatureCountTextBlock.Text = hidden > 0 ? $"{total:N0} / 隐藏 {hidden:N0}" : $"{total:N0}";
+        if (_document is null) {
+            DocumentStatusTextBlock.Text = "未打开地图数据";
+            return;
+        }
+
+        var dirty = _document.IsDirty ? " *" : "";
+        var selection = _selectedFeatures.Count > 0 ? $"，选中 {_selectedFeatures.Count:N0}" : "";
+        var area = _selectionBounds.HasValue ? "，已框选下载区域" : "";
+        var skipped = _document.SkippedFeatureCount > 0 ? $"，跳过 {_document.SkippedFeatureCount:N0}" : "";
+        DocumentStatusTextBlock.Text = $"{_document.Name}{dirty}：{total:N0} 个要素{selection}{area}{skipped}";
+    }
+
+    private bool ConfirmDiscardChanges(string message) {
+        if (_document?.IsDirty != true) return true;
+        return MessageBox.Show(
+            message,
+            "未保存的修改",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+    }
+
+    private void CancelActiveInteraction() {
+        _boxSelectionStart = null;
+        _isPanning = false;
+        _panButton = null;
+        _panOffsetX = 0;
+        _panOffsetY = 0;
+        _lastPanPrefetchOffsetX = 0;
+        _lastPanPrefetchOffsetY = 0;
+        SelectionRectangle.Visibility = Visibility.Collapsed;
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        ApplyLayerTransforms();
+        FinishDraftLine();
+        SetEditorMode(EditorMode.Select);
+    }
+
+    private async Task ExecuteOsmPluginCommandAsync(string commandId) {
+        if (_pluginHost is null) return;
+
+        try {
+            var result = await _pluginHost.ExecuteCommandAsync(
+                BuiltInPluginCatalog.OsmTransferPluginId,
+                commandId,
+                new {
+                    bounds = _selectionBounds,
+                    documentName = _document?.Name,
+                    sourcePath = _document?.SourcePath
+                });
+            foreach (var action in result.Actions) await ApplyPluginActionAsync("OpenStreetMap 传输", action);
+        } catch (Exception ex) {
+            Logger.Error($"OSM plugin command '{commandId}' failed", ex);
+            MessageBox.Show(ex.Message, "OpenStreetMap 传输", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private Task DownloadOsmSelectionAsync() {
+        var downloadWindow = new Views.OsmDownloadWindow(DownloadOsmBoundsAsync) { Owner = this };
+        downloadWindow.ShowDialog();
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> DownloadOsmBoundsAsync(
+        GeoBounds bounds,
+        IProgress<OsmDownloadStage> progress,
+        CancellationToken ct) {
+        if (!ConfirmDiscardChanges("下载的数据将替换当前未保存的地图。是否放弃当前修改？")) return false;
+
+        string? temporaryPath = null;
+        try {
+            var apiBaseUrl = _osmAccountStore.GetActive()?.ApiBaseUrl ?? OsmApiClient.DefaultApiBaseUrl;
+            var bytes = await new OsmApiClient(OsmHttpClient).DownloadMapAsync(apiBaseUrl, bounds, progress, ct);
+            progress.Report(OsmDownloadStage.Importing);
+            var temporaryDirectory = Path.Combine(Path.GetTempPath(), "WPF-OpenStreetmap-Editor");
+            Directory.CreateDirectory(temporaryDirectory);
+            temporaryPath = Path.Combine(temporaryDirectory, $"osm-download-{Guid.NewGuid():N}.osm");
+            await File.WriteAllBytesAsync(temporaryPath, bytes, ct);
+            var document = await SpatialDataService.ImportAsync(temporaryPath);
+            document.Name = $"OSM 下载 {DateTime.Now:yyyy-MM-dd HHmm}";
+            document.SourcePath = null;
+            document.SourceFormat = SpatialFileFormat.OsmXml;
+            document.MarkClean();
+            _document = document;
+            _selectionBounds = null;
+            SetSelectedFeatures([]);
+            FitDocumentToViewport();
+            RefreshFeatureList();
+            UpdateVectorLayer();
+            UpdateDocumentUi();
+            return true;
+        } finally {
+            if (temporaryPath is not null && File.Exists(temporaryPath)) {
+                try {
+                    File.Delete(temporaryPath);
+                } catch (IOException ex) {
+                    Logger.Error("Failed to remove temporary OSM download", ex);
+                }
+            }
+        }
+    }
+
+    private async Task UploadOsmChangesAsync() {
+        if (_document is null) {
+            MessageBox.Show("当前没有可上传的地图数据。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var account = _osmAccountStore.GetActive();
+        if (account is null) {
+            new Views.OsmAccountsWindow(_osmAccountStore) { Owner = this }.ShowDialog();
+            account = _osmAccountStore.GetActive();
+            if (account is null) return;
+        }
+        var accessToken = _osmAccountStore.GetAccessToken(account);
+        if (string.IsNullOrWhiteSpace(accessToken)) {
+            MessageBox.Show("当前 OSM 账号没有访问令牌。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var preview = OsmChangeSerializer.Build(_document, 0);
+        if (preview.TotalCount == 0) {
+            MessageBox.Show("当前地图没有可上传的变更。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var uploadWindow = new Views.OsmUploadWindow(account, preview) { Owner = this };
+        if (uploadWindow.ShowDialog() != true) return;
+
+        var api = new OsmApiClient(OsmHttpClient);
+        long? changesetId = null;
+        try {
+            IsEnabled = false;
+            DocumentStatusTextBlock.Text = "正在创建 OSM 变更集...";
+            changesetId = await api.CreateChangesetAsync(account.ApiBaseUrl, accessToken, uploadWindow.Comment);
+            var changes = OsmChangeSerializer.Build(_document, changesetId.Value);
+            DocumentStatusTextBlock.Text = $"正在上传 {changes.TotalCount:N0} 个变更...";
+            var response = await api.UploadChangesAsync(
+                account.ApiBaseUrl,
+                accessToken,
+                changesetId.Value,
+                changes.Xml);
+            OsmChangeSerializer.ApplyDiffResult(_document, changes, response);
+            RefreshFeatureList();
+            UpdateVectorLayer();
+            UpdateDocumentUi();
+            MessageBox.Show($"已上传到 OSM 变更集 {changesetId.Value}。", "上传完成", MessageBoxButton.OK, MessageBoxImage.Information);
+        } finally {
+            if (changesetId.HasValue) {
+                try {
+                    await api.CloseChangesetAsync(account.ApiBaseUrl, accessToken, changesetId.Value, CancellationToken.None);
+                } catch (Exception ex) {
+                    Logger.Error($"Failed to close OSM changeset {changesetId.Value}", ex);
+                }
+            }
+            IsEnabled = true;
+        }
+    }
+
     private void RefreshRenderedLayerFromStack(MapImageLayer? selectedLayer = null) {
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);
-        var rasterLayers = LayerRenderPlanner.GetRasterCandidates(_settings.ImageLayers);
+        var rasterLayers = LayerRenderPlanner.GetLayersToRender(_settings.ImageLayers);
         RefreshLayerList(selectedLayer ?? _settings.GetActiveLayer());
         LoadImageLayers(rasterLayers);
     }
 
     private void CancelPendingMapWork() {
         _tileSourceCts?.Cancel();
+        _layerStackRefreshCts?.Cancel();
+        _layerStackRefreshCts = null;
         _renderDebounceCts?.Cancel();
         _renderCts?.Cancel();
     }
@@ -979,6 +1935,44 @@ public partial class MainWindow : Window {
         } finally {
             _isUpdatingLayerList = false;
         }
+
+        UpdateSelectedLayerDetails();
+    }
+
+    private void UpdateSelectedLayerDetails() {
+        _isUpdatingLayerDetails = true;
+        try {
+            var layer = LayerListBox.SelectedItem as MapImageLayer;
+            SelectedLayerOptionsPanel.IsEnabled = layer is not null;
+            SelectedLayerVisibilityCheckBox.IsChecked = layer?.IsVisible == true;
+            var opacity = Math.Clamp(layer?.Opacity ?? 1.0, 0.0, 1.0);
+            LayerOpacitySlider.Value = opacity * 100.0;
+            LayerOpacityValueTextBlock.Text = FormatLayerOpacityPercent(opacity);
+        } finally {
+            _isUpdatingLayerDetails = false;
+        }
+    }
+
+    private void ScheduleLayerStackRefresh(MapImageLayer selectedLayer) {
+        _layerStackRefreshCts?.Cancel();
+        var refreshCts = new CancellationTokenSource();
+        _layerStackRefreshCts = refreshCts;
+
+        _ = Task.Run(async () => {
+            try {
+                await Task.Delay(LayerStackRefreshDelayMilliseconds, refreshCts.Token).ConfigureAwait(false);
+                await Dispatcher.InvokeAsync(() => {
+                    if (refreshCts.IsCancellationRequested || !ReferenceEquals(_layerStackRefreshCts, refreshCts)) return;
+
+                    RefreshRenderedLayerFromStack(selectedLayer);
+                });
+            } catch (OperationCanceledException) {
+            }
+        });
+    }
+
+    private static string FormatLayerOpacityPercent(double opacity) {
+        return $"{Math.Clamp(opacity, 0.0, 1.0) * 100.0:0}%";
     }
 
     private void SelectLayer(MapImageLayer layer) {
@@ -994,6 +1988,15 @@ public partial class MainWindow : Window {
         return _settings.ImageLayers.FirstOrDefault(candidate => ReferenceEquals(candidate, layer)) ??
             _settings.ImageLayers.FirstOrDefault(candidate => candidate.Id == layer.Id) ??
             layer;
+    }
+
+    private static T? FindVisualAncestor<T>(DependencyObject? element) where T : DependencyObject {
+        while (element is not null) {
+            if (element is T match) return match;
+            element = VisualTreeHelper.GetParent(element);
+        }
+
+        return null;
     }
 
     private TileSourcePreset ResolveSettingsSource(TileSourcePreset source) {
@@ -1045,13 +2048,11 @@ public partial class MainWindow : Window {
 
     private void UpdateSourceSummary(int? mapMaxZoom = null, int? imageMaxZoom = null) {
         if (_activeImageLayer is null) {
-            ActiveSourceTextBlock.Text = "未添加图层";
             ZoomLimitTextBlock.Text = "";
             UpdateAttribution();
             return;
         }
 
-        ActiveSourceTextBlock.Text = _activeImageLayer.Name;
         ZoomLimitTextBlock.Text =
             $"地图 0-{mapMaxZoom ?? _activeSource.MapMaxZoom} / 影像 0-{imageMaxZoom ?? _activeSource.ImageMaxZoom}";
         UpdateAttribution();
@@ -1171,6 +2172,13 @@ public partial class MainWindow : Window {
         TileService Service,
         TileSourcePreset Source,
         double Opacity);
+
+    private enum EditorMode {
+        Pan,
+        Select,
+        BoxSelect,
+        DrawLine
+    }
 
     private static double ClampWorldPixel(double value, double worldSize) {
         return Math.Clamp(value, 0, worldSize);
