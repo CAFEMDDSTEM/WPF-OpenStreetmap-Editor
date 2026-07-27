@@ -7,3 +7,6 @@ This folder contains project-facing documentation for contributors and operators
 - [Issues and Bug Reports](issues.md)
 - [Pull Requests](pull-requests.md)
 - [Testing Guide](testing.md)
+- [Map data and OSM transfer](map-data.md)
+- [Theme packages](themes.md)
+- [Plugin architecture](plugins.md)

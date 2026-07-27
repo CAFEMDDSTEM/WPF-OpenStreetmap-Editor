@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "example.clear-night",
+  "name": "Clear Night",
+  "author": "WOSM",
+  "version": "1.0.0",
+  "baseTheme": "dark",
+  "colors": {
+    "window": "#181A1D",
+    "surface": "#22252A",
+    "surfaceAlt": "#2D3137",
+    "text": "#F4F6F8",
+    "mutedText": "#B4BBC4",
+    "border": "#59616C",
+    "accent": "#4CC2FF",
+    "accentText": "#0B1B24",
+    "selection": "#155778",
+    "selectionText": "#FFFFFF",
+    "mapBackground": "#343A42"
+  }
+}

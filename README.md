@@ -4,9 +4,9 @@
 
 WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. Its long-term goal is to become a practical C# alternative to JOSM.
 
-The current application can load OpenStreetMap-compatible tile layers, preview map imagery, and manage reusable tile sources and layers.
+The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
 
-> Project status: early development. The current application focuses on tile rendering, layer configuration, caching, and supporting infrastructure.
+> Project status: early development. The current application focuses on imagery rendering, vector data handling, local editing, theming, plugin infrastructure, and basic OpenStreetMap transfer workflows.
 
 ## Test Release
 
@@ -22,10 +22,16 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 - Support common placeholders such as `{z}`, `{x}`, `{y}`, `{-y}`, `{s}`, `{switch:a,b,c}`, `{zoom}`, `{TileMatrix}`, `{TileCol}`, `{TileRow}`, and `{access_token}`.
 - Manage reusable imagery presets, access tokens, attribution, zoom limits, and no-tile markers.
 - Render multiple imagery layers with visibility, primary-layer selection, opacity, mouse panning, and zoom controls.
+- Import `.osm`, `.pbf`, Shapefile, GeoJSON, GML, KML/KMZ, and GPX map data.
+- Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
+- Select, box-select, hide, delete, add point features, and draw line features on top of imagery.
+- Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes through the built-in OpenStreetMap transfer addon.
 - Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
 - Run startup diagnostics and log startup or tile-loading failures for troubleshooting.
+- Switch between system, light, dark, and validated third-party ZIP or 7z theme packages.
+- Install addon, sandboxed process, and explicitly trusted native plugin packages.
 - Keep settings, layers, window state, caches, and logs in the current user's local application data directory.
-- Include focused unit tests for settings, rendering layout, startup diagnostics, caching, validation, coordinate conversion, and URL parsing.
+- Include focused unit tests for settings, rendering, startup diagnostics, caching, spatial formats, themes, plugins, OSM transfer, coordinate conversion, and URL parsing.
 
 ## Requirements
 
@@ -38,6 +44,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 src/WPF-OpenStreetmap-Editor/          WPF application source
 tests/WPF-OpenStreetmap-Editor.Tests/  Unit tests
 docs/                                  Contributor documentation
+sdk/native/                            Native plugin C ABI header
 scripts/                               Local CLI helpers
 .github/workflows/                     CI workflow definitions
 ```
@@ -67,11 +74,12 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 ## Usage
 
 1. Start the application.
-2. Open **Tools > Settings** to select a built-in imagery source or add a custom tile URL template.
-3. Enter an access token in Settings when a provider requires `{access_token}`. Access tokens are used for the current session and are not saved to disk.
-4. Use the **Imagery** menu to add a source as a map layer.
-5. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, and drag the map to pan.
-6. Use the layer list to select the primary layer, toggle visibility, or remove a layer.
+2. Open **Tools > Settings** to select an imagery source, add a custom tile URL template, or switch themes.
+3. Enter an access token in Settings when an imagery provider requires `{access_token}`. Imagery access tokens are used for the current session and are not saved to disk.
+4. Use the **Imagery** menu to add a source as a raster map layer.
+5. Use **File > Open** to import vector map data, or use the built-in OpenStreetMap transfer toolbar to choose and download an OSM bounding box.
+6. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, drag the map to pan, and use the editor toolbar to select, box-select, hide, delete, add points, or draw lines.
+7. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API.
 
 ## Tile Service Notes
 
@@ -84,6 +92,9 @@ The application writes runtime data under `%LOCALAPPDATA%\WPF-OpenStreetmap-Edit
 - `Cache/tiles/` for downloaded tile images
 - `layers.json` for saved layer URLs
 - `settings.json` for imagery and application settings
+- `osm.accounts.json` for OSM account metadata; access tokens are stored separately in Windows Credential Manager
+- `Plugins/` and `plugins.state.json` for installed plugins and native-plugin trust state
+- `Themes/` for installed third-party themes
 - `window_state.json` for the saved window position and size
 - `tile_requests.log` and `startup.log` for diagnostics
 
@@ -94,6 +105,9 @@ Contributor and maintenance documentation lives in [docs/README.md](docs/README.
 - [Development Guide](docs/development.md)
 - [Code Style](docs/code-style.md)
 - [Testing Guide](docs/testing.md)
+- [Map data and OSM transfer](docs/map-data.md)
+- [Theme packages](docs/themes.md)
+- [Plugin architecture](docs/plugins.md)
 - [Issues and Bug Reports](docs/issues.md)
 - [Pull Requests](docs/pull-requests.md)
 
