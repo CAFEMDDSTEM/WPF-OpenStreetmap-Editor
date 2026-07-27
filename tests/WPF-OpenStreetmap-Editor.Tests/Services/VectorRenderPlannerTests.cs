@@ -1,0 +1,71 @@
+using WPF_OpenStreetmap_Editor.Models;
+using WPF_OpenStreetmap_Editor.Services;
+
+namespace WPF_OpenStreetmap_Editor.Tests.Services;
+
+public class VectorRenderPlannerTests {
+    [Fact]
+    public void Create_CullsHiddenOutsideAndOverBudgetFeatures() {
+        var visible = PointFeature("visible", 1, 1);
+        var hidden = PointFeature("hidden", 1, 1);
+        hidden.IsHidden = true;
+        var outside = PointFeature("outside", 20, 20);
+        var overBudget = PointFeature("budget", 2, 2);
+
+        var plan = VectorRenderPlanner.Create(
+            [visible, hidden, outside, overBudget],
+            new GeoBounds(0, 0, 10, 10),
+            featureBudget: 1,
+            coordinateBudget: 100);
+
+        Assert.Same(visible, Assert.Single(plan.Features));
+        Assert.Equal(1, plan.HiddenCount);
+        Assert.Equal(1, plan.OutsideViewportCount);
+        Assert.Equal(1, plan.BudgetOmittedCount);
+    }
+
+    [Fact]
+    public void Create_FromDocumentUsesSpatialIndexForViewportFeatures() {
+        var document = new MapDocument();
+        var visible = PointFeature("visible", 1, 1);
+        var outside = PointFeature("outside", 20, 20);
+        document.Features.Add(visible);
+        document.Features.Add(outside);
+
+        var plan = VectorRenderPlanner.Create(document, new GeoBounds(0, 0, 2, 2));
+
+        Assert.Same(visible, Assert.Single(plan.Features));
+    }
+
+    [Fact]
+    public void Create_FromDocumentKeepsLargeFeaturesThatIntersectViewport() {
+        var document = new MapDocument();
+        var longRoad = new MapFeature {
+            Id = "long-road",
+            GeometryType = MapGeometryType.LineString,
+            Parts = [[new GeoPoint(-10, 1), new GeoPoint(10, 1)]]
+        };
+        document.Features.Add(longRoad);
+
+        var plan = VectorRenderPlanner.Create(document, new GeoBounds(0, 0, 2, 2));
+
+        Assert.Same(longRoad, Assert.Single(plan.Features));
+    }
+
+    [Fact]
+    public void GetFitZoom_ReturnsZoomWhoseExtentFitsViewport() {
+        var bounds = new GeoBounds(103.8, 1.3, 103.9, 1.4);
+
+        var zoom = VectorMapInteraction.GetFitZoom(bounds, new System.Windows.Size(800, 600), 20);
+
+        Assert.InRange(zoom, 10, 14);
+    }
+
+    private static MapFeature PointFeature(string id, double longitude, double latitude) {
+        return new MapFeature {
+            Id = id,
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(longitude, latitude)]]
+        };
+    }
+}
