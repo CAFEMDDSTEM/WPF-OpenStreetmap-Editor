@@ -15,7 +15,7 @@ WOSM 是 WPF OpenStreetMap Editor 的简称，是一个使用 C# / WPF 编写的
 - 在 WPF Canvas 中渲染地图瓦片，并支持鼠标平移和缩放控制。
 - 导入 `.osm`、`.pbf`、Shapefile、GeoJSON、GML、KML/KMZ 和 GPX 地图数据。
 - 将编辑后的数据保存为 GeoJSON、OpenStreetMap XML、GPX、KML 或 GML。PBF、Shapefile 和 KMZ 当前仅支持导入。
-- 在影像上选择、框选、隐藏、删除、添加点要素并绘制线要素。
+- 在影像上选择、框选、隐藏、删除、复制、粘贴、创建副本、添加点、绘制线、旋转、移动和直角化要素。
 - 通过内置 OpenStreetMap 传输插件按框选范围下载 OSM 数据，并在预览后上传创建、修改和删除变更。
 - 将下载的瓦片缓存到应用运行目录。
 - 使用 `layers.json` 保存可复用的图层 URL。
@@ -68,7 +68,11 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 4. 使用 **影像** 菜单将图源添加为栅格地图图层。
 5. 使用 **文件 > 打开** 导入矢量地图数据，或使用内置 OpenStreetMap 传输工具栏选择并下载 OSM 范围。
 6. 使用鼠标滚轮、`+` / `-`，或 `Page Up` / `Page Down` 缩放；拖动地图平移；使用编辑工具栏选择、框选、隐藏、删除、添加点或绘制线。
-7. 使用 **文件 > 保存** 或 **另存为** 保存支持的矢量格式。上传 OSM 前请先检查预览内容。
+7. 使用 `Ctrl+C`、`Ctrl+V`、`Ctrl+Z` 和 `Ctrl+Shift+D` 复制、粘贴、撤销和创建选定要素副本。
+8. 按 `R` 或 `M` 后用鼠标带动旋转或移动选定要素，再按 `Enter` 或左键应用。在选择模式下，按住已选要素并拖动也可以移动当前选择。
+9. 使用 `r20`、`mx2` 或 `mx20y20` 等精确命令后按 `Enter` 应用。旋转数值单位为度；移动数值单位为分米，`x` 向东、`y` 向北。
+10. 按 `Q` 可直角化选定的线或面要素。
+11. 使用 **文件 > 保存** 或 **另存为** 保存支持的矢量格式。上传 OSM 前请先检查预览内容。
 
 ## 瓦片服务说明
 

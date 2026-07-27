@@ -31,7 +31,38 @@ above imagery. The editor toolbar supports:
 - box selection and shift-add box selection
 - drawing line features
 - adding a point at the current map center
-- hiding, showing, and deleting selected features
+- copying, pasting, duplicating, hiding, showing, and deleting selected features
+- moving, rotating, and orthogonalizing selected line or polygon features
+
+Common editing shortcuts:
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+C` | Copy selected features. |
+| `Ctrl+V` | Paste copied features with a small offset. |
+| `Ctrl+Z` | Undo the last committed edit. |
+| `Ctrl+Y` or `Ctrl+Shift+Z` | Redo the last undone edit. |
+| `Ctrl+Shift+D` | Duplicate selected features. |
+| `A` | Enter line drawing mode. Press `Enter` to finish the current line. |
+| `R` | Rotate selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
+| `M` | Move selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
+| `Q` | Orthogonalize selected line or polygon features. |
+
+In select mode, press and hold the left mouse button on an already-selected
+feature to drag the whole selection. Releasing the button commits the move as a
+single undoable edit.
+
+Precision edit commands can be typed directly, then applied with `Enter`:
+
+| Command | Result |
+| --- | --- |
+| `r20` or `r 20` | Rotate selected features 20 degrees around their shared geometry center. |
+| `mx2` or `m x 2` | Move selected features 2 decimeters east. |
+| `mx20y20` | Move selected features 20 decimeters east and 20 decimeters north. |
+| `my-10` | Move selected features 10 decimeters south. |
+
+Move command values are real-world decimeters. The `x` axis moves east/west and
+the `y` axis moves north/south. Negative values move west or south.
 
 Use **File > Save** for formats that can be updated in place. WOSM prompts for
 **Save As** when the source format is import-only, such as PBF, Shapefile, or
