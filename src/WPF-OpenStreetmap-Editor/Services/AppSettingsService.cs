@@ -10,6 +10,7 @@ namespace WPF_OpenStreetmap_Editor.Services;
 
 public sealed class AppSettings {
     public string ThemeId { get; set; } = ThemeService.SystemThemeId;
+    public string LanguageId { get; set; } = LocalizationService.SystemLanguageId;
     public string ActiveSourceName { get; set; } = "Esri 世界影像";
     public string ActiveLayerId { get; set; } = "";
     public int MapMaxZoom { get; set; } = GeoConverter.MaxZoom;
@@ -40,6 +41,7 @@ public sealed class AppSettings {
     public AppSettings Clone() {
         return new AppSettings {
             ThemeId = ThemeId,
+            LanguageId = LanguageId,
             ActiveSourceName = ActiveSourceName,
             ActiveLayerId = ActiveLayerId,
             MapMaxZoom = MapMaxZoom,
@@ -246,6 +248,8 @@ public static class AppSettingsService {
         if (string.IsNullOrWhiteSpace(settings.ThemeId)) {
             settings.ThemeId = ThemeService.SystemThemeId;
         }
+
+        settings.LanguageId = LocalizationService.NormalizeLanguageId(settings.LanguageId);
 
         var defaults = TileSourcePreset.CreateDefaults();
 

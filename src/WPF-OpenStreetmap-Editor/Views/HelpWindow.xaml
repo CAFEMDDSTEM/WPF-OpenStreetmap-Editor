@@ -1,7 +1,8 @@
 <Window x:Class="WPF_OpenStreetmap_Editor.Views.HelpWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="帮助和关于"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+        Title="{services:Loc Help.Title}"
         Height="640"
         Width="840"
         MinHeight="520"
@@ -16,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <TabControl Grid.Row="0">
-            <TabItem Header="使用帮助">
+            <TabItem Header="{services:Loc Help.Usage}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Sections}" Margin="14">
                         <ItemsControl.ItemTemplate>
@@ -47,13 +48,13 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="程序信息">
+            <TabItem Header="{services:Loc Help.ProgramInfo}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="14">
                         <TextBlock Text="{Binding ProgramName}"
                                    FontSize="24"
                                    FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Version, StringFormat=版本 {0}}"
+                        <TextBlock Text="{Binding VersionText}"
                                    Margin="0,4,0,18"
                                    Foreground="{DynamicResource Theme.MutedTextBrush}" />
                         <ItemsControl ItemsSource="{Binding ProgramInfo}">
@@ -79,14 +80,14 @@
                                 Background="{DynamicResource Theme.SurfaceBrush}"
                                 BorderBrush="{DynamicResource Theme.BorderBrush}"
                                 BorderThickness="1">
-                            <TextBlock Text="本程序以 GPL v3 发布。你可以在许可证页查看完整许可文本。"
+                            <TextBlock Text="{services:Loc Help.GplNotice}"
                                        TextWrapping="Wrap" />
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="GPL v3 许可证">
+            <TabItem Header="{services:Loc Help.License}">
                 <Grid Margin="14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -113,7 +114,7 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,10,0,0">
-            <Button Content="关闭"
+            <Button Content="{services:Loc Common.Close}"
                     Width="88"
                     IsCancel="True" />
         </StackPanel>

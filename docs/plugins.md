@@ -101,8 +101,8 @@ or directory packages containing symbolic links/reparse points, are rejected.
 ```
 
 `openUrl` accepts only absolute HTTP/HTTPS URLs. `showMessage` accepts `title`
-and `message`. `addImagery` accepts `type` and a required `url`. Built-in
-addons also use host-owned actions such as `downloadOsm`, `uploadOsm`,
+and `message`. `addImagery` accepts `type` and a required `url`. First-party
+addons can also use host-owned actions such as `downloadOsm`, `uploadOsm`,
 `manageOsmAccounts`, and `enableNonTextInputImeGuard`; these actions do not
 accept arbitrary arguments or executable code.
 
@@ -111,27 +111,38 @@ Toolbar contributions use `location: 'main'`, a valid
 and an order from `-10000` through `10000`. Menu contributions currently use
 `location: 'tools'`.
 
-## Built-in OpenStreetMap transfer
+## First-party OpenStreetMap transfer
 
-WOSM installs `org.openstreetmap.transfer` as a built-in addon package under
-the same plugin directory as third-party packages. It contributes toolbar and
-Tools menu commands for:
+`org.openstreetmap.transfer` is a first-party addon package that can be built
+and installed separately from the main application. When installed, it
+contributes toolbar and Tools menu commands for:
 
 - downloading OSM XML for a bounding box selected in the download window
 - uploading reviewed create/modify/delete changes from the current document
 - managing OSM accounts
 
-The host implements those actions directly. The addon manifest only wires UI
-commands to host-owned behavior; it does not contain network or credential
-code. OSM account metadata is stored in `%LOCALAPPDATA%`, while account
-passwords and OAuth access tokens are stored in Windows Credential Manager.
+The host implements those actions directly, and `Ctrl+Shift+Down` /
+`Ctrl+Shift+Up` continue to open the download and upload workflows even when
+the addon is absent. The addon manifest only wires UI commands to host-owned
+behavior; it does not contain network or credential code. OSM account metadata
+is stored in `%LOCALAPPDATA%`, while account passwords and OAuth access tokens
+are stored in Windows Credential Manager.
 
-## Built-in Better IME
+## First-party Better IME
 
-WOSM installs `org.wosm.better-ime` as a built-in addon package. On main-window
-startup it enables the host-owned IME guard, which disables IME while keyboard
-focus is outside editable text fields and leaves text boxes, password boxes,
-and editable combo boxes available for normal text entry.
+`org.wosm.better-ime` is a first-party addon package that can enable the
+host-owned IME guard through `enableNonTextInputImeGuard`. The main application
+also enables that guard directly at startup, so it does not depend on the addon
+being present.
+
+## First-party addon source layout
+
+First-party addon source should live outside the main branch, for example in
+separate worktrees checked out from per-addon branches under `external-plugins/`.
+The main application does not fetch those branches. If a plugin project is
+present locally, `scripts/build.ps1` can build it alongside the app and place
+its output under `artifacts/plugins/<plugin-name>/`; if it is absent, the app
+build continues without it.
 
 ## Process bridge
 

@@ -16,10 +16,13 @@ public partial class SettingsWindow : Window {
     private readonly ObservableCollection<TileSourcePreset> _sources;
     private readonly ObservableCollection<ThemeDefinition> _themes = [];
     private readonly string _originalThemeId;
+    private readonly string _originalLanguageId;
     private TileSourcePreset? _selectedSource;
     private bool _loadingFields;
     private bool _loadingThemes;
+    private bool _loadingLanguages;
     private bool _accepted;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public AppSettings ResultSettings { get; private set; }
 
@@ -31,8 +34,9 @@ public partial class SettingsWindow : Window {
             : AppearanceTabItem;
 
         _workingSettings = settings.Clone();
-        _originalThemeId = _workingSettings.ThemeId;
         AppSettingsService.EnsureDefaults(_workingSettings);
+        _originalThemeId = _workingSettings.ThemeId;
+        _originalLanguageId = _workingSettings.LanguageId;
         _sources = new ObservableCollection<TileSourcePreset>(_workingSettings.TileSources);
         ResultSettings = _workingSettings.Clone();
 
@@ -40,6 +44,7 @@ public partial class SettingsWindow : Window {
         ThemeComboBox.ItemsSource = _themes;
         ExperimentalSmoothZoomCheckBox.IsChecked = _workingSettings.ExperimentalSmoothZoom;
         LoadThemes(_workingSettings.ThemeId);
+        LoadLanguages(_workingSettings.LanguageId);
 
         Loaded += (_, _) => {
             var selected = _sources.FirstOrDefault(source => source.Name == _workingSettings.ActiveSourceName) ??
@@ -47,7 +52,10 @@ public partial class SettingsWindow : Window {
             SourcesListBox.SelectedItem = selected;
         };
         Closing += (_, _) => {
-            if (!_accepted) ThemeService.ApplyTheme(_originalThemeId);
+            if (!_accepted) {
+                ThemeService.ApplyTheme(_originalThemeId);
+                L.ApplyLanguage(_originalLanguageId);
+            }
         };
     }
 
@@ -59,10 +67,21 @@ public partial class SettingsWindow : Window {
         UpdateThemeDetails(theme);
     }
 
+    private void LanguageComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+        if (_loadingLanguages || LanguageComboBox.SelectedItem is not LanguageOption language) return;
+
+        _workingSettings.LanguageId = language.Id;
+        L.ApplyLanguage(language.Id);
+        LoadLanguages(language.Id);
+        if (ThemeComboBox.SelectedItem is ThemeDefinition theme) {
+            UpdateThemeDetails(theme);
+        }
+    }
+
     private void ImportTheme_Click(object sender, RoutedEventArgs e) {
         var dialog = new OpenFileDialog {
-            Title = "导入 WOSM 主题",
-            Filter = "WOSM 主题包 (*.wosm-theme;*.zip;*.7z)|*.wosm-theme;*.zip;*.7z|所有文件 (*.*)|*.*",
+            Title = L.GetString("Settings.ImportThemeDialogTitle"),
+            Filter = L.GetString("Settings.ImportThemeFilter"),
             CheckFileExists = true,
             Multiselect = false
         };
@@ -74,7 +93,7 @@ public partial class SettingsWindow : Window {
             ThemeService.ApplyTheme(installed.Id);
             _workingSettings.ThemeId = installed.Id;
         } catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException) {
-            MessageBox.Show(ex.Message, "无法导入主题", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, L.GetString("Settings.ImportThemeErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -82,8 +101,8 @@ public partial class SettingsWindow : Window {
         if (ThemeComboBox.SelectedItem is not ThemeDefinition { IsBuiltIn: false } theme) return;
 
         var confirmation = MessageBox.Show(
-            $"确定删除第三方主题“{theme.Name}”吗？主题目录及其中资源将从本机移除。",
-            "删除主题",
+            L.Format("Settings.DeleteThemeConfirm", theme.Name),
+            L.GetString("Settings.DeleteThemeTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No);
@@ -95,7 +114,7 @@ public partial class SettingsWindow : Window {
             ThemeService.ApplyTheme(ThemeService.SystemThemeId);
             _workingSettings.ThemeId = ThemeService.SystemThemeId;
         } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) {
-            MessageBox.Show(ex.Message, "无法删除主题", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, L.GetString("Settings.DeleteThemeErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -116,7 +135,7 @@ public partial class SettingsWindow : Window {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
 
         var source = new TileSourcePreset {
-            Name = CreateUniqueSourceName("新图源"),
+            Name = CreateUniqueSourceName(L.GetString("Settings.NewSource")),
             Source = "xyz:https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             MapMaxZoom = GeoConverter.MaxZoom,
             ImageMaxZoom = GeoConverter.MaxZoom,
@@ -132,7 +151,7 @@ public partial class SettingsWindow : Window {
     private void RemoveSource_Click(object sender, RoutedEventArgs e) {
         if (SourcesListBox.SelectedItem is not TileSourcePreset source) return;
         if (_sources.Count <= 1) {
-            MessageBox.Show("至少保留一个图源。", "设置", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Settings.KeepOneSource"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -146,6 +165,7 @@ public partial class SettingsWindow : Window {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
 
         _workingSettings.ThemeId = (ThemeComboBox.SelectedItem as ThemeDefinition)?.Id ?? ThemeService.SystemThemeId;
+        _workingSettings.LanguageId = (LanguageComboBox.SelectedItem as LanguageOption)?.Id ?? LocalizationService.SystemLanguageId;
         _workingSettings.TileSources = [.. _sources];
         _workingSettings.ExperimentalSmoothZoom = ExperimentalSmoothZoomCheckBox.IsChecked == true;
         _workingSettings.ActiveSourceName =
@@ -179,7 +199,7 @@ public partial class SettingsWindow : Window {
 
             ThemeErrorsTextBlock.Text = catalog.Errors.Count == 0
                 ? ""
-                : $"发现 {catalog.Errors.Count} 个无效主题文件：{string.Join("；", catalog.Errors.Take(3))}";
+                : L.Format("Settings.InvalidThemeFiles", catalog.Errors.Count, string.Join("; ", catalog.Errors.Take(3)));
             ThemeErrorsTextBlock.Visibility = catalog.Errors.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         } finally {
             _loadingThemes = false;
@@ -188,8 +208,8 @@ public partial class SettingsWindow : Window {
 
     private void UpdateThemeDetails(ThemeDefinition theme) {
         ThemeMetadataTextBlock.Text = theme.IsBuiltIn
-            ? $"WOSM 内置主题    版本：{theme.Version}"
-            : $"作者：{theme.Author}    版本：{theme.Version}";
+            ? L.Format("Settings.BuiltInThemeMetadata", theme.Version)
+            : L.Format("Settings.ThemeMetadata", theme.Author, theme.Version);
         ThemeDescriptionTextBlock.Text = theme.Description;
         RemoveThemeButton.IsEnabled = !theme.IsBuiltIn;
     }
@@ -218,24 +238,24 @@ public partial class SettingsWindow : Window {
 
         var name = SourceNameTextBox.Text.Trim();
         if (string.IsNullOrEmpty(name)) {
-            MessageBox.Show("请输入图源名称。", "设置", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Settings.SourceNameRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
         if (_sources.Any(source => !ReferenceEquals(source, _selectedSource) && source.Name == name)) {
-            MessageBox.Show("图源名称不能重复。", "设置", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Settings.SourceNameDuplicate"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
         var url = SourceUrlTextBox.Text.Trim();
         if (string.IsNullOrEmpty(url)) {
-            MessageBox.Show("请输入图源 URL。", "设置", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Settings.SourceUrlRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
         if (!TryReadZoom(MapMaxZoomTextBox.Text, out var mapMaxZoom) ||
             !TryReadZoom(ImageMaxZoomTextBox.Text, out var imageMaxZoom)) {
-            MessageBox.Show($"层级必须是 {GeoConverter.MinZoom} 到 {GeoConverter.MaxZoom} 之间的整数。", "设置", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.Format("Settings.ZoomRangeRequired", GeoConverter.MinZoom, GeoConverter.MaxZoom), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -280,4 +300,25 @@ public partial class SettingsWindow : Window {
             .Split(["\r\n", "\n", "\r", ",", ";"], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .ToList();
     }
+
+    private void LoadLanguages(string selectedLanguageId) {
+        _loadingLanguages = true;
+        try {
+            var selectedId = LocalizationService.NormalizeLanguageId(selectedLanguageId);
+            var languages = new[] {
+                new LanguageOption(LocalizationService.SystemLanguageId, L.GetString("Language.System")),
+                new LanguageOption("en", L.GetString("Language.English")),
+                new LanguageOption("zh-Hans", L.GetString("Language.SimplifiedChinese")),
+                new LanguageOption("zh-Hant", L.GetString("Language.TraditionalChinese")),
+                new LanguageOption("ja", L.GetString("Language.Japanese")),
+                new LanguageOption("de", L.GetString("Language.German"))
+            };
+            LanguageComboBox.ItemsSource = languages;
+            LanguageComboBox.SelectedItem = languages.First(language => language.Id == selectedId);
+        } finally {
+            _loadingLanguages = false;
+        }
+    }
+
+    private sealed record LanguageOption(string Id, string DisplayName);
 }

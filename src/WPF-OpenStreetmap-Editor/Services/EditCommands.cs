@@ -139,6 +139,154 @@ public sealed class SetFeatureHiddenCommand : IEditCommand {
     }
 }
 
+public sealed class SetFeatureAttributesCommand : IEditCommand {
+    private readonly MapFeature _feature;
+    private readonly Dictionary<string, string?> _attributes;
+    private readonly bool _replaceAll;
+    private Dictionary<string, string>? _previousAttributes;
+    private bool _wasDirty;
+
+    public SetFeatureAttributesCommand(MapFeature feature, IReadOnlyDictionary<string, string> attributes)
+        : this(
+            feature,
+            attributes.ToDictionary(
+                static item => item.Key,
+                static item => (string?)item.Value,
+                StringComparer.Ordinal),
+            replaceAll: true) {
+    }
+
+    private SetFeatureAttributesCommand(
+        MapFeature feature,
+        Dictionary<string, string?> attributes,
+        bool replaceAll) {
+        _feature = feature;
+        _attributes = attributes;
+        _replaceAll = replaceAll;
+    }
+
+    public static SetFeatureAttributesCommand CreatePatch(
+        MapFeature feature,
+        IEnumerable<KeyValuePair<string, string?>> attributes) {
+        return new SetFeatureAttributesCommand(
+            feature,
+            new Dictionary<string, string?>(attributes, StringComparer.Ordinal),
+            replaceAll: false);
+    }
+
+    public string Description => "Update feature tags";
+
+    public bool Execute(MapEditDataset dataset) {
+        if (dataset.Document is null || !dataset.Contains(_feature) || !HasChanges()) {
+            return false;
+        }
+
+        _wasDirty = dataset.Document.IsDirty;
+        _previousAttributes = new Dictionary<string, string>(_feature.Attributes, StringComparer.Ordinal);
+        ApplyAttributes(_feature, _attributes, _replaceAll);
+        dataset.RestoreDirty(true);
+        return true;
+    }
+
+    public void Undo(MapEditDataset dataset) {
+        if (_previousAttributes is null) return;
+
+        ReplaceAttributes(_feature, _previousAttributes);
+        dataset.RestoreDirty(_wasDirty);
+    }
+
+    private bool HasChanges() {
+        if (_replaceAll) {
+            return !TagsEqual(featureTags: _feature.Attributes, replacement: _attributes);
+        }
+
+        foreach (var attribute in _attributes) {
+            if (string.IsNullOrWhiteSpace(attribute.Key)) continue;
+
+            var hasCurrent = _feature.Attributes.TryGetValue(attribute.Key, out var current);
+            if (attribute.Value is null) {
+                if (hasCurrent) return true;
+            } else if (!hasCurrent || current != attribute.Value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void ApplyAttributes(
+        MapFeature feature,
+        IReadOnlyDictionary<string, string?> attributes,
+        bool replaceAll) {
+        if (replaceAll) feature.Attributes.Clear();
+        foreach (var attribute in attributes) {
+            if (string.IsNullOrWhiteSpace(attribute.Key)) continue;
+
+            if (attribute.Value is null) {
+                feature.Attributes.Remove(attribute.Key);
+            } else {
+                feature.Attributes[attribute.Key] = attribute.Value;
+            }
+        }
+    }
+
+    private static void ReplaceAttributes(MapFeature feature, IReadOnlyDictionary<string, string> attributes) {
+        feature.Attributes.Clear();
+        foreach (var attribute in attributes) feature.Attributes[attribute.Key] = attribute.Value;
+    }
+
+    private static bool TagsEqual(
+        IReadOnlyDictionary<string, string> featureTags,
+        IReadOnlyDictionary<string, string?> replacement) {
+        var normalizedReplacement = replacement
+            .Where(static item => item.Value is not null && !string.IsNullOrWhiteSpace(item.Key))
+            .OrderBy(static item => item.Key, StringComparer.Ordinal)
+            .Select(static item => KeyValuePair.Create(item.Key, item.Value!));
+        return featureTags.Count == replacement.Count(static item => item.Value is not null && !string.IsNullOrWhiteSpace(item.Key)) &&
+            featureTags.OrderBy(static item => item.Key, StringComparer.Ordinal)
+                .SequenceEqual(normalizedReplacement);
+    }
+}
+
+public sealed class SetFeatureOsmMetadataCommand : IEditCommand {
+    private readonly MapFeature _feature;
+    private readonly OsmFeatureMetadata? _metadata;
+    private OsmFeatureMetadata? _previousMetadata;
+    private bool _wasDirty;
+
+    public SetFeatureOsmMetadataCommand(MapFeature feature, OsmFeatureMetadata? metadata) {
+        _feature = feature;
+        _metadata = metadata?.Clone();
+    }
+
+    public string Description => "Update OSM metadata";
+
+    public bool Execute(MapEditDataset dataset) {
+        if (dataset.Document is null || !dataset.Contains(_feature) || MetadataEqual(_feature.Osm, _metadata)) {
+            return false;
+        }
+
+        _wasDirty = dataset.Document.IsDirty;
+        _previousMetadata = _feature.Osm?.Clone();
+        _feature.Osm = _metadata?.Clone();
+        dataset.RestoreDirty(true);
+        return true;
+    }
+
+    public void Undo(MapEditDataset dataset) {
+        _feature.Osm = _previousMetadata?.Clone();
+        dataset.RestoreDirty(_wasDirty);
+    }
+
+    private static bool MetadataEqual(OsmFeatureMetadata? left, OsmFeatureMetadata? right) {
+        if (left is null || right is null) return left is null && right is null;
+        return left.PrimitiveType == right.PrimitiveType &&
+            left.Id == right.Id &&
+            left.Version == right.Version &&
+            left.NodeReferences.SequenceEqual(right.NodeReferences);
+    }
+}
+
 public sealed record FeaturePartsSnapshot(MapFeature Feature, IReadOnlyList<IReadOnlyList<GeoPoint>> Parts);
 
 public sealed class SetFeaturePartsCommand : IEditCommand {

@@ -5,6 +5,8 @@ using WPF_OpenStreetmap_Editor.Services;
 namespace WPF_OpenStreetmap_Editor.Views;
 
 public partial class LayersWindow : Window {
+    private static LocalizationService L => LocalizationService.Instance;
+
     public LayersWindow() {
         InitializeComponent();
         ThemeService.ApplyWindowTheme(this);
@@ -16,7 +18,7 @@ public partial class LayersWindow : Window {
         var url = LayerUrlTextBox.Text?.Trim();
         var type = (LayerTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "XYZ";
         if (string.IsNullOrEmpty(url)) {
-            MessageBox.Show("请输入图层 URL", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Layers.UrlRequired"), L.GetString("Common.Settings"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -34,7 +36,7 @@ public partial class LayersWindow : Window {
 
     private void LoadSelected_Click(object sender, RoutedEventArgs e) {
         if (LayersListBox.SelectedItem is null) {
-            MessageBox.Show("请选择一个图层以加载", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Layers.SelectLayer"), L.GetString("Layers.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -48,7 +50,7 @@ public partial class LayersWindow : Window {
         }
 
         if (string.Equals(type, "WMS", StringComparison.OrdinalIgnoreCase)) {
-            MessageBox.Show("WMS 图层尚未实现，请添加 XYZ 或 TMS 瓦片图层。", "不支持的图层", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Layers.UnsupportedWms"), L.GetString("Layers.UnsupportedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -57,7 +59,7 @@ public partial class LayersWindow : Window {
             else main.LoadMapFromUrl(url);
             Close();
         } else {
-            MessageBox.Show("未能找到主窗口来加载地图", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(L.GetString("Layers.MainWindowMissing"), L.GetString("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

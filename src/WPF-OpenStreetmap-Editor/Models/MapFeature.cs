@@ -17,6 +17,15 @@ public sealed class OsmFeatureMetadata {
     public long Id { get; set; }
     public int Version { get; set; }
     public List<OsmNodeReference> NodeReferences { get; set; } = [];
+
+    public OsmFeatureMetadata Clone() {
+        return new OsmFeatureMetadata {
+            PrimitiveType = PrimitiveType,
+            Id = Id,
+            Version = Version,
+            NodeReferences = NodeReferences.ToList()
+        };
+    }
 }
 
 public sealed record OsmNodeReference(long Id, int Version, GeoPoint Point);
@@ -47,12 +56,7 @@ public sealed class MapFeature {
             GeometryType = GeometryType,
             Parts = Parts.Select(static part => part.ToList()).ToList(),
             Attributes = new Dictionary<string, string>(Attributes, StringComparer.Ordinal),
-            Osm = Osm is null ? null : new OsmFeatureMetadata {
-                PrimitiveType = Osm.PrimitiveType,
-                Id = Osm.Id,
-                Version = Osm.Version,
-                NodeReferences = Osm.NodeReferences.ToList()
-            },
+            Osm = Osm?.Clone(),
             IsHidden = IsHidden,
             IsSelected = IsSelected
         };

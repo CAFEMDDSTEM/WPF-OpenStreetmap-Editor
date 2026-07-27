@@ -22,6 +22,7 @@ public partial class App : Application {
         base.OnStartup(e);
 
         var settings = AppSettingsService.Load();
+        LocalizationService.Instance.Initialize(settings.LanguageId);
         ThemeService.Initialize(settings.ThemeId);
 
         var stopwatch = Stopwatch.StartNew();
@@ -39,8 +40,8 @@ public partial class App : Application {
             Logger.Startup($"启动诊断异常：{ex.GetType().Name}: {ex.Message}");
             splash.ApplyProgress(new StartupProgressUpdate(
                 "diagnostics-error",
-                "启动诊断",
-                "启动检查遇到异常，已写入日志并继续打开主界面",
+                LocalizationService.Instance.GetString("Startup.Diagnostics.Title"),
+                LocalizationService.Instance.GetString("Startup.Diagnostics.Error"),
                 StartupCheckState.Warning,
                 0.96));
         }

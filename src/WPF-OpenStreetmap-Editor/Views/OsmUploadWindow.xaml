@@ -54,7 +54,22 @@
 
                 <StackPanel Grid.Row="2" Margin="0,0,0,10">
                     <TextBlock Text="Changeset comment" Margin="0,0,0,4" />
-                    <ComboBox x:Name="CommentComboBox" IsEditable="True" MaxDropDownHeight="160" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox x:Name="CommentComboBox"
+                                  Grid.Column="0"
+                                  IsEditable="True"
+                                  MaxDropDownHeight="160" />
+                        <Button x:Name="AiSummaryButton"
+                                Grid.Column="1"
+                                Content="AI 生成"
+                                Padding="10,1"
+                                Margin="8,0,0,0"
+                                Click="AiSummary_Click" />
+                    </Grid>
                 </StackPanel>
 
                 <CheckBox x:Name="ReviewRequestedCheckBox"

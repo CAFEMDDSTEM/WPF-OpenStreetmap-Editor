@@ -46,7 +46,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also
 - Import `.osm`, `.pbf`, Shapefile, GeoJSON, GML, KML/KMZ, and GPX map data.
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, copy, paste, duplicate, add point features, draw line features, rotate, move, and orthogonalize features on top of imagery.
-- Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes through the built-in OpenStreetMap transfer addon.
+- Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes; an optional first-party OpenStreetMap transfer addon can add toolbar and menu entry points.
 - Use `WPF-OpenStreetmap-Editor.exe` from the command line to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
 - Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
 - Run startup diagnostics and log startup or tile-loading failures for troubleshooting.
@@ -105,7 +105,7 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 2. Open **Tools > Settings** to select an imagery source, add a custom tile URL template, or switch themes.
 3. Enter an access token in Settings when an imagery provider requires `{access_token}`. Imagery access tokens are used for the current session and are not saved to disk.
 4. Use the **Imagery** menu to add a source as a raster map layer.
-5. Use **File > Open** to import vector map data, or use the built-in OpenStreetMap transfer toolbar to choose and download an OSM bounding box.
+5. Use **File > Open** to import vector map data, or use `Ctrl+Shift+Down` to choose and download an OSM bounding box.
 6. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, drag the map to pan, and use the editor toolbar to select, box-select, hide, delete, add points, or draw lines.
 7. Use `Ctrl+C`, `Ctrl+V`, `Ctrl+Z`, and `Ctrl+Shift+D` to copy, paste, undo, and duplicate selected features.
 8. Press `R` or `M` to rotate or move selected features with the mouse, then press `Enter` or left-click to apply. In select mode, drag an already-selected feature to move the selection.

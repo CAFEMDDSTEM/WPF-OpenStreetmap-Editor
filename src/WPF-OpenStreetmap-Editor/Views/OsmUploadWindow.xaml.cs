@@ -9,17 +9,34 @@ namespace WPF_OpenStreetmap_Editor.Views;
 
 public partial class OsmUploadWindow : Window {
     private readonly Func<OsmChangeBuildResult> _previewFactory;
+    private readonly Func<MapFeature, OsmFeatureMetadata?, bool> _metadataUpdater;
+    private readonly MapDocument? _document;
+    private readonly BetterIdAiClient? _aiClient;
     private OsmChangeBuildResult _preview;
+    private CancellationTokenSource? _aiSummaryCts;
     private bool _updatingSelection;
 
     public OsmUploadWindow(OsmAccount account, OsmChangeBuildResult preview)
-        : this(account, preview, () => preview) {
+        : this(account, preview, () => preview, ApplyMetadataDirectly) {
     }
 
-    public OsmUploadWindow(OsmAccount account, OsmChangeBuildResult preview, Func<OsmChangeBuildResult> previewFactory) {
+    public OsmUploadWindow(OsmAccount account, OsmChangeBuildResult preview, Func<OsmChangeBuildResult> previewFactory)
+        : this(account, preview, previewFactory, ApplyMetadataDirectly) {
+    }
+
+    public OsmUploadWindow(
+        OsmAccount account,
+        OsmChangeBuildResult preview,
+        Func<OsmChangeBuildResult> previewFactory,
+        Func<MapFeature, OsmFeatureMetadata?, bool> metadataUpdater,
+        MapDocument? document = null,
+        BetterIdAiClient? aiClient = null) {
         InitializeComponent();
         _preview = preview;
         _previewFactory = previewFactory;
+        _metadataUpdater = metadataUpdater;
+        _document = document;
+        _aiClient = aiClient;
         AccountTextBlock.Text = $"上传到“{account.ApiBaseUrl}”    账号：{account.DisplayName}    认证：{OsmAuthenticationMethodDisplay.GetName(account.AuthenticationMethod)}";
         CommentComboBox.ItemsSource = new[] {
             "更新 OpenStreetMap 数据",
@@ -32,6 +49,11 @@ public partial class OsmUploadWindow : Window {
             "Bing aerial imagery",
             "OpenStreetMap"
         };
+        AiSummaryButton.IsEnabled = _document is not null && _aiClient is not null;
+        AiSummaryButton.ToolTip = AiSummaryButton.IsEnabled
+            ? "根据当前上传预览生成中文变更说明"
+            : "AI 生成需要从主窗口打开上传流程";
+        Closed += (_, _) => _aiSummaryCts?.Cancel();
         RefreshPreview();
     }
 
@@ -63,6 +85,8 @@ public partial class OsmUploadWindow : Window {
         if (window.ShowDialog() != true) return;
 
         try {
+            if (!_metadataUpdater(feature, window.Metadata)) return;
+
             MetadataChanged = true;
             _preview = _previewFactory();
             RefreshPreview();
@@ -70,6 +94,35 @@ public partial class OsmUploadWindow : Window {
         } catch (Exception ex) {
             StatusTextBlock.Text = ex.Message;
             MessageBox.Show(ex.Message, "刷新上传预览", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void AiSummary_Click(object sender, RoutedEventArgs e) {
+        if (_document is null || _aiClient is null) {
+            StatusTextBlock.Text = "AI 生成不可用。";
+            return;
+        }
+
+        _aiSummaryCts?.Cancel();
+        _aiSummaryCts = new CancellationTokenSource();
+        var ct = _aiSummaryCts.Token;
+
+        try {
+            AiSummaryButton.IsEnabled = false;
+            StatusTextBlock.Text = "正在请求 BetterID AI 生成变更说明...";
+            _preview = _previewFactory();
+            var summary = OsmAiChangesetSummaryBuilder.Build(_document, _preview);
+            var comment = await _aiClient.SummarizeChangesAsync(summary, ct);
+            CommentComboBox.Text = comment;
+            StatusTextBlock.Text = "AI 变更说明已生成，请检查后再上传。";
+        } catch (OperationCanceledException) {
+        } catch (Exception ex) {
+            Logger.Error("Failed to generate AI changeset summary", ex);
+            StatusTextBlock.Text = $"AI 生成失败：{ex.Message}";
+        } finally {
+            if (!ct.IsCancellationRequested) {
+                AiSummaryButton.IsEnabled = _document is not null && _aiClient is not null;
+            }
         }
     }
 
@@ -168,6 +221,21 @@ public partial class OsmUploadWindow : Window {
         return long.TryParse(element.Attribute(name)?.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? value
             : 0;
+    }
+
+    private static bool ApplyMetadataDirectly(MapFeature feature, OsmFeatureMetadata? metadata) {
+        if (MetadataEqual(feature.Osm, metadata)) return false;
+
+        feature.Osm = metadata?.Clone();
+        return true;
+    }
+
+    private static bool MetadataEqual(OsmFeatureMetadata? left, OsmFeatureMetadata? right) {
+        if (left is null || right is null) return left is null && right is null;
+        return left.PrimitiveType == right.PrimitiveType &&
+            left.Id == right.Id &&
+            left.Version == right.Version &&
+            left.NodeReferences.SequenceEqual(right.NodeReferences);
     }
 
     private sealed class ChangeItem(string operation, string primitiveType, long id, string details, MapFeature? feature) {

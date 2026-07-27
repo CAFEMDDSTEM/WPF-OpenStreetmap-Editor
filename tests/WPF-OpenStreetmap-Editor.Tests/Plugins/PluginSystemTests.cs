@@ -231,17 +231,30 @@ public class PluginSystemTests {
     }
 
     [Fact]
-    public async Task PluginHost_LoadsBuiltInBetterImeAddon() {
+    public async Task PluginHost_DoesNotInstallFirstPartyAddonsByDefault() {
         using var testDirectory = new TestDirectory();
         var pluginsDirectory = Path.Combine(testDirectory.Path, "Plugins");
         await using var host = new PluginHost(pluginsDirectory, Path.Combine(testDirectory.Path, "state.json"));
 
         await host.ReloadAsync();
-        var result = await host.ExecuteCommandAsync(
-            BuiltInPluginCatalog.BetterImePluginId,
-            BuiltInPluginCatalog.BetterImeEnableCommandId);
 
-        var plugin = Assert.Single(host.Plugins, plugin => plugin.Id == BuiltInPluginCatalog.BetterImePluginId);
+        Assert.Empty(host.Plugins);
+        Assert.Empty(Directory.EnumerateDirectories(pluginsDirectory));
+    }
+
+    [Fact]
+    public async Task PluginHost_LoadsInstalledBetterImeAddon() {
+        using var testDirectory = new TestDirectory();
+        var pluginsDirectory = Path.Combine(testDirectory.Path, "Plugins");
+        var packageDirectory = Path.Combine(pluginsDirectory, "org.wosm.better-ime");
+        testDirectory.WriteRequiredAssets(packageDirectory);
+        File.WriteAllText(Path.Combine(packageDirectory, PluginManifestReader.ManifestFileName), BetterImeAddonManifest);
+        await using var host = new PluginHost(pluginsDirectory, Path.Combine(testDirectory.Path, "state.json"));
+
+        await host.ReloadAsync();
+        var result = await host.ExecuteCommandAsync("org.wosm.better-ime", "enable");
+
+        var plugin = Assert.Single(host.Plugins, plugin => plugin.Id == "org.wosm.better-ime");
         Assert.Equal(PluginLoadStatus.Loaded, plugin.Status);
         Assert.Equal("Better IME For WOSM", plugin.Name);
         var action = Assert.Single(result.Actions);
@@ -501,6 +514,26 @@ public class PluginSystemTests {
               },
             ],
           },
+        }
+        """;
+
+    private const string BetterImeAddonManifest = """
+        {
+          schemaVersion: 1,
+          id: 'org.wosm.better-ime',
+          name: 'Better IME For WOSM',
+          version: '1.0.0',
+          icon: 'icon.png',
+          descriptionFile: 'description.md',
+          kind: 'addon',
+          contributions: {
+            commands: [
+              {
+                id: 'enable',
+                actions: [{ type: 'enableNonTextInputImeGuard', arguments: {} }]
+              }
+            ]
+          }
         }
         """;
 

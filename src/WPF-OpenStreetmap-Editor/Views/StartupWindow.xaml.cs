@@ -8,7 +8,7 @@ public partial class StartupWindow : Window {
     public StartupWindow() {
         InitializeComponent();
 
-        VersionTextBlock.Text = $"Version {GetVersionText()}";
+        VersionTextBlock.Text = LocalizationService.Instance.Format("Startup.Version", GetVersionText());
         ThemeService.ApplyWindowTheme(this);
     }
 

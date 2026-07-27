@@ -66,6 +66,22 @@ public class OsmChangeSerializerTests {
     }
 
     [Fact]
+    public void Build_DoesNotMutateDocumentWhenPreviewCreatesOsmIdentity() {
+        var document = new MapDocument();
+        var feature = new MapFeature {
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(1, 1)]]
+        };
+        document.Features.Add(feature);
+
+        var result = OsmChangeSerializer.Build(document, 10);
+
+        Assert.Equal(1, result.CreateCount);
+        Assert.Null(feature.Osm);
+        Assert.Null(document.Osm);
+    }
+
+    [Fact]
     public void Build_PositiveOsmIdWithoutOriginalDatasetWritesModify() {
         var document = new MapDocument();
         document.Features.Add(new MapFeature {
@@ -191,7 +207,8 @@ public class OsmChangeSerializerTests {
         var modifiedNode = Assert.Single(xml.Root!.Element("modify")!.Elements("node"));
         Assert.Equal("2", modifiedNode.Attribute("id")!.Value);
         Assert.Null(xml.Root.Element("modify")!.Element("way"));
-        Assert.Equal(moved, secondWay.Parts[0][0]);
+        Assert.Equal(moved, result.Dataset.Nodes[2].Point);
+        Assert.Equal(shared, secondWay.Parts[0][0]);
     }
 
     [Fact]
@@ -239,6 +256,41 @@ public class OsmChangeSerializerTests {
         Assert.Equal("10", member.Attribute("ref")!.Value);
         Assert.Contains(relation.Elements("tag"), tag =>
             tag.Attribute("k")?.Value == "name" && tag.Attribute("v")?.Value == "New");
+    }
+
+    [Fact]
+    public void Build_ModifiedRelationGeometryUpdatesOuterWayNodes() {
+        var first = new GeoPoint(1, 1);
+        var second = new GeoPoint(2, 2);
+        var moved = new GeoPoint(2.2, 2.2);
+        var third = new GeoPoint(3, 3);
+        var document = new MapDocument {
+            Osm = new OsmDataset()
+        };
+        document.Osm.Nodes[1] = new OsmNode { Id = 1, Version = 1, Point = first };
+        document.Osm.Nodes[2] = new OsmNode { Id = 2, Version = 1, Point = second };
+        document.Osm.Nodes[3] = new OsmNode { Id = 3, Version = 1, Point = third };
+        document.Osm.Ways[10] = new OsmWay { Id = 10, Version = 1, NodeIds = [1, 2, 3, 1] };
+        document.Osm.Relations[20] = new OsmRelation {
+            Id = 20,
+            Version = 3,
+            Members = [new OsmRelationMember(OsmRelationMemberType.Way, 10, "outer")],
+            Tags = new Dictionary<string, string> {
+                ["type"] = "multipolygon",
+                ["name"] = "Area"
+            }
+        };
+        var relationFeature = OsmDocumentSync.CreateRelationFeature(document.Osm, document.Osm.Relations[20])!;
+        document.Features.Add(relationFeature);
+        document.MarkClean();
+        relationFeature.Parts[0][1] = moved;
+
+        var result = OsmChangeSerializer.Build(document, 99);
+        var xml = XDocument.Parse(result.Xml);
+
+        Assert.Equal(moved, result.Dataset.Nodes[2].Point);
+        Assert.Contains(xml.Root!.Element("modify")!.Elements("node"), node => node.Attribute("id")!.Value == "2");
+        Assert.DoesNotContain(xml.Root.Element("modify")!.Elements("relation"), relation => relation.Attribute("id")!.Value == "20");
     }
 
     [Fact]

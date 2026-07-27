@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WPF_OpenStreetmap_Editor"
         xmlns:controls="clr-namespace:WPF_OpenStreetmap_Editor.Controls"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
         xmlns:iconPacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Lucide"
         mc:Ignorable="d"
-        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" PreviewKeyDown="Window_KeyDown"
+        Title="{services:Loc App.Title}" Height="1080" Width="1920" PreviewKeyDown="Window_KeyDown"
         Background="{DynamicResource Theme.WindowBackgroundBrush}"
         Foreground="{DynamicResource Theme.TextBrush}"
         UseLayoutRounding="True"
@@ -29,49 +30,50 @@
                     <Setter Property="VerticalContentAlignment" Value="Center" />
                 </Style>
             </Menu.ItemContainerStyle>
-            <MenuItem Header="文件">
-                <MenuItem Header="新建" Click="New_Click" />
-                <MenuItem Header="打开" Click="Open_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.File}">
+                <MenuItem Header="{services:Loc Main.Menu.New}" Click="New_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Open}" Click="Open_Click" />
                 <Separator />
-                <MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click" />
-                <MenuItem Header="另存为..." Click="SaveAs_Click" />
+                <MenuItem Header="{services:Loc Common.Save}" InputGestureText="Ctrl+S" Click="Save_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.SaveAs}" Click="SaveAs_Click" />
             </MenuItem>
-            <MenuItem Header="编辑">
-                <MenuItem Header="撤销" InputGestureText="Ctrl+Z" Click="Undo_Click" />
-                <MenuItem Header="重做" InputGestureText="Ctrl+Y" Click="Redo_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.Edit}">
+                <MenuItem Header="{services:Loc Main.Menu.Undo}" InputGestureText="Ctrl+Z" Click="Undo_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Redo}" InputGestureText="Ctrl+Y" Click="Redo_Click" />
                 <Separator />
-                <MenuItem Header="复制选定对象" InputGestureText="Ctrl+C" Click="CopySelected_Click" />
-                <MenuItem Header="粘贴对象" InputGestureText="Ctrl+V" Click="PasteFeatures_Click" />
-                <MenuItem Header="创建选定对象副本" InputGestureText="Ctrl+Shift+D" Click="DuplicateSelected_Click" />
-                <MenuItem Header="旋转选定对象" InputGestureText="R" Click="RotateSelected_Click" />
-                <MenuItem Header="移动选定对象" InputGestureText="M" Click="MoveSelected_Click" />
-                <MenuItem Header="直角化选定对象" InputGestureText="Q" Click="OrthogonalizeSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.CopySelected}" InputGestureText="Ctrl+C" Click="CopySelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.PasteFeatures}" InputGestureText="Ctrl+V" Click="PasteFeatures_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.DuplicateSelected}" InputGestureText="Ctrl+Shift+D" Click="DuplicateSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.RotateSelected}" InputGestureText="R" Click="RotateSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.MoveSelected}" InputGestureText="M" Click="MoveSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.OrthogonalizeSelected}" InputGestureText="Q" Click="OrthogonalizeSelected_Click" />
                 <Separator />
-                <MenuItem Header="删除选定对象" InputGestureText="Del" Click="DeleteSelected_Click" />
-                <MenuItem Header="隐藏选定对象" InputGestureText="H" Click="HideSelected_Click" />
-                <MenuItem Header="显示全部对象" Click="ShowAllFeatures_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.DeleteSelected}" InputGestureText="Del" Click="DeleteSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.HideSelected}" InputGestureText="H" Click="HideSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.ShowAll}" Click="ShowAllFeatures_Click" />
             </MenuItem>
-            <MenuItem Header="视图">
-                <MenuItem Header="显示" Click="Show_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.View}">
+                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
             </MenuItem>
-            <MenuItem x:Name="ImageryMenuItem" Header="影像">
-                <MenuItem Header="影像选项..." Click="ImagerySettings_Click" />
+            <MenuItem x:Name="ImageryMenuItem" Header="{services:Loc Main.Menu.Imagery}">
+                <MenuItem Header="{services:Loc Main.Menu.ImageryOptions}" Click="ImagerySettings_Click" />
                 <Separator />
             </MenuItem>
-            <MenuItem Header="项目">
-                <MenuItem Header="显示" Click="Show_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.Project}">
+                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
             </MenuItem>
-            <MenuItem x:Name="ToolsMenuItem" Header="工具">
-                <MenuItem Header="图层" Click="Layer_Click" />
-                <MenuItem Header="设置" Click="Settings_Click" />
+            <MenuItem x:Name="ToolsMenuItem" Header="{services:Loc Main.Menu.Tools}">
+                <MenuItem Header="{services:Loc Main.Menu.Layers}" Click="Layer_Click" />
+                <MenuItem Header="{services:Loc Common.Settings}" Click="Settings_Click" />
                 <Separator x:Name="PluginContributionsSeparator" Visibility="Collapsed" />
-                <MenuItem Header="插件..." Click="Plugins_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Plugins}" Click="Plugins_Click" />
             </MenuItem>
-            <MenuItem Header="窗口">
-                <MenuItem Header="显示" Click="Show_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.Window}">
+                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
             </MenuItem>
-            <MenuItem Header="帮助(_H)">
-                <MenuItem Header="帮助和关于..." InputGestureText="F1" Click="Help_Click" />
+            <MenuItem Header="{services:Loc Main.Menu.Help}">
+                <MenuItem Header="{services:Loc Main.Menu.HelpAbout}" InputGestureText="F1" Click="Help_Click" />
             </MenuItem>
         </Menu>
 
@@ -82,10 +84,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Open_Click" ToolTip="导入地图数据">
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Open_Click" ToolTip="{services:Loc Main.Tooltip.Import}">
                     <iconPacks:PackIconLucide Kind="FolderOpen" Width="18" Height="18" />
                 </Button>
-                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Save_Click" ToolTip="保存地图 (Ctrl+S)">
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Save_Click" ToolTip="{services:Loc Main.Tooltip.SaveMap}">
                     <iconPacks:PackIconLucide Kind="Save" Width="18" Height="18" />
                 </Button>
                 <StackPanel x:Name="PluginToolbarPanel"
@@ -114,22 +116,22 @@
 
             <!-- 编辑工具使用固定尺寸，避免模式切换时改变地图布局。 -->
             <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="4">
-                <Button x:Name="PanToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="PanTool_Click" ToolTip="拖动地图">
+                <Button x:Name="PanToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="PanTool_Click" ToolTip="{services:Loc Main.Tooltip.Pan}">
                     <iconPacks:PackIconLucide Kind="Hand" Width="21" Height="21" />
                 </Button>
-                <Button x:Name="SelectToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="SelectTool_Click" ToolTip="选择对象 (S)">
+                <Button x:Name="SelectToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="SelectTool_Click" ToolTip="{services:Loc Main.Tooltip.Select}">
                     <iconPacks:PackIconLucide Kind="MousePointer2" Width="21" Height="21" />
                 </Button>
-                <Button x:Name="BoxSelectToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="BoxSelectTool_Click" ToolTip="框选工具 (V)">
+                <Button x:Name="BoxSelectToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="BoxSelectTool_Click" ToolTip="{services:Loc Main.Tooltip.BoxSelect}">
                     <iconPacks:PackIconLucide Kind="LassoSelect" Width="21" Height="21" />
                 </Button>
-                <Button x:Name="DrawLineToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="DrawLineTool_Click" ToolTip="画线模式 (A)">
+                <Button x:Name="DrawLineToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="DrawLineTool_Click" ToolTip="{services:Loc Main.Tooltip.DrawLine}">
                     <iconPacks:PackIconLucide Kind="PenLine" Width="21" Height="21" />
                 </Button>
-                <Button Width="44" Height="44" Margin="2" Padding="0" Click="AddNode_Click" ToolTip="在地图中心添加节点 (Ins)">
+                <Button Width="44" Height="44" Margin="2" Padding="0" Click="AddNode_Click" ToolTip="{services:Loc Main.Tooltip.AddNode}">
                     <iconPacks:PackIconLucide Kind="MapPinPlus" Width="21" Height="21" />
                 </Button>
-                <Button Width="44" Height="44" Margin="2" Padding="0" Click="HideSelected_Click" ToolTip="隐藏选定对象 (H)">
+                <Button Width="44" Height="44" Margin="2" Padding="0" Click="HideSelected_Click" ToolTip="{services:Loc Main.Tooltip.HideSelected}">
                     <iconPacks:PackIconLucide Kind="EyeOff" Width="21" Height="21" />
                 </Button>
             </StackPanel>
@@ -142,7 +144,7 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
-                    <TextBlock VerticalAlignment="Center" Margin="0,0,6,0">缩放:</TextBlock>
+                    <TextBlock VerticalAlignment="Center" Margin="0,0,6,0" Text="{services:Loc Main.Zoom}" />
                     <TextBox x:Name="ZoomTextBox" Width="48" VerticalAlignment="Center" Text="2" IsReadOnly="True" HorizontalContentAlignment="Center" />
                     <Button x:Name="ZoomInButton" Content="+" Width="28" Height="22" Margin="4,0,0,0" Click="ZoomIn_Click" />
                     <Button x:Name="ZoomOutButton" Content="-" Width="28" Height="22" Margin="2,0,0,0" Click="ZoomOut_Click" />
@@ -214,15 +216,15 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="图层" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="{services:Loc Main.Layers.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                             <TextBlock x:Name="ZoomLimitTextBlock"
                                        Grid.Column="1"
                                        Margin="10,0,8,0"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
                                        Foreground="{DynamicResource Theme.MutedTextBrush}" />
-                            <Button Grid.Column="2" Content="设置" Padding="8,1" Click="ImagerySettings_Click" />
-                            <Button Grid.Column="3" Content="移除" Margin="6,0,0,0" Padding="8,1" Click="RemoveImageLayer_Click" />
+                            <Button Grid.Column="2" Content="{services:Loc Common.Settings}" Padding="8,1" Click="ImagerySettings_Click" />
+                            <Button Grid.Column="3" Content="{services:Loc Common.Remove}" Margin="6,0,0,0" Padding="8,1" Click="RemoveImageLayer_Click" />
                         </Grid>
                         <Border x:Name="SelectedLayerOptionsPanel"
                                 DockPanel.Dock="Bottom"
@@ -234,7 +236,7 @@
                                 Background="{DynamicResource Theme.SurfaceAltBrush}">
                             <StackPanel>
                                 <CheckBox x:Name="SelectedLayerVisibilityCheckBox"
-                                          Content="显示图层"
+                                          Content="{services:Loc Main.Layers.ShowLayer}"
                                           Margin="0,0,0,6"
                                           VerticalAlignment="Center"
                                           Click="SelectedLayerVisibilityCheckBox_Click" />
@@ -244,7 +246,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
-                                               Text="不透明度"
+                                               Text="{services:Loc Main.Layers.Opacity}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource Theme.MutedTextBrush}" />
                                     <TextBlock x:Name="LayerOpacityValueTextBlock"
@@ -300,7 +302,7 @@
                                                 Margin="2,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Cursor="SizeAll"
-                                                ToolTip="拖动排序">
+                                                ToolTip="{services:Loc Main.Tooltip.DragSort}">
                                             <iconPacks:PackIconLucide Kind="GripVertical"
                                                                       Width="15"
                                                                       Height="15"
@@ -310,7 +312,7 @@
                                                      GroupName="PrimaryMapLayer"
                                                      IsChecked="{Binding IsPrimary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      VerticalAlignment="Center"
-                                                     ToolTip="主图层"
+                                                     ToolTip="{services:Loc Main.Tooltip.PrimaryLayer}"
                                                      Click="PrimaryLayer_Click" />
                                         <Button Grid.Column="2"
                                                 Content="{Binding VisibilityLabel}"
@@ -350,9 +352,72 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="地图要素" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="{services:Loc Main.Features.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                             <TextBlock x:Name="FeatureCountTextBlock" Grid.Column="1" Foreground="{DynamicResource Theme.MutedTextBrush}" />
                         </Grid>
+                        <Expander x:Name="AiTagAssistantExpander"
+                                  DockPanel.Dock="Top"
+                                  Header="{services:Loc Main.AiTags.Header}"
+                                  Margin="8,0,8,6"
+                                  Visibility="Collapsed"
+                                  IsExpanded="False">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Text="{services:Loc Main.AiTags.Description}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource Theme.MutedTextBrush}"
+                                           Margin="0,0,0,6" />
+                                <TextBox x:Name="AiTagDescriptionTextBox"
+                                         Height="64"
+                                         MaxLength="1200"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Margin="0,0,0,6" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Button x:Name="AiTagSuggestButton"
+                                            Content="{services:Loc Main.AiTags.Suggest}"
+                                            Padding="10,2"
+                                            Click="AiTagSuggest_Click" />
+                                    <Button x:Name="AiTagApplyButton"
+                                            Content="{services:Loc Main.AiTags.ApplySelected}"
+                                            Padding="10,2"
+                                            Margin="8,0,0,0"
+                                            IsEnabled="False"
+                                            Click="AiTagApply_Click" />
+                                </StackPanel>
+                                <TextBlock x:Name="AiTagStatusTextBlock"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource Theme.MutedTextBrush}"
+                                           Margin="0,0,0,6" />
+                                <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl x:Name="AiTagSuggestionsItemsControl">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{DynamicResource Theme.BorderBrush}"
+                                                        BorderThickness="0,1,0,0"
+                                                        Padding="0,6">
+                                                    <CheckBox IsChecked="{Binding Selected, Mode=TwoWay}"
+                                                              Click="AiTagSuggestionCheckBox_Click">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding ProposedText}"
+                                                                       FontFamily="Consolas"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding DetailText}"
+                                                                       Foreground="{DynamicResource Theme.MutedTextBrush}"
+                                                                       TextWrapping="Wrap"
+                                                                       Margin="0,2,0,0" />
+                                                            <TextBlock Text="{Binding Reason}"
+                                                                       TextWrapping="Wrap"
+                                                                       Margin="0,2,0,0" />
+                                                        </StackPanel>
+                                                    </CheckBox>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Expander>
                         <DataGrid x:Name="FeatureDataGrid"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -364,9 +429,9 @@
                                   ScrollViewer.CanContentScroll="True"
                                   SelectionChanged="FeatureDataGrid_SelectionChanged">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="类型" Binding="{Binding GeometryType}" Width="80" />
+                                <DataGridTextColumn Header="{services:Loc Main.Features.GeometryType}" Binding="{Binding GeometryType}" Width="80" />
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*" />
-                                <DataGridCheckBoxColumn Header="隐藏" Binding="{Binding IsHidden}" Width="54" />
+                                <DataGridCheckBoxColumn Header="{services:Loc Main.Features.Hidden}" Binding="{Binding IsHidden}" Width="54" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>

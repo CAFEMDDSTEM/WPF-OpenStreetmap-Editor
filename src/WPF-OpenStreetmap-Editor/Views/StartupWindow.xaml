@@ -1,7 +1,8 @@
 <Window x:Class="WPF_OpenStreetmap_Editor.Views.StartupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="WPF OpenStreetmap Editor"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+        Title="{services:Loc App.Title}"
         Width="760"
         Height="500"
         ResizeMode="NoResize"
@@ -34,7 +35,7 @@
                                FontSize="32"
                                FontWeight="Bold"
                                Foreground="{DynamicResource Theme.TextBrush}" />
-                    <TextBlock Text="OpenStreetMap Editor"
+                    <TextBlock Text="{services:Loc App.Title}"
                                Margin="1,2,0,0"
                                FontSize="16"
                                Foreground="{DynamicResource Theme.TextBrush}" />
@@ -47,7 +48,7 @@
                 <StackPanel Grid.Row="1"
                             VerticalAlignment="Center">
                     <TextBlock x:Name="StatusTitleTextBlock"
-                               Text="正在启动"
+                               Text="{services:Loc Startup.Starting}"
                                FontSize="15"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource Theme.TextBrush}"
@@ -58,7 +59,7 @@
                                FontSize="12"
                                LineHeight="18"
                                Foreground="{DynamicResource Theme.MutedTextBrush}"
-                               Text="正在准备应用..."
+                               Text="{services:Loc Startup.Preparing}"
                                TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -67,7 +68,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="启动进度"
+                    <TextBlock Text="{services:Loc Startup.Progress}"
                                FontSize="11"
                                Foreground="{DynamicResource Theme.MutedTextBrush}" />
                     <TextBlock x:Name="PercentTextBlock"

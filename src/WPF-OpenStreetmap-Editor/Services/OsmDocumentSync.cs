@@ -1,3 +1,4 @@
+using System.IO;
 using WPF_OpenStreetmap_Editor.Models;
 
 namespace WPF_OpenStreetmap_Editor.Services;
@@ -183,7 +184,7 @@ internal static class OsmDocumentSync {
                 ApplyWayFeature(document, dataset, feature);
                 break;
             case OsmPrimitiveType.Relation:
-                ApplyRelationFeature(dataset, feature);
+                ApplyRelationFeature(document, dataset, feature);
                 break;
         }
     }
@@ -245,12 +246,13 @@ internal static class OsmDocumentSync {
             : feature.Osm.NodeReferences.Count > 0
                 ? feature.Osm.NodeReferences
                 : CreateNodeReferences(dataset, way.NodeIds);
-        way.NodeIds = ReconcileWayNodes(dataset, feature.Parts[0], originalFeature, originalReferences);
+        var originalPart = originalFeature?.Parts.Count == 1 ? originalFeature.Parts[0] : null;
+        way.NodeIds = ReconcileWayNodes(dataset, feature.Parts[0], originalPart, originalReferences);
         way.Tags = OsmDataset.CopyTags(feature.Attributes);
         feature.Osm.NodeReferences = CreateNodeReferences(dataset, way.NodeIds);
     }
 
-    private static void ApplyRelationFeature(OsmDataset dataset, MapFeature feature) {
+    private static void ApplyRelationFeature(MapDocument document, OsmDataset dataset, MapFeature feature) {
         if (feature.Osm is null) return;
 
         if (!dataset.Relations.TryGetValue(feature.Osm.Id, out var relation)) {
@@ -262,12 +264,34 @@ internal static class OsmDocumentSync {
         }
 
         relation.Tags = OsmDataset.CopyTags(feature.Attributes);
+        if (!HasRelationGeometryChange(document, dataset, feature, relation)) return;
+
+        var outerWays = GetRenderableOuterWays(dataset, relation).ToList();
+        if (outerWays.Count != feature.Parts.Count) {
+            throw new InvalidDataException(
+                $"Relation {relation.Id} geometry has {feature.Parts.Count:N0} editable parts but {outerWays.Count:N0} outer way members.");
+        }
+
+        document.OriginalFeatures.TryGetValue(feature.Id, out var originalFeature);
+        for (var i = 0; i < outerWays.Count; i++) {
+            var part = feature.Parts[i];
+            if (part.Count < 4 || part[0] != part[^1]) {
+                throw new InvalidDataException($"Relation {relation.Id} part {i + 1:N0} must be a closed ring.");
+            }
+
+            var way = outerWays[i];
+            var originalPart = originalFeature is not null && i < originalFeature.Parts.Count
+                ? originalFeature.Parts[i]
+                : null;
+            var originalReferences = CreateNodeReferences(dataset, way.NodeIds);
+            way.NodeIds = ReconcileWayNodes(dataset, part, originalPart, originalReferences);
+        }
     }
 
     private static List<long> ReconcileWayNodes(
         OsmDataset dataset,
         IReadOnlyList<GeoPoint> points,
-        MapFeature? originalFeature,
+        IReadOnlyList<GeoPoint>? originalPoints,
         IReadOnlyList<OsmNodeReference> originalReferences) {
         var matchedNodes = OsmNodeReferenceMatcher.MatchEditedWay(points, originalReferences);
         var nodeIds = new List<long>(points.Count);
@@ -289,7 +313,7 @@ internal static class OsmDocumentSync {
                     dataset.Nodes[nodeId] = node;
                 }
 
-                if (WasMatchedPointEdited(originalFeature, match, points[i])) {
+                if (WasMatchedPointEdited(originalPoints, match, points[i])) {
                     node.Point = points[i];
                 }
 
@@ -306,11 +330,14 @@ internal static class OsmDocumentSync {
         return nodeIds;
     }
 
-    private static bool WasMatchedPointEdited(MapFeature? originalFeature, OsmNodeReferenceMatch match, GeoPoint currentPoint) {
-        if (originalFeature?.Parts.Count == 1 &&
+    private static bool WasMatchedPointEdited(
+        IReadOnlyList<GeoPoint>? originalPoints,
+        OsmNodeReferenceMatch match,
+        GeoPoint currentPoint) {
+        if (originalPoints is not null &&
             match.OriginalIndex >= 0 &&
-            match.OriginalIndex < originalFeature.Parts[0].Count) {
-            return originalFeature.Parts[0][match.OriginalIndex] != currentPoint;
+            match.OriginalIndex < originalPoints.Count) {
+            return originalPoints[match.OriginalIndex] != currentPoint;
         }
 
         return match.Reference.Point != currentPoint;
@@ -404,6 +431,41 @@ internal static class OsmDocumentSync {
         return relation.Tags.TryGetValue("type", out var type) &&
             (string.Equals(type, "multipolygon", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(type, "boundary", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasRelationGeometryChange(
+        MapDocument document,
+        OsmDataset dataset,
+        MapFeature feature,
+        OsmRelation relation) {
+        if (document.OriginalFeatures.TryGetValue(feature.Id, out var originalFeature)) {
+            return !PartsEqual(feature.Parts, originalFeature.Parts);
+        }
+
+        var relationFeature = CreateRelationFeature(dataset, relation);
+        return relationFeature is not null && !PartsEqual(feature.Parts, relationFeature.Parts);
+    }
+
+    private static IEnumerable<OsmWay> GetRenderableOuterWays(OsmDataset dataset, OsmRelation relation) {
+        foreach (var member in relation.Members) {
+            if (member.Type != OsmRelationMemberType.Way ||
+                string.Equals(member.Role, "inner", StringComparison.OrdinalIgnoreCase) ||
+                !dataset.Ways.TryGetValue(member.Id, out var way)) {
+                continue;
+            }
+
+            var points = ResolveWayPoints(dataset, way.NodeIds);
+            if (points.Count > 3 && points[0] == points[^1]) yield return way;
+        }
+    }
+
+    private static bool PartsEqual(IReadOnlyList<List<GeoPoint>> left, IReadOnlyList<List<GeoPoint>> right) {
+        if (left.Count != right.Count) return false;
+        for (var i = 0; i < left.Count; i++) {
+            if (!left[i].SequenceEqual(right[i])) return false;
+        }
+
+        return true;
     }
 
     private static void RefreshFeatureGeometries(MapDocument document, OsmDataset dataset) {

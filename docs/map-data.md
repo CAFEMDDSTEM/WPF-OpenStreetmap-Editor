@@ -2,7 +2,7 @@
 
 WOSM can render raster imagery and a vector document at the same time. Raster
 layers come from imagery sources, while vector documents come from local files
-or the built-in OpenStreetMap transfer addon.
+or OpenStreetMap transfer workflows.
 
 ## Supported formats
 
@@ -70,12 +70,13 @@ KMZ.
 
 ## OpenStreetMap transfer
 
-The built-in OpenStreetMap transfer addon adds toolbar and Tools menu commands
+OpenStreetMap transfer is available from the keyboard shortcuts below. The
+optional first-party transfer addon can also add toolbar and Tools menu commands
 for download, upload, and account management.
 
 To download from OSM:
 
-1. Use the OSM download toolbar button, **Tools > Download OSM data**, or `Ctrl+Shift+Down`.
+1. Use `Ctrl+Shift+Down`, or use the OSM download toolbar/menu command when the optional transfer addon is installed.
 2. In the download window, pan or zoom the map to the area you need.
 3. Drag a bounding box and confirm the download.
 
@@ -84,9 +85,9 @@ Downloaded data replaces the current unsaved vector document after confirmation.
 
 To upload to OSM:
 
-1. Configure an OSM account in **Tools > OSM accounts**.
+1. Configure an OSM account from the upload prompt, or use **Tools > OSM accounts** when the optional transfer addon is installed.
 2. Review the current document changes.
-3. Use the OSM upload toolbar button, **Tools > Upload to OSM**, or `Ctrl+Shift+Up`.
+3. Use `Ctrl+Shift+Up`, or use the OSM upload toolbar/menu command when the optional transfer addon is installed.
 4. Enter a changeset comment and confirm the upload preview.
 
 Uploads are built from the current document as OSM API 0.6 changes. WOSM

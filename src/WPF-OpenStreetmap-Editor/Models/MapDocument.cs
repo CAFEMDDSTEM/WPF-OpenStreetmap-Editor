@@ -38,15 +38,14 @@ public sealed class MapDocument {
         _spatialIndex = null;
     }
 
-    public void MarkClean() {
-        _originalFeatures = Features.ToDictionary(
-            static feature => feature.Id,
-            static feature => feature.Clone(),
-            StringComparer.Ordinal);
-        _originalOsm = Osm?.Clone();
-        foreach (var feature in Features) {
-            feature.IsSelected = false;
-        }
+    public void MarkClean(bool updateOsmHistory = true) {
+        if (updateOsmHistory) CaptureOsmHistory();
+        ClearSelection();
+        IsDirty = false;
+    }
+
+    public void MarkSaved() {
+        ClearSelection();
         IsDirty = false;
     }
 
@@ -60,5 +59,37 @@ public sealed class MapDocument {
             feature.Osm = null;
         }
         _originalOsm = null;
+    }
+
+    internal MapDocument CreateOsmProjection() {
+        var projection = new MapDocument {
+            Name = Name,
+            SourcePath = SourcePath,
+            SourceFormat = SourceFormat,
+            Osm = Osm?.Clone(),
+            IsDirty = IsDirty,
+            SkippedFeatureCount = SkippedFeatureCount
+        };
+        projection.Features.AddRange(Features.Select(static feature => feature.Clone()));
+        projection._originalFeatures = _originalFeatures.ToDictionary(
+            static item => item.Key,
+            static item => item.Value.Clone(),
+            StringComparer.Ordinal);
+        projection._originalOsm = _originalOsm?.Clone();
+        return projection;
+    }
+
+    private void CaptureOsmHistory() {
+        _originalFeatures = Features.ToDictionary(
+            static feature => feature.Id,
+            static feature => feature.Clone(),
+            StringComparer.Ordinal);
+        _originalOsm = Osm?.Clone();
+    }
+
+    private void ClearSelection() {
+        foreach (var feature in Features) {
+            feature.IsSelected = false;
+        }
     }
 }

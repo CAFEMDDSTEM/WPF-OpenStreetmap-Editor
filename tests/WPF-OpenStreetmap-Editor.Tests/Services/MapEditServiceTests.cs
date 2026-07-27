@@ -215,6 +215,60 @@ public class MapEditServiceTests {
         Assert.Equal(0, feature.Parts[0][0].Latitude, 8);
     }
 
+    [Fact]
+    public void SetFeatureAttributesCommand_UndoRestoresTagsAndDirtyState() {
+        var feature = CreatePoint("feature", 1);
+        feature.Attributes["name"] = "Old";
+        feature.Attributes["note"] = "remove me";
+        var document = new MapDocument();
+        document.Features.Add(feature);
+        document.MarkClean();
+        var editor = new EditorSession();
+        editor.ReplaceDocument(document);
+
+        Assert.True(editor.Execute(SetFeatureAttributesCommand.CreatePatch(
+            feature,
+            new Dictionary<string, string?> {
+                ["name"] = "New",
+                ["amenity"] = "bench",
+                ["note"] = null
+            })));
+
+        Assert.True(document.IsDirty);
+        Assert.Equal("New", feature.Attributes["name"]);
+        Assert.Equal("bench", feature.Attributes["amenity"]);
+        Assert.False(feature.Attributes.ContainsKey("note"));
+
+        Assert.True(editor.Undo());
+        Assert.False(document.IsDirty);
+        Assert.Equal("Old", feature.Attributes["name"]);
+        Assert.Equal("remove me", feature.Attributes["note"]);
+        Assert.False(feature.Attributes.ContainsKey("amenity"));
+    }
+
+    [Fact]
+    public void SetFeatureOsmMetadataCommand_UndoRestoresMetadata() {
+        var feature = CreatePoint("feature", 1);
+        feature.Osm = new OsmFeatureMetadata { PrimitiveType = OsmPrimitiveType.Node, Id = 1, Version = 2 };
+        var document = new MapDocument();
+        document.Features.Add(feature);
+        document.MarkClean();
+        var editor = new EditorSession();
+        editor.ReplaceDocument(document);
+
+        Assert.True(editor.Execute(new SetFeatureOsmMetadataCommand(
+            feature,
+            new OsmFeatureMetadata { PrimitiveType = OsmPrimitiveType.Node, Id = 10, Version = 3 })));
+
+        Assert.True(document.IsDirty);
+        Assert.Equal(10, feature.Osm!.Id);
+
+        Assert.True(editor.Undo());
+        Assert.False(document.IsDirty);
+        Assert.Equal(1, feature.Osm!.Id);
+        Assert.Equal(2, feature.Osm.Version);
+    }
+
     private static MapFeature CreatePoint(string id, double coordinate) {
         return new MapFeature {
             Id = id,

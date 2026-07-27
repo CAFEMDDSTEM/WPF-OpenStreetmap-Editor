@@ -16,7 +16,7 @@ WOSM 是 WPF OpenStreetMap Editor 的简称，是一个使用 C# / WPF 编写的
 - 导入 `.osm`、`.pbf`、Shapefile、GeoJSON、GML、KML/KMZ 和 GPX 地图数据。
 - 将编辑后的数据保存为 GeoJSON、OpenStreetMap XML、GPX、KML 或 GML。PBF、Shapefile 和 KMZ 当前仅支持导入。
 - 在影像上选择、框选、隐藏、删除、复制、粘贴、创建副本、添加点、绘制线、旋转、移动和直角化要素。
-- 通过内置 OpenStreetMap 传输插件按框选范围下载 OSM 数据，并在预览后上传创建、修改和删除变更。
+- 按框选范围下载 OSM 数据，并在预览后上传创建、修改和删除变更；可选的第一方 OpenStreetMap 传输插件可提供工具栏和菜单入口。
 - 将下载的瓦片缓存到应用运行目录。
 - 使用 `layers.json` 保存可复用的图层 URL。
 - 记录瓦片请求和加载错误，便于排查问题。
@@ -66,7 +66,7 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 2. 打开 **工具 > 设置** 选择影像源、添加自定义瓦片 URL 模板或切换主题。
 3. 如果影像服务商需要 `{access_token}`，请在设置中填写访问令牌。影像访问令牌仅用于当前会话，不会写入磁盘。
 4. 使用 **影像** 菜单将图源添加为栅格地图图层。
-5. 使用 **文件 > 打开** 导入矢量地图数据，或使用内置 OpenStreetMap 传输工具栏选择并下载 OSM 范围。
+5. 使用 **文件 > 打开** 导入矢量地图数据，或按 `Ctrl+Shift+Down` 选择并下载 OSM 范围。
 6. 使用鼠标滚轮、`+` / `-`，或 `Page Up` / `Page Down` 缩放；拖动地图平移；使用编辑工具栏选择、框选、隐藏、删除、添加点或绘制线。
 7. 使用 `Ctrl+C`、`Ctrl+V`、`Ctrl+Z` 和 `Ctrl+Shift+D` 复制、粘贴、撤销和创建选定要素副本。
 8. 按 `R` 或 `M` 后用鼠标带动旋转或移动选定要素，再按 `Enter` 或左键应用。在选择模式下，按住已选要素并拖动也可以移动当前选择。

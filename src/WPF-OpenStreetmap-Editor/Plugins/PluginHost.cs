@@ -24,9 +24,9 @@ public sealed class PluginDescriptor {
     public string Version => Manifest?.Version ?? "";
     public string Kind => Manifest?.Kind ?? "unknown";
     public string StatusText => Status switch {
-        PluginLoadStatus.Loaded => "已加载",
-        PluginLoadStatus.Untrusted => "需要确认原生 DLL 风险",
-        _ => $"加载失败: {Error}"
+        PluginLoadStatus.Loaded => LocalizationService.Instance.GetString("Plugins.Status.Loaded"),
+        PluginLoadStatus.Untrusted => LocalizationService.Instance.GetString("Plugins.Status.Untrusted"),
+        _ => LocalizationService.Instance.Format("Plugins.Status.Failed", Error)
     };
 }
 
@@ -86,7 +86,6 @@ public sealed class PluginHost : IAsyncDisposable {
             await DisposeLoadedPluginsAsync().ConfigureAwait(false);
             _descriptors.Clear();
             Directory.CreateDirectory(_pluginsDirectory);
-            BuiltInPluginCatalog.EnsureInstalled(_pluginsDirectory);
 
             var seenIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (var packageDirectory in Directory.EnumerateDirectories(_pluginsDirectory).Order(StringComparer.Ordinal)) {

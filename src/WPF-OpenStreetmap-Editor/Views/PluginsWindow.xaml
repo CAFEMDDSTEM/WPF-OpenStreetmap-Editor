@@ -1,7 +1,8 @@
 <Window x:Class="WPF_OpenStreetmap_Editor.Views.PluginsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="插件" Height="570" Width="760"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+        Title="{services:Loc Plugins.Title}" Height="570" Width="760"
         MinHeight="360" MinWidth="620"
         Background="{DynamicResource Theme.WindowBackgroundBrush}"
         Foreground="{DynamicResource Theme.TextBrush}"
@@ -16,7 +17,7 @@
 
         <TextBlock Grid.Row="0"
                    Margin="0,0,0,10"
-                   Text="原生 DLL 插件在主进程内运行；文件变化后必须重新确认。进程插件在 AppContainer 中隔离。"
+                   Text="{services:Loc Plugins.Description}"
                    TextWrapping="Wrap" />
 
         <DataGrid x:Name="PluginsDataGrid"
@@ -27,10 +28,10 @@
                   SelectionMode="Single"
                   SelectionChanged="PluginsDataGrid_SelectionChanged">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="2*" />
-                <DataGridTextColumn Header="版本" Binding="{Binding Version}" Width="*" />
-                <DataGridTextColumn Header="类型" Binding="{Binding Kind}" Width="*" />
-                <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="2*" />
+                <DataGridTextColumn Header="{services:Loc Plugins.Column.Name}" Binding="{Binding Name}" Width="2*" />
+                <DataGridTextColumn Header="{services:Loc Plugins.Column.Version}" Binding="{Binding Version}" Width="*" />
+                <DataGridTextColumn Header="{services:Loc Plugins.Column.Type}" Binding="{Binding Kind}" Width="*" />
+                <DataGridTextColumn Header="{services:Loc Plugins.Column.Status}" Binding="{Binding StatusText}" Width="2*" />
             </DataGrid.Columns>
         </DataGrid>
 
@@ -76,16 +77,16 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="安装..." Width="88" Margin="0,0,8,0" Click="Install_Click" />
+            <Button Grid.Column="0" Content="{services:Loc Plugins.Install}" Width="88" Margin="0,0,8,0" Click="Install_Click" />
             <Button x:Name="TrustButton"
                     Grid.Column="1"
-                    Content="信任并加载"
+                    Content="{services:Loc Plugins.TrustAndLoad}"
                     Width="104"
                     Margin="0,0,8,0"
                     IsEnabled="False"
                     Click="Trust_Click" />
-            <Button Grid.Column="2" Content="重新扫描" Width="88" Click="Reload_Click" />
-            <Button Grid.Column="4" Content="关闭" Width="88" IsCancel="True" />
+            <Button Grid.Column="2" Content="{services:Loc Plugins.Reload}" Width="88" Click="Reload_Click" />
+            <Button Grid.Column="4" Content="{services:Loc Common.Close}" Width="88" IsCancel="True" />
         </Grid>
     </Grid>
 </Window>

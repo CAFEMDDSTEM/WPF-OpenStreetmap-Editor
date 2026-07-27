@@ -78,6 +78,9 @@ public partial class MainWindow : Window {
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
     private MapLayer? _stagingLayer;
+    private string? _aiTagFeatureId;
+    private CancellationTokenSource? _aiTagCts;
+    private IReadOnlyList<AiTagSuggestionItem> _aiTagSuggestions = [];
     private AppSettings _settings = AppSettingsService.Load();
     private MapImageLayer? _activeImageLayer;
     private TileSourcePreset _activeSource = TileSourcePreset.CreateDefaults()[0];
@@ -98,9 +101,12 @@ public partial class MainWindow : Window {
     private const double FeaturePasteOffsetPixels = 24.0;
     private const double MinimumCommittedRotationDegrees = 0.01;
     private const double MinimumCommittedMovePixels = 0.5;
+    private const string OsmTransferPluginId = "org.openstreetmap.transfer";
+    private const string OsmTransferPluginName = "OpenStreetMap transfer";
     private const double PanPrefetchDistance = GeoConverter.TileSize * 0.75;
     private static readonly SemaphoreSlim TileThrottle = new(MaxConcurrentTileLoads, MaxConcurrentTileLoads);
     private static readonly HttpClient OsmHttpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
+    private static readonly BetterIdAiClient BetterIdAi = new(OsmHttpClient);
 
     public MainWindow() : this(null, null, null) {
     }
@@ -128,6 +134,7 @@ public partial class MainWindow : Window {
             _nonTextInputImeGuard?.Dispose();
             _nonTextInputImeGuard = null;
             _tileSourceCts?.Cancel();
+            _aiTagCts?.Cancel();
             _layerStackRefreshCts?.Cancel();
             _renderDebounceCts?.Cancel();
             _renderCts?.Cancel();
@@ -146,10 +153,11 @@ public partial class MainWindow : Window {
         UpdateVectorLayer();
         RefreshPluginMenus();
         RefreshPluginToolbar();
-        await ExecuteDefaultPluginCommandAsync(
-            BuiltInPluginCatalog.BetterImePluginId,
-            "Better IME For WOSM",
-            BuiltInPluginCatalog.BetterImeEnableCommandId);
+        try {
+            _nonTextInputImeGuard ??= NonTextInputImeGuard.Attach(this);
+        } catch (Exception ex) {
+            Logger.Error("Failed to enable non-text input IME guard", ex);
+        }
         try {
             await ApplyPluginActionsAsync(_startupPluginActions);
             if (_pluginHost is not null) {
@@ -891,6 +899,7 @@ public partial class MainWindow : Window {
         AppSettingsService.EnsureDefaults(_settings);
         AppSettingsService.Save(_settings);
         ThemeService.ApplyTheme(_settings.ThemeId);
+        LocalizationService.Instance.ApplyLanguage(_settings.LanguageId);
         TileImageLoader.Shared.Clear();
         RefreshImageryMenu();
         var activeLayer = _settings.GetActiveLayer();
@@ -1021,18 +1030,29 @@ public partial class MainWindow : Window {
         }
     }
 
-    private async Task ExecuteDefaultPluginCommandAsync(string pluginId, string pluginName, string commandId) {
-        if (_pluginHost is null) return;
+    private async Task<bool> TryExecuteOptionalPluginCommandAsync(
+        string pluginId,
+        string pluginName,
+        string commandId,
+        object? payload = null) {
+        if (_pluginHost?.Plugins.Any(plugin =>
+                plugin.Id == pluginId &&
+                plugin.Status == PluginLoadStatus.Loaded) != true) {
+            return false;
+        }
 
         try {
             var result = await _pluginHost.ExecuteCommandAsync(
                 pluginId,
-                commandId);
+                commandId,
+                payload);
             foreach (var action in result.Actions) {
                 await ApplyPluginActionAsync(pluginName, action);
             }
+            return true;
         } catch (Exception ex) {
-            Logger.Error($"Default plugin '{pluginId}' command '{commandId}' failed", ex);
+            Logger.Error($"Optional plugin '{pluginId}' command '{commandId}' failed", ex);
+            return false;
         }
     }
 
@@ -1319,6 +1339,9 @@ public partial class MainWindow : Window {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.Control && e.Key == Key.V) {
             PasteFeatures();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Control && e.Key == Key.T) {
+            EditTagsSelectedFeatures();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.Control && e.Key == Key.Z) {
             UndoLastEdit();
@@ -1737,6 +1760,8 @@ public partial class MainWindow : Window {
 
     private void DuplicateSelected_Click(object sender, RoutedEventArgs e) => DuplicateSelectedFeatures();
 
+    private void EditTagsSelected_Click(object sender, RoutedEventArgs e) => EditTagsSelectedFeatures();
+
     private void RotateSelected_Click(object sender, RoutedEventArgs e) {
         if (_featureRotation is null) BeginFeatureRotation();
         else CommitFeatureRotation();
@@ -1973,6 +1998,29 @@ public partial class MainWindow : Window {
         if (selectedFeatures.Count == 0) return;
 
         InsertFeatureCopies(selectedFeatures, offsetMultiplier: 1);
+    }
+
+    private void EditTagsSelectedFeatures() {
+        if (_featureRotation is not null) CommitFeatureRotation();
+        if (_featureMove is not null) CommitFeatureMove();
+        if (Editor.HasDraftLine) FinishDraftLine();
+
+        var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
+        if (selectedFeatures.Count == 0) return;
+        if (selectedFeatures.Count > 1) {
+            MessageBox.Show("请选择一个对象编辑标签。", "编辑标签", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var feature = selectedFeatures[0];
+        var window = new Views.FeatureTagsWindow(feature) { Owner = this };
+        if (window.ShowDialog() != true) return;
+
+        if (!Editor.Execute(new SetFeatureAttributesCommand(feature, window.Tags))) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
     }
 
     private void OrthogonalizeSelectedFeatures() {
@@ -2318,6 +2366,167 @@ public partial class MainWindow : Window {
         SetSelectedFeatures(Selection.Features.Where(_document.Features.Contains).ToList());
     }
 
+    private void RefreshAiTagAssistant() {
+        var feature = GetSingleSelectedFeature();
+        AiTagAssistantExpander.Visibility = feature is null ? Visibility.Collapsed : Visibility.Visible;
+        AiTagSuggestButton.IsEnabled = feature is not null;
+
+        if (feature is null) {
+            _aiTagFeatureId = null;
+            _aiTagCts?.Cancel();
+            ClearAiTagResults("");
+            return;
+        }
+
+        if (_aiTagFeatureId == feature.Id) {
+            UpdateAiTagApplyButton();
+            return;
+        }
+
+        _aiTagFeatureId = feature.Id;
+        _aiTagCts?.Cancel();
+        AiTagDescriptionTextBox.Text = "";
+        ClearAiTagResults("输入对象描述后点击“识别标签”。");
+    }
+
+    private MapFeature? GetSingleSelectedFeature() {
+        return Selection.Count == 1 ? Selection.Features.FirstOrDefault() : null;
+    }
+
+    private async void AiTagSuggest_Click(object sender, RoutedEventArgs e) {
+        var feature = GetSingleSelectedFeature();
+        if (feature is null) {
+            AiTagStatusTextBlock.Text = "请先选择一个地图要素。";
+            return;
+        }
+
+        var description = AiTagDescriptionTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(description)) {
+            AiTagStatusTextBlock.Text = "请先输入对象描述。";
+            return;
+        }
+
+        _aiTagCts?.Cancel();
+        _aiTagCts = new CancellationTokenSource();
+        var requestFeatureId = feature.Id;
+        var ct = _aiTagCts.Token;
+
+        try {
+            AiTagSuggestButton.IsEnabled = false;
+            AiTagApplyButton.IsEnabled = false;
+            AiTagStatusTextBlock.Text = "正在请求 BetterID AI 识别标签...";
+            AiTagSuggestionsItemsControl.ItemsSource = null;
+
+            var request = BetterIdAiClient.CreateTagSuggestionRequest(
+                description,
+                feature.Attributes,
+                GetAiGeometry(feature),
+                GetAiLocation(feature));
+            var response = await BetterIdAi.GetTagSuggestionsAsync(request, ct);
+            if (ct.IsCancellationRequested || GetSingleSelectedFeature()?.Id != requestFeatureId) return;
+
+            var result = BetterIdAiTagSuggestionNormalizer.Normalize(response, feature.Attributes);
+            _aiTagSuggestions = result.Suggestions.Select(static suggestion => new AiTagSuggestionItem(suggestion)).ToList();
+            AiTagSuggestionsItemsControl.ItemsSource = _aiTagSuggestions;
+            AiTagStatusTextBlock.Text = FormatAiTagStatus(result);
+            UpdateAiTagApplyButton();
+        } catch (OperationCanceledException) {
+        } catch (Exception ex) {
+            Logger.Error("Failed to request BetterID AI tag suggestions", ex);
+            ClearAiTagResults($"AI 标签识别失败：{ex.Message}");
+        } finally {
+            if (!ct.IsCancellationRequested) {
+                AiTagSuggestButton.IsEnabled = GetSingleSelectedFeature() is not null;
+            }
+        }
+    }
+
+    private void AiTagSuggestionCheckBox_Click(object sender, RoutedEventArgs e) {
+        UpdateAiTagApplyButton();
+    }
+
+    private void AiTagApply_Click(object sender, RoutedEventArgs e) {
+        var feature = GetSingleSelectedFeature();
+        if (feature is null) {
+            AiTagStatusTextBlock.Text = "请先选择一个地图要素。";
+            return;
+        }
+
+        var changes = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var suggestion in _aiTagSuggestions.Where(static suggestion => suggestion.Selected)) {
+            changes[suggestion.Key] = suggestion.Action == "remove" ? null : suggestion.Value;
+        }
+        if (changes.Count == 0) {
+            AiTagStatusTextBlock.Text = "请至少勾选一条建议。";
+            return;
+        }
+
+        if (!Editor.Execute(SetFeatureAttributesCommand.CreatePatch(feature, changes))) {
+            AiTagStatusTextBlock.Text = "选中的建议没有产生标签变化。";
+            return;
+        }
+
+        FeatureDataGrid.Items.Refresh();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+        AiTagStatusTextBlock.Text = $"已应用 {changes.Count:N0} 条标签建议，可用撤销恢复。";
+        ClearAiTagSuggestionsOnly();
+    }
+
+    private void ClearAiTagResults(string status) {
+        _aiTagSuggestions = [];
+        AiTagSuggestionsItemsControl.ItemsSource = null;
+        AiTagStatusTextBlock.Text = status;
+        AiTagApplyButton.IsEnabled = false;
+    }
+
+    private void ClearAiTagSuggestionsOnly() {
+        _aiTagSuggestions = [];
+        AiTagSuggestionsItemsControl.ItemsSource = null;
+        AiTagApplyButton.IsEnabled = false;
+    }
+
+    private void UpdateAiTagApplyButton() {
+        AiTagApplyButton.IsEnabled = _aiTagSuggestions.Any(static suggestion => suggestion.Selected);
+    }
+
+    private static string FormatAiTagStatus(BetterIdAiNormalizedTagSuggestionResult result) {
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(result.Summary)) lines.Add(result.Summary);
+        lines.Add(result.Suggestions.Count == 0
+            ? "没有可用标签建议。"
+            : $"识别到 {result.Suggestions.Count:N0} 条标签建议，请检查后应用。");
+        lines.AddRange(result.Warnings);
+        if (result.Sources.Count > 0) {
+            lines.Add($"参考来源：{string.Join("；", result.Sources.Select(static source => string.IsNullOrWhiteSpace(source.Title) ? source.Url : source.Title))}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string GetAiGeometry(MapFeature feature) {
+        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Relation) return "relation";
+        return feature.GeometryType switch {
+            MapGeometryType.Point => "point",
+            MapGeometryType.LineString => "line",
+            MapGeometryType.Polygon => "area",
+            _ => "feature"
+        };
+    }
+
+    private static BetterIdAiLocation? GetAiLocation(MapFeature feature) {
+        if (feature.Bounds.IsValid) {
+            var center = feature.Bounds.Center;
+            return new BetterIdAiLocation(center.Latitude, center.Longitude);
+        }
+
+        foreach (var point in feature.Points) {
+            if (point.IsValid) return new BetterIdAiLocation(point.Latitude, point.Longitude);
+        }
+
+        return null;
+    }
+
     private void SetSelectedFeatures(IEnumerable<MapFeature> features, bool updateGrid = true) {
         Selection.Set(features);
 
@@ -2331,6 +2540,7 @@ public partial class MainWindow : Window {
                 _isUpdatingFeatureSelection = false;
             }
         }
+        RefreshAiTagAssistant();
         UpdateVectorLayer();
         UpdateDocumentUi();
     }
@@ -2443,21 +2653,29 @@ public partial class MainWindow : Window {
     }
 
     private async Task ExecuteOsmPluginCommandAsync(string commandId) {
-        if (_pluginHost is null) return;
-
-        try {
-            var result = await _pluginHost.ExecuteCommandAsync(
-                BuiltInPluginCatalog.OsmTransferPluginId,
+        var payload = new {
+            bounds = _selectionBounds,
+            documentName = _document?.Name,
+            sourcePath = _document?.SourcePath
+        };
+        if (await TryExecuteOptionalPluginCommandAsync(
+                OsmTransferPluginId,
+                OsmTransferPluginName,
                 commandId,
-                new {
-                    bounds = _selectionBounds,
-                    documentName = _document?.Name,
-                    sourcePath = _document?.SourcePath
-                });
-            foreach (var action in result.Actions) await ApplyPluginActionAsync("OpenStreetMap 传输", action);
-        } catch (Exception ex) {
-            Logger.Error($"OSM plugin command '{commandId}' failed", ex);
-            MessageBox.Show(ex.Message, "OpenStreetMap 传输", MessageBoxButton.OK, MessageBoxImage.Error);
+                payload)) {
+            return;
+        }
+
+        switch (commandId) {
+            case "download":
+                await DownloadOsmSelectionAsync();
+                break;
+            case "upload":
+                await UploadOsmChangesAsync();
+                break;
+            case "accounts":
+                new Views.OsmAccountsWindow(_osmAccountStore) { Owner = this }.ShowDialog();
+                break;
         }
     }
 
@@ -2532,7 +2750,13 @@ public partial class MainWindow : Window {
             MessageBox.Show("当前地图没有可上传的变更。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        var uploadWindow = new Views.OsmUploadWindow(account, preview, () => OsmChangeSerializer.Build(_document, 0)) { Owner = this };
+        var uploadWindow = new Views.OsmUploadWindow(
+            account,
+            preview,
+            () => OsmChangeSerializer.Build(_document, 0),
+            (feature, metadata) => Editor.Execute(new SetFeatureOsmMetadataCommand(feature, metadata)),
+            _document,
+            BetterIdAi) { Owner = this };
         var uploadConfirmed = uploadWindow.ShowDialog() == true;
         if (uploadWindow.MetadataChanged) {
             _document.IsDirty = true;
@@ -2849,6 +3073,49 @@ public partial class MainWindow : Window {
         TileService Service,
         TileSourcePreset Source,
         double Opacity);
+
+    private sealed class AiTagSuggestionItem {
+        public AiTagSuggestionItem(BetterIdAiNormalizedTagSuggestion suggestion) {
+            Key = suggestion.Key;
+            Value = suggestion.Value;
+            Action = suggestion.Action;
+            ProposedText = suggestion.ProposedText;
+            DetailText = FormatDetailText(suggestion);
+            Reason = string.IsNullOrWhiteSpace(suggestion.Reason)
+                ? "BetterID AI 未返回说明，请人工核验。"
+                : suggestion.Reason;
+            Selected = suggestion.Selected;
+        }
+
+        public string Key { get; }
+
+        public string Value { get; }
+
+        public string Action { get; }
+
+        public string ProposedText { get; }
+
+        public string DetailText { get; }
+
+        public string Reason { get; }
+
+        public bool Selected { get; set; }
+
+        private static string FormatDetailText(BetterIdAiNormalizedTagSuggestion suggestion) {
+            var confidence = suggestion.ConfidenceLabel switch {
+                "high" => "高置信度",
+                "medium" => "中置信度",
+                _ => "低置信度"
+            };
+            if (suggestion.ConfidenceScore.HasValue) {
+                confidence = $"{confidence} {suggestion.ConfidenceScore.Value:P0}";
+            }
+
+            return suggestion.CurrentValue is null
+                ? confidence
+                : $"{confidence}，当前值：{suggestion.CurrentValue}";
+        }
+    }
 
     private enum EditorMode {
         Pan,

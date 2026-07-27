@@ -10,6 +10,7 @@ namespace WPF_OpenStreetmap_Editor.Views;
 
 public partial class PluginsWindow : Window {
     private readonly PluginHost _pluginHost;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public PluginsWindow(PluginHost pluginHost) {
         InitializeComponent();
@@ -20,8 +21,8 @@ public partial class PluginsWindow : Window {
 
     private async void Install_Click(object sender, RoutedEventArgs e) {
         var dialog = new OpenFileDialog {
-            Title = "选择插件包",
-            Filter = "WOSM 插件|plugin.json5;*.wosm-plugin;*.zip|插件声明|plugin.json5|插件包|*.wosm-plugin;*.zip|所有文件|*.*"
+            Title = L.GetString("Plugins.SelectPackageTitle"),
+            Filter = L.GetString("Plugins.PackageFilter")
         };
         if (dialog.ShowDialog(this) != true) return;
 
@@ -30,10 +31,8 @@ public partial class PluginsWindow : Window {
             var allowCodeExecution = false;
             if (candidate.RequiresCodeExecutionConsent) {
                 var answer = MessageBox.Show(
-                    $"“{candidate.Manifest.Name}”包含在主进程内运行的原生 DLL。\n\n" +
-                    "它可以读取或修改当前用户可访问的文件、访问网络、控制主程序并启动其他程序。" +
-                    "只有在你信任来源时才应继续。\n\n是否安装并允许运行？",
-                    "原生 DLL 插件风险",
+                    L.Format("Plugins.NativeRiskMessage", candidate.Manifest.Name),
+                    L.GetString("Plugins.NativeRiskTitle"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning,
                     MessageBoxResult.No);
@@ -45,7 +44,7 @@ public partial class PluginsWindow : Window {
             await _pluginHost.ReloadAsync();
             RefreshList();
         } catch (Exception ex) {
-            MessageBox.Show(ex.Message, "无法安装插件", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Plugins.InstallErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -56,9 +55,8 @@ public partial class PluginsWindow : Window {
         } descriptor) return;
 
         var answer = MessageBox.Show(
-            $"“{descriptor.Name}”是手动放入插件目录或内容已发生变化的原生 DLL 插件。\n\n" +
-            "确认后它将以当前用户权限运行。是否信任当前文件并加载？",
-            "确认原生 DLL 插件",
+            L.Format("Plugins.NativeTrustMessage", descriptor.Name),
+            L.GetString("Plugins.NativeTrustTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No);
@@ -68,7 +66,7 @@ public partial class PluginsWindow : Window {
             await _pluginHost.TrustAndReloadAsync(descriptor.Id);
             RefreshList();
         } catch (Exception ex) {
-            MessageBox.Show(ex.Message, "无法加载插件", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Plugins.LoadErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -77,7 +75,7 @@ public partial class PluginsWindow : Window {
             await _pluginHost.ReloadAsync();
             RefreshList();
         } catch (Exception ex) {
-            MessageBox.Show(ex.Message, "无法扫描插件", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Plugins.ScanErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

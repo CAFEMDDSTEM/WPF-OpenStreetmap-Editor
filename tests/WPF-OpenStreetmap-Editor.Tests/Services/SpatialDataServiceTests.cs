@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
@@ -194,6 +195,37 @@ public class SpatialDataServiceTests {
             Assert.Equal("way", member.Attribute("type")!.Value);
             Assert.Equal("10", member.Attribute("ref")!.Value);
             Assert.Equal("route", member.Attribute("role")!.Value);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_OsmXmlDoesNotResetUploadBaseline() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "saved.osm");
+        try {
+            var original = new GeoPoint(1, 1);
+            var moved = new GeoPoint(1.2, 1.2);
+            var document = new MapDocument {
+                Osm = new OsmDataset()
+            };
+            document.Osm.Nodes[1] = new OsmNode { Id = 1, Version = 2, Point = original };
+            var feature = OsmDocumentSync.CreateNodeFeature(document.Osm.Nodes[1]);
+            document.Features.Add(feature);
+            document.MarkClean();
+            feature.Parts[0][0] = moved;
+            document.IsDirty = true;
+
+            await SpatialDataService.SaveAsync(document, path);
+            var changes = OsmChangeSerializer.Build(document, 99);
+            var xml = XDocument.Parse(changes.Xml);
+
+            Assert.False(document.IsDirty);
+            Assert.Equal(1, changes.ModifyCount);
+            var node = Assert.Single(xml.Root!.Element("modify")!.Elements("node"));
+            Assert.Equal("1", node.Attribute("id")!.Value);
+            Assert.Equal(moved.Latitude.ToString("R", CultureInfo.InvariantCulture), node.Attribute("lat")!.Value);
         } finally {
             DeleteTestDirectory(root);
         }

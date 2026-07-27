@@ -80,7 +80,7 @@ public static class SpatialDataService {
             document.SourcePath = fullPath;
             document.SourceFormat = format;
             document.Name = Path.GetFileName(fullPath);
-            document.MarkClean();
+            document.MarkSaved();
         }, ct);
     }
 
