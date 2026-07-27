@@ -122,6 +122,34 @@ public class BetterIdAiClientTests {
         Assert.Contains("amenity", summary.TagKeys);
     }
 
+    [Fact]
+    public void ChangesetSummaryBuilder_ResolvesCompactOsmBaselineTagChanges() {
+        var document = new MapDocument {
+            Osm = new OsmDataset()
+        };
+        document.Osm.Nodes[1] = new OsmNode {
+            Id = 1,
+            Version = 1,
+            Point = new GeoPoint(113, 23),
+            Tags = new Dictionary<string, string> {
+                ["amenity"] = "cafe",
+                ["name"] = "Old"
+            }
+        };
+        var feature = OsmDocumentSync.CreateNodeFeature(document.Osm.Nodes[1]);
+        document.Features.Add(feature);
+        document.MarkClean(compactOsmHistory: true);
+        feature.Attributes["amenity"] = "restaurant";
+
+        var preview = OsmChangeSerializer.Build(document, 99);
+        var summary = OsmAiChangesetSummaryBuilder.Build(document, preview);
+
+        var change = Assert.Single(summary.ActualChanges);
+        Assert.Equal("modified", change.Action);
+        Assert.Contains(change.TagChanges.Changed,
+            tag => tag.Key == "amenity" && tag.Before == "cafe" && tag.After == "restaurant");
+    }
+
     private static BetterIdAiRawTagSuggestion Suggestion(
         string key,
         string value,

@@ -15,6 +15,8 @@ public sealed class AppSettings {
     public string ActiveLayerId { get; set; } = "";
     public int MapMaxZoom { get; set; } = GeoConverter.MaxZoom;
     public bool ExperimentalSmoothZoom { get; set; }
+    public string DefaultImportProjectionId { get; set; } = ProjectionService.Wgs84Id;
+    public string CustomImportProjectionWkt { get; set; } = "";
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
 
@@ -46,6 +48,8 @@ public sealed class AppSettings {
             ActiveLayerId = ActiveLayerId,
             MapMaxZoom = MapMaxZoom,
             ExperimentalSmoothZoom = ExperimentalSmoothZoom,
+            DefaultImportProjectionId = DefaultImportProjectionId,
+            CustomImportProjectionWkt = CustomImportProjectionWkt,
             TileSources = [.. TileSources.Select(static source => source.Clone())],
             ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())]
         };
@@ -160,10 +164,14 @@ public sealed class MapImageLayer {
     public string DataPath { get; set; } = "";
 
     [JsonIgnore]
-    public string VisibilityLabel => IsVisible ? "隐藏" : "显示";
+    public string VisibilityLabel => IsVisible
+        ? LocalizationService.Instance.GetString("MapLayer.Visibility.Hide")
+        : LocalizationService.Instance.GetString("MapLayer.Visibility.Show");
 
     [JsonIgnore]
-    public string KindLabel => Kind == MapLayerKind.Data ? "数据" : "影像";
+    public string KindLabel => Kind == MapLayerKind.Data
+        ? LocalizationService.Instance.GetString("MapLayer.Kind.Data")
+        : LocalizationService.Instance.GetString("MapLayer.Kind.Imagery");
 
     public static MapImageLayer FromSource(TileSourcePreset source) {
         return new MapImageLayer {
@@ -250,6 +258,8 @@ public static class AppSettingsService {
         }
 
         settings.LanguageId = LocalizationService.NormalizeLanguageId(settings.LanguageId);
+        settings.DefaultImportProjectionId = ProjectionService.NormalizeProjectionId(settings.DefaultImportProjectionId);
+        settings.CustomImportProjectionWkt = settings.CustomImportProjectionWkt?.Trim() ?? "";
 
         var defaults = TileSourcePreset.CreateDefaults();
 

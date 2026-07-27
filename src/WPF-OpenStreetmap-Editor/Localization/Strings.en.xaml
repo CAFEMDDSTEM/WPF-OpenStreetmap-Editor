@@ -62,11 +62,6 @@
     <sys:String x:Key="Main.Tooltip.DragSort">Drag to reorder</sys:String>
     <sys:String x:Key="Main.Tooltip.PrimaryLayer">Primary layer</sys:String>
     <sys:String x:Key="Main.Zoom">Zoom:</sys:String>
-    <sys:String x:Key="Main.PluginHttpOnly">Plugins can only open HTTP or HTTPS links.</sys:String>
-    <sys:String x:Key="Main.PluginAddImageryMissingUrl">The addImagery action is missing a URL.</sys:String>
-    <sys:String x:Key="Main.PluginUnsupportedAction">Unsupported plugin action: {0}.</sys:String>
-    <sys:String x:Key="Main.MenuClicked">{0} was clicked.</sys:String>
-    <sys:String x:Key="Main.MenuTitle">Menu</sys:String>
     <sys:String x:Key="Main.Layers.Title">Layers</sys:String>
     <sys:String x:Key="Main.Layers.ShowLayer">Show layer</sys:String>
     <sys:String x:Key="Main.Layers.Opacity">Opacity</sys:String>
@@ -150,6 +145,7 @@ Open the download page?</sys:String>
 
     <sys:String x:Key="Settings.Title">Settings</sys:String>
     <sys:String x:Key="Settings.Appearance">Appearance</sys:String>
+    <sys:String x:Key="Settings.Data">Data</sys:String>
     <sys:String x:Key="Settings.Theme">Theme</sys:String>
     <sys:String x:Key="Settings.InterfaceTheme">App theme</sys:String>
     <sys:String x:Key="Settings.Language">Language</sys:String>
@@ -166,9 +162,15 @@ Open the download page?</sys:String>
     <sys:String x:Key="Settings.ApiKeyToken">API key / Token</sys:String>
     <sys:String x:Key="Settings.AttributionText">Attribution text</sys:String>
     <sys:String x:Key="Settings.AttributionUrl">Attribution URL</sys:String>
+    <sys:String x:Key="Settings.NoTileEtag">No-tile ETag</sys:String>
+    <sys:String x:Key="Settings.NoTileMd5">No-tile MD5</sys:String>
     <sys:String x:Key="Settings.VisibleByDefault">Show by default when adding a layer</sys:String>
     <sys:String x:Key="Settings.KnownSource">Known source; do not auto-detect maximum imagery zoom</sys:String>
     <sys:String x:Key="Settings.ExperimentalSmoothZoom">Experimental: smooth zoom</sys:String>
+    <sys:String x:Key="Settings.ImportProjection">Import projection</sys:String>
+    <sys:String x:Key="Settings.DefaultImportProjection">Default import projection</sys:String>
+    <sys:String x:Key="Settings.CustomProjectionWkt">Custom WKT</sys:String>
+    <sys:String x:Key="Settings.ImportProjectionHelp">WOSM stores and renders vector data as WGS 84 longitude/latitude. This setting transforms GeoJSON, GML, and Shapefiles without a PRJ file while importing. OSM, GPX, KML, and Shapefiles with PRJ keep their own coordinate rules.</sys:String>
     <sys:String x:Key="Settings.UrlHelp">URL supports xyz[19]:, tms[18]:, tms[auto]:, and tms: prefixes. Known sources use the imagery max zoom configured here; custom tms[auto]/tms: sources are detected automatically.</sys:String>
     <sys:String x:Key="Settings.AuthorFormat">Author: {0}</sys:String>
     <sys:String x:Key="Settings.AuthorLabel">Author: </sys:String>

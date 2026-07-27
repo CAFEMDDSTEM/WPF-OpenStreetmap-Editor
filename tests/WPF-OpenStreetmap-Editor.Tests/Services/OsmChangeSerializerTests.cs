@@ -179,6 +179,60 @@ public class OsmChangeSerializerTests {
     }
 
     [Fact]
+    public void Build_ReversedWayReordersNodeReferencesWithoutMovingNodes() {
+        var first = new GeoPoint(1, 1);
+        var second = new GeoPoint(2, 2);
+        var third = new GeoPoint(3, 3);
+        var document = new MapDocument {
+            Osm = new OsmDataset()
+        };
+        document.Osm.Nodes[1] = new OsmNode { Id = 1, Version = 1, Point = first };
+        document.Osm.Nodes[2] = new OsmNode { Id = 2, Version = 1, Point = second };
+        document.Osm.Nodes[3] = new OsmNode { Id = 3, Version = 1, Point = third };
+        document.Osm.Ways[10] = new OsmWay { Id = 10, Version = 4, NodeIds = [1, 2, 3] };
+        var way = OsmDocumentSync.CreateWayFeature(document.Osm, document.Osm.Ways[10])!;
+        document.Features.Add(way);
+        document.MarkClean();
+        way.Parts[0].Reverse();
+
+        var result = OsmChangeSerializer.Build(document, 99);
+        var xml = XDocument.Parse(result.Xml);
+
+        Assert.Equal([3, 2, 1], result.Dataset.Ways[10].NodeIds);
+        Assert.Equal(first, result.Dataset.Nodes[1].Point);
+        Assert.Equal(second, result.Dataset.Nodes[2].Point);
+        Assert.Equal(third, result.Dataset.Nodes[3].Point);
+        Assert.Equal(1, result.ModifyCount);
+        Assert.Empty(xml.Root!.Element("modify")!.Elements("node"));
+        var wayNodeIds = xml.Root.Element("modify")!.Element("way")!.Elements("nd")
+            .Select(element => element.Attribute("ref")!.Value)
+            .ToArray();
+        Assert.Equal(["3", "2", "1"], wayNodeIds);
+    }
+
+    [Fact]
+    public void Build_CompactOsmBaselineStillDetectsDeletedWay() {
+        var document = new MapDocument {
+            Osm = new OsmDataset()
+        };
+        document.Osm.Nodes[1] = new OsmNode { Id = 1, Version = 1, Point = new GeoPoint(1, 1) };
+        document.Osm.Nodes[2] = new OsmNode { Id = 2, Version = 1, Point = new GeoPoint(2, 2) };
+        document.Osm.Ways[10] = new OsmWay { Id = 10, Version = 4, NodeIds = [1, 2] };
+        var way = OsmDocumentSync.CreateWayFeature(document.Osm, document.Osm.Ways[10])!;
+        document.Features.Add(way);
+        document.MarkClean(compactOsmHistory: true);
+        document.Features.Clear();
+
+        var result = OsmChangeSerializer.Build(document, 99);
+        var xml = XDocument.Parse(result.Xml);
+
+        Assert.Equal(1, result.DeleteCount);
+        var deletedWay = Assert.Single(xml.Root!.Element("delete")!.Elements("way"));
+        Assert.Equal("10", deletedWay.Attribute("id")!.Value);
+        Assert.False(result.Dataset.Ways.ContainsKey(10));
+    }
+
+    [Fact]
     public void Build_MovingSharedWayNodeModifiesOneDatasetNode() {
         var first = new GeoPoint(1, 1);
         var shared = new GeoPoint(2, 2);

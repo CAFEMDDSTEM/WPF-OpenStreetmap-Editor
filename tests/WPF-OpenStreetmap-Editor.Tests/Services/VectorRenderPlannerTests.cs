@@ -53,6 +53,51 @@ public class VectorRenderPlannerTests {
     }
 
     [Fact]
+    public void SpatialIndex_UsesFinerCellsForDenseLocalData() {
+        var features = new List<MapFeature>();
+        for (var y = 0; y < 64; y++) {
+            for (var x = 0; x < 64; x++) {
+                features.Add(PointFeature($"p-{x}-{y}", x * 0.001, y * 0.001));
+            }
+        }
+
+        var index = MapFeatureSpatialIndex.Build(features);
+
+        Assert.True(index.CellSizeDegrees < 0.05);
+        Assert.True(index.CellCount > 1);
+        Assert.Equal(4096, index.FeatureCount);
+    }
+
+    [Fact]
+    public void SpatialIndex_QueryCullsDenseLocalDataToViewport() {
+        var features = new List<MapFeature>();
+        for (var y = 0; y < 100; y++) {
+            for (var x = 0; x < 100; x++) {
+                features.Add(PointFeature($"p-{x}-{y}", x * 0.001, y * 0.001));
+            }
+        }
+
+        var index = MapFeatureSpatialIndex.Build(features);
+        var visible = index.Query(new GeoBounds(0, 0, 0.0091, 0.0091)).ToList();
+
+        Assert.Equal(100, visible.Count);
+    }
+
+    [Fact]
+    public void SpatialIndex_QueryDoesNotDuplicateFeaturesThatSpanCells() {
+        var feature = new MapFeature {
+            Id = "multi-cell",
+            GeometryType = MapGeometryType.LineString,
+            Parts = [[new GeoPoint(0, 0), new GeoPoint(0.01, 0.01)]]
+        };
+        var index = MapFeatureSpatialIndex.Build([feature]);
+
+        var visible = index.Query(new GeoBounds(0, 0, 0.01, 0.01)).ToList();
+
+        Assert.Same(feature, Assert.Single(visible));
+    }
+
+    [Fact]
     public void GetFitZoom_ReturnsZoomWhoseExtentFitsViewport() {
         var bounds = new GeoBounds(103.8, 1.3, 103.9, 1.4);
 

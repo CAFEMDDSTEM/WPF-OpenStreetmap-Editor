@@ -99,6 +99,7 @@ internal static class XmlSpatialFormats {
         var xml = LoadXml(stream);
         var document = new MapDocument();
         var coordinateCount = 0;
+        var transform = ProjectionService.CreateImportTransform(options);
         var geometryIndex = 0;
         var geometryNames = new HashSet<string>(StringComparer.Ordinal) { "Point", "LineString", "Curve", "Polygon" };
         var geometries = xml.Descendants().Where(element =>
@@ -110,7 +111,7 @@ internal static class XmlSpatialFormats {
             var attributes = ReadGmlProperties(geometry);
             switch (geometry.Name.LocalName) {
                 case "Point":
-                    var pointCoordinates = ReadGmlCoordinates(geometry, ref coordinateCount, options);
+                    var pointCoordinates = ReadGmlCoordinates(geometry, ref coordinateCount, options, transform);
                     if (pointCoordinates.Count > 0) {
                         AddFeature(document, options, new MapFeature {
                             Id = $"gml-{geometryIndex++}",
@@ -122,7 +123,7 @@ internal static class XmlSpatialFormats {
                     break;
                 case "LineString":
                 case "Curve":
-                    var line = ReadGmlCoordinates(geometry, ref coordinateCount, options);
+                    var line = ReadGmlCoordinates(geometry, ref coordinateCount, options, transform);
                     if (line.Count > 1) {
                         AddFeature(document, options, new MapFeature {
                             Id = $"gml-{geometryIndex++}",
@@ -135,7 +136,7 @@ internal static class XmlSpatialFormats {
                 case "Polygon":
                     var rings = geometry.Descendants()
                         .Where(static element => element.Name.LocalName is "LinearRing" or "Ring")
-                        .Select(element => ReadGmlCoordinates(element, ref coordinateCount, options))
+                        .Select(element => ReadGmlCoordinates(element, ref coordinateCount, options, transform))
                         .Where(static ring => ring.Count > 2)
                         .ToList();
                     if (rings.Count > 0) {
@@ -288,7 +289,11 @@ internal static class XmlSpatialFormats {
         return result;
     }
 
-    private static List<GeoPoint> ReadGmlCoordinates(XElement geometry, ref int count, SpatialImportOptions options) {
+    private static List<GeoPoint> ReadGmlCoordinates(
+        XElement geometry,
+        ref int count,
+        SpatialImportOptions options,
+        Func<double, double, GeoPoint> transform) {
         var coordinateElement = geometry.DescendantsAndSelf().FirstOrDefault(element =>
             element.Name.LocalName is "pos" or "posList" or "coordinates");
         if (coordinateElement is null) return [];
@@ -299,7 +304,7 @@ internal static class XmlSpatialFormats {
             foreach (var tuple in tuples) {
                 var values = tuple.Split(',');
                 if (values.Length < 2) continue;
-                legacyCoordinates.Add(CheckPoint(new GeoPoint(
+                legacyCoordinates.Add(CheckPoint(transform(
                     double.Parse(values[0], CultureInfo.InvariantCulture),
                     double.Parse(values[1], CultureInfo.InvariantCulture)), ref count, options));
             }
@@ -318,7 +323,7 @@ internal static class XmlSpatialFormats {
             var point = latitudeFirst
                 ? new GeoPoint(numbers[i + 1], numbers[i])
                 : new GeoPoint(numbers[i], numbers[i + 1]);
-            result.Add(CheckPoint(point, ref count, options));
+            result.Add(CheckPoint(transform(point.Longitude, point.Latitude), ref count, options));
         }
         return result;
     }

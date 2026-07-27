@@ -21,18 +21,18 @@ WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. It
 
 The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
 
-> Project status: first official release, still early development. WOSM v0.1.0 focuses on imagery rendering, vector data handling, local editing, theming, plugin infrastructure, and basic OpenStreetMap transfer workflows.
+> Project status: early alpha. WOSM v0.2.0-alpha.1 adds five-language UI localization, projection-aware imports, BetterID AI-assisted OSM comments, and OSM editing workflow refinements. Expect rough edges and review all OpenStreetMap uploads before sending them.
 
 ## Release
 
-The first official WOSM release is available as a Windows x64 self-contained package:
+The latest alpha WOSM release is available as a Windows x64 self-contained package:
 
-[Download WOSM v0.1.0](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0/WOSM-v0.1.0-win-x64.zip)
+[Download WOSM v0.2.0-alpha.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/WOSM-v0.2.0-alpha.1-win-x64.zip)
 
-Verify the ZIP against [`SHA256SUMS-v0.1.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0/SHA256SUMS-v0.1.0.txt) before signing in to OpenStreetMap or uploading changes:
+Verify the ZIP against [`SHA256SUMS-v0.2.0-alpha.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/SHA256SUMS-v0.2.0-alpha.1.txt) before signing in to OpenStreetMap or uploading changes:
 
 ```powershell
-Get-FileHash .\WOSM-v0.1.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.0-alpha.1-win-x64.zip -Algorithm SHA256
 ```
 
 Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also accepts command-line data workflow commands such as `help`, `import`, `convert`, `download`, `changeset`, and `upload`. This build is unsigned, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
@@ -43,7 +43,9 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also
 - Support common placeholders such as `{z}`, `{x}`, `{y}`, `{-y}`, `{s}`, `{switch:a,b,c}`, `{zoom}`, `{TileMatrix}`, `{TileCol}`, `{TileRow}`, and `{access_token}`.
 - Manage reusable imagery presets, access tokens, attribution, zoom limits, and no-tile markers.
 - Render multiple imagery layers with visibility, primary-layer selection, opacity, mouse panning, and zoom controls.
+- Switch the interface between system language, English, Simplified Chinese, Traditional Chinese, Japanese, and German.
 - Import `.osm`, `.pbf`, Shapefile, GeoJSON, GML, KML/KMZ, and GPX map data.
+- Choose a default source projection for projected GeoJSON, GML, and Shapefiles without `.prj`; Shapefile `.prj` files are honored when present.
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, copy, paste, duplicate, add point features, draw line features, rotate, move, and orthogonalize features on top of imagery.
 - Request BetterID AI tag suggestions for a selected feature and generate draft OSM changeset comments for review before upload.
@@ -103,7 +105,7 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 ## Usage
 
 1. Start the application.
-2. Open **Tools > Settings** to select an imagery source, add a custom tile URL template, or switch themes.
+2. Open **Tools > Settings** to select an imagery source, add a custom tile URL template, switch language, configure import projection defaults, or switch themes.
 3. Enter an access token in Settings when an imagery provider requires `{access_token}`. Imagery access tokens are used for the current session and are not saved to disk.
 4. Use the **Imagery** menu to add a source as a raster map layer.
 5. Use **File > Open** to import vector map data, or use `Ctrl+Shift+Down` to choose and download an OSM bounding box.

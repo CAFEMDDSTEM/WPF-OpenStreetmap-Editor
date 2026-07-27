@@ -1,47 +1,68 @@
 namespace WPF_OpenStreetmap_Editor.Models;
 
 public sealed class MapFeatureSpatialIndex {
-    private const double CellSizeDegrees = 0.05;
-    private const int MaxIndexedCellsPerFeature = 128;
-    private const int MaxQueryCells = 4096;
+    private const double DefaultCellSizeDegrees = 0.05;
+    private const double MinCellSizeDegrees = 0.0025;
+    private const double MaxCellSizeDegrees = 1.0;
+    private const int TargetFeaturesPerCell = 16;
+    private const int MinTargetCellCount = 256;
+    private const int MaxTargetCellCount = 65_536;
+    private const int MaxIndexedCellsPerFeature = 512;
+    private const int MaxQueryCells = 65_536;
 
     private readonly MapFeature[] _features;
-    private readonly Dictionary<long, List<MapFeature>> _cells;
-    private readonly List<MapFeature> _largeFeatures;
+    private readonly Dictionary<long, int[]> _cells;
+    private readonly int[] _largeFeatureIndexes;
+    private readonly int[] _seenStamps;
+    private readonly double _cellSizeDegrees;
+    private int _queryStamp;
 
     private MapFeatureSpatialIndex(
         MapFeature[] features,
-        Dictionary<long, List<MapFeature>> cells,
-        List<MapFeature> largeFeatures,
+        Dictionary<long, int[]> cells,
+        int[] largeFeatureIndexes,
+        double cellSizeDegrees,
         int coordinateCount) {
         _features = features;
         _cells = cells;
-        _largeFeatures = largeFeatures;
+        _largeFeatureIndexes = largeFeatureIndexes;
+        _cellSizeDegrees = cellSizeDegrees;
+        _seenStamps = new int[features.Length];
         CoordinateCount = coordinateCount;
     }
 
     public int FeatureCount => _features.Length;
 
+    public int CellCount => _cells.Count;
+
     public int CoordinateCount { get; }
+
+    public double CellSizeDegrees => _cellSizeDegrees;
+
+    public int LargeFeatureCount => _largeFeatureIndexes.Length;
 
     public static MapFeatureSpatialIndex Build(IReadOnlyList<MapFeature> features) {
         var snapshot = features.ToArray();
-        var cells = new Dictionary<long, List<MapFeature>>();
-        var largeFeatures = new List<MapFeature>();
-        var coordinateCount = 0;
+        var cellSize = ChooseCellSize(snapshot, out var coordinateCount);
+        var cells = new Dictionary<long, List<int>>();
+        var largeFeatureIndexes = new List<int>();
+        var convertedCells = new Dictionary<long, int[]>();
+        if (snapshot.Length == 0) {
+            return new MapFeatureSpatialIndex(snapshot, convertedCells, [], cellSize, coordinateCount);
+        }
 
-        foreach (var feature in snapshot) {
-            coordinateCount += feature.CoordinateCount;
+        for (var featureIndex = 0; featureIndex < snapshot.Length; featureIndex++) {
+            var feature = snapshot[featureIndex];
             var bounds = feature.Bounds;
             if (!bounds.IsValid) {
-                largeFeatures.Add(feature);
+                largeFeatureIndexes.Add(featureIndex);
                 continue;
             }
 
-            var range = GetCellRange(bounds);
+            var range = GetCellRange(bounds, cellSize);
             var indexedCellCount = GetCellCount(range);
             if (indexedCellCount <= 0 || indexedCellCount > MaxIndexedCellsPerFeature) {
-                largeFeatures.Add(feature);
+                largeFeatureIndexes.Add(featureIndex);
                 continue;
             }
 
@@ -52,18 +73,23 @@ public sealed class MapFeatureSpatialIndex {
                         bucket = [];
                         cells[key] = bucket;
                     }
-                    bucket.Add(feature);
+                    bucket.Add(featureIndex);
                 }
             }
         }
 
-        return new MapFeatureSpatialIndex(snapshot, cells, largeFeatures, coordinateCount);
+        convertedCells = new Dictionary<long, int[]>(cells.Count);
+        foreach (var (key, bucket) in cells) {
+            convertedCells[key] = [.. bucket];
+        }
+
+        return new MapFeatureSpatialIndex(snapshot, convertedCells, [.. largeFeatureIndexes], cellSize, coordinateCount);
     }
 
     public IEnumerable<MapFeature> Query(GeoBounds viewport) {
         if (!viewport.IsValid) return _features;
 
-        var range = GetCellRange(viewport);
+        var range = GetCellRange(viewport, _cellSizeDegrees);
         var queryCellCount = GetCellCount(range);
         if (queryCellCount <= 0 || queryCellCount > MaxQueryCells) {
             return _features;
@@ -72,10 +98,47 @@ public sealed class MapFeatureSpatialIndex {
         return QueryCells(viewport, range);
     }
 
+    private static double ChooseCellSize(IReadOnlyList<MapFeature> features, out int coordinateCount) {
+        coordinateCount = 0;
+        var validFeatureCount = 0;
+        var minLongitude = double.MaxValue;
+        var minLatitude = double.MaxValue;
+        var maxLongitude = double.MinValue;
+        var maxLatitude = double.MinValue;
+
+        foreach (var feature in features) {
+            coordinateCount += feature.CoordinateCount;
+            var bounds = feature.Bounds;
+            if (!bounds.IsValid) {
+                continue;
+            }
+
+            validFeatureCount++;
+            minLongitude = Math.Min(minLongitude, bounds.MinLongitude);
+            minLatitude = Math.Min(minLatitude, bounds.MinLatitude);
+            maxLongitude = Math.Max(maxLongitude, bounds.MaxLongitude);
+            maxLatitude = Math.Max(maxLatitude, bounds.MaxLatitude);
+        }
+
+        if (validFeatureCount == 0) {
+            return DefaultCellSizeDegrees;
+        }
+
+        var longitudeSpan = Math.Max(maxLongitude - minLongitude, MinCellSizeDegrees);
+        var latitudeSpan = Math.Max(maxLatitude - minLatitude, MinCellSizeDegrees);
+        var targetCellCount = Math.Clamp(
+            validFeatureCount / TargetFeaturesPerCell,
+            MinTargetCellCount,
+            MaxTargetCellCount);
+        var cellSize = Math.Sqrt(longitudeSpan * latitudeSpan / targetCellCount);
+        return Math.Clamp(cellSize, MinCellSizeDegrees, MaxCellSizeDegrees);
+    }
+
     private IEnumerable<MapFeature> QueryCells(GeoBounds viewport, CellRange range) {
-        var seen = new HashSet<MapFeature>();
-        foreach (var feature in _largeFeatures) {
-            if (feature.Bounds.Intersects(viewport) && seen.Add(feature)) {
+        var stamp = GetNextQueryStamp();
+        foreach (var featureIndex in _largeFeatureIndexes) {
+            var feature = _features[featureIndex];
+            if (TryMarkSeen(featureIndex, stamp) && feature.Bounds.Intersects(viewport)) {
                 yield return feature;
             }
         }
@@ -84,8 +147,9 @@ public sealed class MapFeatureSpatialIndex {
             for (var x = range.MinX; x <= range.MaxX; x++) {
                 if (!_cells.TryGetValue(PackCell(x, y), out var bucket)) continue;
 
-                foreach (var feature in bucket) {
-                    if (seen.Add(feature) && feature.Bounds.Intersects(viewport)) {
+                foreach (var featureIndex in bucket) {
+                    var feature = _features[featureIndex];
+                    if (TryMarkSeen(featureIndex, stamp) && feature.Bounds.Intersects(viewport)) {
                         yield return feature;
                     }
                 }
@@ -93,21 +157,37 @@ public sealed class MapFeatureSpatialIndex {
         }
     }
 
-    private static CellRange GetCellRange(GeoBounds bounds) {
+    private int GetNextQueryStamp() {
+        var stamp = Interlocked.Increment(ref _queryStamp);
+        if (stamp != int.MaxValue) return stamp;
+
+        Array.Clear(_seenStamps);
+        _queryStamp = 1;
+        return 1;
+    }
+
+    private bool TryMarkSeen(int featureIndex, int stamp) {
+        if (_seenStamps[featureIndex] == stamp) return false;
+
+        _seenStamps[featureIndex] = stamp;
+        return true;
+    }
+
+    private static CellRange GetCellRange(GeoBounds bounds, double cellSizeDegrees) {
         var minLongitude = Math.Clamp(bounds.MinLongitude, -180.0, 180.0);
         var maxLongitude = Math.Clamp(bounds.MaxLongitude, -180.0, 180.0);
         var minLatitude = Math.Clamp(bounds.MinLatitude, -90.0, 90.0);
         var maxLatitude = Math.Clamp(bounds.MaxLatitude, -90.0, 90.0);
 
         return new CellRange(
-            ToCell(minLongitude),
-            ToCell(minLatitude),
-            ToCell(maxLongitude),
-            ToCell(maxLatitude));
+            ToCell(minLongitude, cellSizeDegrees),
+            ToCell(minLatitude, cellSizeDegrees),
+            ToCell(maxLongitude, cellSizeDegrees),
+            ToCell(maxLatitude, cellSizeDegrees));
     }
 
-    private static int ToCell(double value) {
-        return (int)Math.Floor(value / CellSizeDegrees);
+    private static int ToCell(double value, double cellSizeDegrees) {
+        return (int)Math.Floor(value / cellSizeDegrees);
     }
 
     private static long GetCellCount(CellRange range) {

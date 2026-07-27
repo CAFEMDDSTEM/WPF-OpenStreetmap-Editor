@@ -206,16 +206,37 @@ public static class OsmAiChangesetSummaryBuilder {
                 continue;
             }
 
+            original = ResolveOriginalFeature(document, original);
             if (!FeatureEquivalent(original, feature)) {
                 changes.Add(new FeatureChange("modified", original, feature));
             }
         }
 
         foreach (var deleted in document.GetDeletedOriginalFeatures()) {
-            changes.Add(new FeatureChange("deleted", deleted, null));
+            changes.Add(new FeatureChange("deleted", ResolveOriginalFeature(document, deleted), null));
         }
 
         return changes;
+    }
+
+    private static MapFeature ResolveOriginalFeature(MapDocument document, MapFeature original) {
+        if (!IsCompactOriginalFeature(original) || document.OriginalOsm is not { } dataset || original.Osm is null) {
+            return original;
+        }
+
+        return original.Osm.PrimitiveType switch {
+            OsmPrimitiveType.Node when dataset.Nodes.TryGetValue(original.Osm.Id, out var node) =>
+                OsmDocumentSync.CreateNodeFeature(node),
+            OsmPrimitiveType.Way when dataset.Ways.TryGetValue(original.Osm.Id, out var way) =>
+                OsmDocumentSync.CreateWayFeature(dataset, way) ?? original,
+            OsmPrimitiveType.Relation when dataset.Relations.TryGetValue(original.Osm.Id, out var relation) =>
+                OsmDocumentSync.CreateRelationFeature(dataset, relation) ?? original,
+            _ => original
+        };
+    }
+
+    private static bool IsCompactOriginalFeature(MapFeature feature) {
+        return feature.Osm is not null && feature.Parts.Count == 0 && feature.Attributes.Count == 0;
     }
 
     private static bool FeatureEquivalent(MapFeature left, MapFeature right) {

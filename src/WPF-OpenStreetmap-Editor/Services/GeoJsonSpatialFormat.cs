@@ -19,18 +19,19 @@ internal static class GeoJsonSpatialFormat {
         var document = new MapDocument();
         var coordinateCount = 0;
         var root = json.RootElement;
+        var transform = ProjectionService.CreateImportTransform(options);
 
         if (IsType(root, "FeatureCollection") && root.TryGetProperty("features", out var features)) {
             var index = 0;
             foreach (var feature in features.EnumerateArray()) {
                 ct.ThrowIfCancellationRequested();
-                ReadFeature(feature, document, ref coordinateCount, options, index++);
+                ReadFeature(feature, document, ref coordinateCount, options, transform, index++);
                 Report(progress, document.Features.Count, "正在读取 GeoJSON");
             }
         } else if (IsType(root, "Feature")) {
-            ReadFeature(root, document, ref coordinateCount, options, 0);
+            ReadFeature(root, document, ref coordinateCount, options, transform, 0);
         } else {
-            ReadGeometry(root, new Dictionary<string, string>(), document, ref coordinateCount, options, "geometry-0");
+            ReadGeometry(root, new Dictionary<string, string>(), document, ref coordinateCount, options, transform, "geometry-0");
         }
 
         return document;
@@ -65,6 +66,7 @@ internal static class GeoJsonSpatialFormat {
         MapDocument document,
         ref int coordinateCount,
         SpatialImportOptions options,
+        Func<double, double, GeoPoint> transform,
         int index) {
         if (!source.TryGetProperty("geometry", out var geometry) || geometry.ValueKind == JsonValueKind.Null) return;
 
@@ -78,7 +80,7 @@ internal static class GeoJsonSpatialFormat {
         var id = source.TryGetProperty("id", out var idValue)
             ? JsonValueToString(idValue)
             : $"feature-{index.ToString(CultureInfo.InvariantCulture)}";
-        ReadGeometry(geometry, attributes, document, ref coordinateCount, options, id);
+        ReadGeometry(geometry, attributes, document, ref coordinateCount, options, transform, id);
     }
 
     private static void ReadGeometry(
@@ -87,6 +89,7 @@ internal static class GeoJsonSpatialFormat {
         MapDocument document,
         ref int coordinateCount,
         SpatialImportOptions options,
+        Func<double, double, GeoPoint> transform,
         string id) {
         if (!geometry.TryGetProperty("type", out var typeElement) ||
             typeElement.ValueKind != JsonValueKind.String) return;
@@ -95,7 +98,7 @@ internal static class GeoJsonSpatialFormat {
         if (type == "GeometryCollection" && geometry.TryGetProperty("geometries", out var geometries)) {
             var childIndex = 0;
             foreach (var child in geometries.EnumerateArray()) {
-                ReadGeometry(child, new Dictionary<string, string>(attributes), document, ref coordinateCount, options, $"{id}-{childIndex++}");
+                ReadGeometry(child, new Dictionary<string, string>(attributes), document, ref coordinateCount, options, transform, $"{id}-{childIndex++}");
             }
             return;
         }
@@ -106,14 +109,14 @@ internal static class GeoJsonSpatialFormat {
                 AddFeature(document, options, new MapFeature {
                     Id = id,
                     GeometryType = MapGeometryType.Point,
-                    Parts = [[ReadPoint(coordinates, ref coordinateCount, options)]],
+                    Parts = [[ReadPoint(coordinates, ref coordinateCount, options, transform)]],
                     Attributes = attributes
                 });
                 break;
             case "MultiPoint":
                 var pointParts = new List<List<GeoPoint>>();
                 foreach (var point in coordinates.EnumerateArray()) {
-                    pointParts.Add([ReadPoint(point, ref coordinateCount, options)]);
+                    pointParts.Add([ReadPoint(point, ref coordinateCount, options, transform)]);
                 }
                 AddFeature(document, options, new MapFeature {
                     Id = id,
@@ -126,14 +129,14 @@ internal static class GeoJsonSpatialFormat {
                 AddFeature(document, options, new MapFeature {
                     Id = id,
                     GeometryType = MapGeometryType.LineString,
-                    Parts = [ReadLine(coordinates, ref coordinateCount, options)],
+                    Parts = [ReadLine(coordinates, ref coordinateCount, options, transform)],
                     Attributes = attributes
                 });
                 break;
             case "MultiLineString":
                 var lineParts = new List<List<GeoPoint>>();
                 foreach (var line in coordinates.EnumerateArray()) {
-                    lineParts.Add(ReadLine(line, ref coordinateCount, options));
+                    lineParts.Add(ReadLine(line, ref coordinateCount, options, transform));
                 }
                 AddFeature(document, options, new MapFeature {
                     Id = id,
@@ -145,7 +148,7 @@ internal static class GeoJsonSpatialFormat {
             case "Polygon":
                 var polygonParts = new List<List<GeoPoint>>();
                 foreach (var ring in coordinates.EnumerateArray()) {
-                    polygonParts.Add(ReadLine(ring, ref coordinateCount, options));
+                    polygonParts.Add(ReadLine(ring, ref coordinateCount, options, transform));
                 }
                 AddFeature(document, options, new MapFeature {
                     Id = id,
@@ -159,7 +162,7 @@ internal static class GeoJsonSpatialFormat {
                 foreach (var polygon in coordinates.EnumerateArray()) {
                     var rings = new List<List<GeoPoint>>();
                     foreach (var ring in polygon.EnumerateArray()) {
-                        rings.Add(ReadLine(ring, ref coordinateCount, options));
+                        rings.Add(ReadLine(ring, ref coordinateCount, options, transform));
                     }
                     AddFeature(document, options, new MapFeature {
                         Id = $"{id}-{polygonIndex++}",
@@ -172,20 +175,26 @@ internal static class GeoJsonSpatialFormat {
         }
     }
 
-    private static GeoPoint ReadPoint(JsonElement coordinates, ref int count, SpatialImportOptions options) {
+    private static GeoPoint ReadPoint(
+        JsonElement coordinates,
+        ref int count,
+        SpatialImportOptions options,
+        Func<double, double, GeoPoint> transform) {
         if (coordinates.ValueKind != JsonValueKind.Array || coordinates.GetArrayLength() < 2) {
             throw new InvalidDataException("GeoJSON 坐标必须至少包含经度和纬度。");
         }
         CheckCoordinateLimit(++count, options);
-        var point = new GeoPoint(coordinates[0].GetDouble(), coordinates[1].GetDouble());
-        if (!point.IsValid) throw new InvalidDataException("GeoJSON 包含无效的经纬度坐标。");
-        return point;
+        return transform(coordinates[0].GetDouble(), coordinates[1].GetDouble());
     }
 
-    private static List<GeoPoint> ReadLine(JsonElement coordinates, ref int count, SpatialImportOptions options) {
+    private static List<GeoPoint> ReadLine(
+        JsonElement coordinates,
+        ref int count,
+        SpatialImportOptions options,
+        Func<double, double, GeoPoint> transform) {
         var points = new List<GeoPoint>();
         foreach (var point in coordinates.EnumerateArray()) {
-            points.Add(ReadPoint(point, ref count, options));
+            points.Add(ReadPoint(point, ref count, options, transform));
         }
         return points;
     }

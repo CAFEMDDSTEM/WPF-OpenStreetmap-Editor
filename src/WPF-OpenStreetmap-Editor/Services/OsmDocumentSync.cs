@@ -438,7 +438,8 @@ internal static class OsmDocumentSync {
         OsmDataset dataset,
         MapFeature feature,
         OsmRelation relation) {
-        if (document.OriginalFeatures.TryGetValue(feature.Id, out var originalFeature)) {
+        if (document.OriginalFeatures.TryGetValue(feature.Id, out var originalFeature) &&
+            originalFeature.Parts.Count > 0) {
             return !PartsEqual(feature.Parts, originalFeature.Parts);
         }
 

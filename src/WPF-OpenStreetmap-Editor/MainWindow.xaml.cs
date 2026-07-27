@@ -820,7 +820,13 @@ public partial class MainWindow : Window {
             DocumentStatusTextBlock.Text = L.Format("Main.Status.Importing", Path.GetFileName(path));
             var progress = new Progress<SpatialImportProgress>(update =>
                 DocumentStatusTextBlock.Text = L.Format("Main.Status.ImportProgress", update.Stage, update.FeaturesRead));
-            var document = await SpatialDataService.ImportAsync(path, progress: progress);
+            var document = await SpatialDataService.ImportAsync(
+                path,
+                new SpatialImportOptions {
+                    SourceProjectionId = _settings.DefaultImportProjectionId,
+                    CustomProjectionWkt = _settings.CustomImportProjectionWkt
+                },
+                progress);
             _document = document;
             _selectionBounds = null;
             SetSelectedFeatures([]);
@@ -905,6 +911,7 @@ public partial class MainWindow : Window {
         TileImageLoader.Shared.Clear();
         RefreshImageryMenu();
         var activeLayer = _settings.GetActiveLayer();
+        RefreshLocalizedText();
         RefreshRenderedLayerFromStack(activeLayer);
     }
 
@@ -2622,6 +2629,13 @@ public partial class MainWindow : Window {
             command);
     }
 
+    private void RefreshLocalizedText() {
+        SetEditorMode(_editorMode);
+        UpdateDocumentUi();
+        UpdateSourceSummary();
+        RefreshLayerList(LayerListBox.SelectedItem as MapImageLayer ?? _settings.GetActiveLayer());
+    }
+
     private bool ConfirmDiscardChanges(string message) {
         if (_document?.IsDirty != true &&
             !Editor.HasDraftLine &&
@@ -2718,7 +2732,7 @@ public partial class MainWindow : Window {
             document.Name = L.Format("Main.OsmDownloadDocumentName", DateTime.Now);
             document.SourcePath = null;
             document.SourceFormat = SpatialFileFormat.OsmXml;
-            document.MarkClean();
+            document.MarkClean(compactOsmHistory: true);
             _document = document;
             _selectionBounds = null;
             SetSelectedFeatures([]);

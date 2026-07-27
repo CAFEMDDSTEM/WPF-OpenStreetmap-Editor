@@ -15,10 +15,19 @@ public sealed class LocalizationService : INotifyPropertyChanged {
     private static readonly IReadOnlyDictionary<string, string> CultureResourceNames =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             ["en"] = "en",
+            ["en-US"] = "en",
+            ["en-GB"] = "en",
             ["zh-Hans"] = "zh-Hans",
+            ["zh-CN"] = "zh-Hans",
+            ["zh-SG"] = "zh-Hans",
             ["zh-Hant"] = "zh-Hant",
+            ["zh-TW"] = "zh-Hant",
+            ["zh-HK"] = "zh-Hant",
+            ["zh-MO"] = "zh-Hant",
             ["ja"] = "ja",
-            ["de"] = "de"
+            ["ja-JP"] = "ja",
+            ["de"] = "de",
+            ["de-DE"] = "de"
         };
     private static readonly IReadOnlyDictionary<string, string> HeadlessEnglishStrings =
         new Dictionary<string, string>(StringComparer.Ordinal) {
@@ -120,11 +129,11 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         Thread.CurrentThread.CurrentCulture = culture;
         Thread.CurrentThread.CurrentUICulture = culture;
 
-        var dictionary = LoadDictionary(resolvedLanguageId);
+        var dictionaries = LoadDictionaries(resolvedLanguageId);
         lock (_sync) {
-            RefreshStrings(dictionary);
+            RefreshStrings(dictionaries);
         }
-        ApplyApplicationResources(dictionary);
+        ApplyApplicationResources(dictionaries);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LanguageId)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ResolvedLanguageId)));
@@ -176,14 +185,16 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         return "en";
     }
 
-    private static ResourceDictionary LoadDictionary(string languageId) {
+    private static IReadOnlyList<ResourceDictionary> LoadDictionaries(string languageId) {
+        var dictionaries = new List<ResourceDictionary> { CreateDictionary("en") };
+        if (languageId.Equals("en", StringComparison.OrdinalIgnoreCase)) return dictionaries;
+
         try {
-            return CreateDictionary(languageId);
-        } catch (Exception ex) when (
-            !languageId.Equals("en", StringComparison.OrdinalIgnoreCase) &&
-            ex is IOException or XamlParseException) {
-            return CreateDictionary("en");
+            dictionaries.Add(CreateDictionary(languageId));
+        } catch (Exception ex) when (ex is IOException or XamlParseException) {
         }
+
+        return dictionaries;
     }
 
     private static ResourceDictionary CreateDictionary(string languageId) {
@@ -196,7 +207,7 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         if (_strings.Count > 0) return;
 
         try {
-            RefreshStrings(LoadDictionary(_resolvedLanguageId));
+            RefreshStrings(LoadDictionaries(_resolvedLanguageId));
         } catch (Exception ex) when (ex is IOException or NotSupportedException or XamlParseException) {
             RefreshStrings(HeadlessEnglishStrings);
         }
@@ -209,16 +220,18 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         }
     }
 
-    private void RefreshStrings(ResourceDictionary dictionary) {
+    private void RefreshStrings(IEnumerable<ResourceDictionary> dictionaries) {
         _strings.Clear();
-        foreach (var key in dictionary.Keys.OfType<string>()) {
-            if (dictionary[key] is string value) {
-                _strings[key] = value;
+        foreach (var dictionary in dictionaries) {
+            foreach (var key in dictionary.Keys.OfType<string>()) {
+                if (dictionary[key] is string value) {
+                    _strings[key] = value;
+                }
             }
         }
     }
 
-    private static void ApplyApplicationResources(ResourceDictionary dictionary) {
+    private static void ApplyApplicationResources(IEnumerable<ResourceDictionary> localizationDictionaries) {
         if (Application.Current is null) return;
 
         var dictionaries = Application.Current.Resources.MergedDictionaries;
@@ -230,6 +243,8 @@ public sealed class LocalizationService : INotifyPropertyChanged {
             }
         }
 
-        dictionaries.Add(dictionary);
+        foreach (var dictionary in localizationDictionaries) {
+            dictionaries.Add(dictionary);
+        }
     }
 }

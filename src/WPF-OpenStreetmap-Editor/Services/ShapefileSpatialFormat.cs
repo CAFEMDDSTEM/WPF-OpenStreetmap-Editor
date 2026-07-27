@@ -15,7 +15,7 @@ internal static class ShapefileSpatialFormat {
         IProgress<SpatialImportProgress>? progress,
         CancellationToken ct) {
         var attributes = ReadDbf(FindCompanion(path, ".dbf"));
-        var transform = CreateCoordinateTransform(FindCompanion(path, ".prj"));
+        var transform = CreateCoordinateTransform(FindCompanion(path, ".prj"), options);
         var document = new MapDocument();
         using var stream = File.OpenRead(path);
         using var reader = new BinaryReader(stream);
@@ -189,8 +189,8 @@ internal static class ShapefileSpatialFormat {
         return Encoding.Latin1;
     }
 
-    private static Func<double, double, GeoPoint> CreateCoordinateTransform(string? prjPath) {
-        if (prjPath is null) return static (x, y) => ValidatePoint(x, y);
+    private static Func<double, double, GeoPoint> CreateCoordinateTransform(string? prjPath, SpatialImportOptions options) {
+        if (prjPath is null) return ProjectionService.CreateImportTransform(options);
         var wkt = File.ReadAllText(prjPath);
         try {
             var coordinateSystemFactory = new CoordinateSystemFactory();
@@ -200,7 +200,7 @@ internal static class ShapefileSpatialFormat {
                 .MathTransform;
             return (x, y) => {
                 var result = transform.Transform([x, y]);
-                return ValidatePoint(result[0], result[1]);
+                return ProjectionService.ValidatePoint(result[0], result[1]);
             };
         } catch (Exception ex) when (ex is not InvalidDataException) {
             throw new InvalidDataException("无法解析 Shapefile 的 PRJ 坐标系。", ex);
@@ -216,14 +216,6 @@ internal static class ShapefileSpatialFormat {
             throw new SpatialDataLimitException($"Shapefile 超过安全导入上限 {options.MaxCoordinates:N0} 个坐标。");
         }
         return transform(reader.ReadDouble(), reader.ReadDouble());
-    }
-
-    private static GeoPoint ValidatePoint(double longitude, double latitude) {
-        var point = new GeoPoint(longitude, latitude);
-        if (!point.IsValid) {
-            throw new InvalidDataException("Shapefile 坐标不在有效经纬度范围内，并且没有可用的 PRJ 转换。");
-        }
-        return point;
     }
 
     private static void AddFeature(MapDocument document, MapFeature feature, SpatialImportOptions options) {

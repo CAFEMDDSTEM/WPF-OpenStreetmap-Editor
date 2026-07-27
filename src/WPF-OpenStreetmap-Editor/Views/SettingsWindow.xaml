@@ -149,6 +149,59 @@
                 </Grid>
             </TabItem>
 
+            <TabItem x:Name="DataTabItem" Header="{services:Loc Settings.Data}">
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.ColumnSpan="2"
+                               Text="{services:Loc Settings.ImportProjection}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,14" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.DefaultImportProjection}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,10" />
+                    <ComboBox x:Name="ImportProjectionComboBox"
+                              Grid.Row="1"
+                              Grid.Column="1"
+                              Width="390"
+                              HorizontalAlignment="Left"
+                              DisplayMemberPath="Name"
+                              SelectionChanged="ImportProjectionComboBox_SelectionChanged"
+                              Margin="0,0,0,10" />
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.CustomProjectionWkt}"
+                               VerticalAlignment="Top"
+                               Margin="0,3,8,10" />
+                    <TextBox x:Name="CustomProjectionWktTextBox"
+                             Grid.Row="2"
+                             Grid.Column="1"
+                             Height="160"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,10" />
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="1"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="{services:Loc Settings.ImportProjectionHelp}" />
+                </Grid>
+            </TabItem>
+
             <TabItem x:Name="SourcesTabItem" Header="{services:Loc Settings.Sources}">
                 <Grid Margin="12">
                     <Grid.ColumnDefinitions>
@@ -225,7 +278,7 @@
                             <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" Text="{services:Loc Settings.AttributionUrl}" Margin="0,0,8,8" />
                             <TextBox x:Name="AttributionUrlTextBox" Grid.Row="6" Grid.Column="1" Margin="0,0,0,8" />
 
-                            <TextBlock Grid.Row="7" Grid.Column="0" VerticalAlignment="Top" Text="No-tile ETag" Margin="0,3,8,8" />
+                            <TextBlock Grid.Row="7" Grid.Column="0" VerticalAlignment="Top" Text="{services:Loc Settings.NoTileEtag}" Margin="0,3,8,8" />
                             <TextBox x:Name="NoTileEtagsTextBox"
                                      Grid.Row="7"
                                      Grid.Column="1"
@@ -235,7 +288,7 @@
                                      VerticalScrollBarVisibility="Auto"
                                      Margin="0,0,0,8" />
 
-                            <TextBlock Grid.Row="8" Grid.Column="0" VerticalAlignment="Top" Text="No-tile MD5" Margin="0,3,8,8" />
+                            <TextBlock Grid.Row="8" Grid.Column="0" VerticalAlignment="Top" Text="{services:Loc Settings.NoTileMd5}" Margin="0,3,8,8" />
                             <TextBox x:Name="NoTileMd5sTextBox"
                                      Grid.Row="8"
                                      Grid.Column="1"

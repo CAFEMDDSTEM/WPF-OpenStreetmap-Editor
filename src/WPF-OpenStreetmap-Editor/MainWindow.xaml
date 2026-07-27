@@ -430,7 +430,7 @@
                                   SelectionChanged="FeatureDataGrid_SelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="{services:Loc Main.Features.GeometryType}" Binding="{Binding GeometryType}" Width="80" />
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*" />
+                                <DataGridTextColumn Header="{services:Loc Main.Features.Id}" Binding="{Binding Id}" Width="*" />
                                 <DataGridCheckBoxColumn Header="{services:Loc Main.Features.Hidden}" Binding="{Binding IsHidden}" Width="54" />
                             </DataGrid.Columns>
                         </DataGrid>

@@ -20,6 +20,21 @@ or OpenStreetMap transfer workflows.
 Imports are bounded by default to 250,000 features and 2,000,000 coordinates.
 Large OSM API downloads are also capped at 128 MB.
 
+## Import projections
+
+WOSM stores vector data internally as WGS 84 longitude/latitude so it can align
+with XYZ and TMS imagery. Open **Tools > Settings > Data** to choose the default
+source projection used when importing projected GeoJSON, GML, or Shapefiles
+without a `.prj` file. Built-in options include WGS 84, Web Mercator, CGCS2000
+longitude/latitude, CGCS2000 Mercator, JGD2011, JGD2000, ETRS89, and German
+ETRS89 / UTM zones 32N and 33N. Use **Custom WKT** for another CRS.
+
+Shapefiles with a companion `.prj` keep using the CRS declared by that file.
+OSM, GPX, and KML are treated as longitude/latitude formats.
+Legacy German DHDN / Gauss-Kruger data should keep its `.prj` file or use a
+site-approved custom WKT because high-accuracy datum conversion can depend on
+local transformation parameters.
+
 ## Editing workflow
 
 Use **File > Open** to import a vector document. WOSM fits the map to the

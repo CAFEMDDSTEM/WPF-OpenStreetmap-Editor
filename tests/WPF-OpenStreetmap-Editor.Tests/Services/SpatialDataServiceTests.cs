@@ -41,6 +41,53 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task ImportAsync_GeoJsonTransformsConfiguredProjectedCoordinates() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "projected.geojson");
+        try {
+            var (x, y) = ToWebMercatorMeters(10, 20);
+            File.WriteAllText(path, $$"""
+                {
+                  "type": "Feature",
+                  "id": "projected-point",
+                  "properties": {},
+                  "geometry": { "type": "Point", "coordinates": [{{x.ToString("R", CultureInfo.InvariantCulture)}}, {{y.ToString("R", CultureInfo.InvariantCulture)}}] }
+                }
+                """);
+
+            var document = await SpatialDataService.ImportAsync(
+                path,
+                new SpatialImportOptions { SourceProjectionId = ProjectionService.WebMercatorId });
+
+            var point = Assert.Single(document.Features).Parts[0][0];
+            Assert.Equal(10, point.Longitude, precision: 6);
+            Assert.Equal(20, point.Latitude, precision: 6);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public void ProjectionService_Cgcs2000MercatorPresetCanTransformCoordinates() {
+        var transform = ProjectionService.CreateImportTransform(ProjectionService.Cgcs2000MercatorId);
+
+        var point = transform(0, 0);
+
+        Assert.Equal(0, point.Longitude, precision: 10);
+        Assert.Equal(0, point.Latitude, precision: 10);
+    }
+
+    [Fact]
+    public void ProjectionService_Etrs89Utm33NTransformsBerlinCoordinate() {
+        var transform = ProjectionService.CreateImportTransform(ProjectionService.Etrs89Utm33NId);
+
+        var point = transform(391779.26, 5820072.16);
+
+        Assert.Equal(13.405, point.Longitude, precision: 3);
+        Assert.Equal(52.52, point.Latitude, precision: 2);
+    }
+
+    [Fact]
     public async Task SaveAsync_GeoJsonRoundTripsDocument() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "saved.geojson");
@@ -127,6 +174,8 @@ public class SpatialDataServiceTests {
             Assert.Equal(1, node.Osm!.Id);
             Assert.Equal(4, way.Osm!.Version);
             Assert.Equal(3, way.Parts[0].Count);
+            Assert.Same(document.Osm, document.OriginalOsm);
+            Assert.All(document.OriginalFeatures.Values, feature => Assert.Empty(feature.Parts));
         } finally {
             DeleteTestDirectory(root);
         }
@@ -319,6 +368,25 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task ImportAsync_ShapefileWithoutPrjUsesConfiguredProjection() {
+        var root = CreateTestDirectory();
+        try {
+            var (x, y) = ToWebMercatorMeters(10, 20);
+            WritePointShapefile(Path.Combine(root, "map.shp"), x, y);
+
+            var document = await SpatialDataService.ImportAsync(
+                Path.Combine(root, "map.shp"),
+                new SpatialImportOptions { SourceProjectionId = ProjectionService.WebMercatorId });
+
+            var point = Assert.Single(document.Features).Parts[0][0];
+            Assert.Equal(10, point.Longitude, precision: 6);
+            Assert.Equal(20, point.Latitude, precision: 6);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
     public async Task ImportAsync_StopsAtConfiguredCoordinateLimit() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "map.geojson");
@@ -356,6 +424,14 @@ public class SpatialDataServiceTests {
         writer.Write(1);
         writer.Write(longitude);
         writer.Write(latitude);
+    }
+
+    private static (double X, double Y) ToWebMercatorMeters(double longitude, double latitude) {
+        const double radius = 6378137.0;
+        var x = longitude * Math.PI / 180.0 * radius;
+        var latRad = latitude * Math.PI / 180.0;
+        var y = Math.Log(Math.Tan(Math.PI / 4.0 + latRad / 2.0)) * radius;
+        return (x, y);
     }
 
     private static void WriteDbf(string path, string value) {

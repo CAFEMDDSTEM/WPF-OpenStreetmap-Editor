@@ -8,6 +8,8 @@ public sealed record SpatialImportProgress(int FeaturesRead, string Stage);
 public sealed class SpatialImportOptions {
     public int MaxFeatures { get; init; } = 1_000_000;
     public int MaxCoordinates { get; init; } = 8_000_000;
+    public string SourceProjectionId { get; init; } = ProjectionService.Wgs84Id;
+    public string CustomProjectionWkt { get; init; } = "";
 }
 
 public sealed class SpatialDataLimitException(string message) : IOException(message);
@@ -46,7 +48,7 @@ public static class SpatialDataService {
             document.SourcePath = fullPath;
             document.SourceFormat = format;
             document.Name = Path.GetFileName(fullPath);
-            document.MarkClean();
+            document.MarkClean(compactOsmHistory: IsOsmFormat(format));
             return document;
         }, ct);
     }
@@ -96,6 +98,10 @@ public static class SpatialDataService {
             ".gpx" => SpatialFileFormat.Gpx,
             var extension => throw new NotSupportedException($"不支持的数据格式：{extension}")
         };
+    }
+
+    private static bool IsOsmFormat(SpatialFileFormat format) {
+        return format is SpatialFileFormat.OsmXml or SpatialFileFormat.OsmPbf;
     }
 
     private static string ResolveInputPath(string path) {

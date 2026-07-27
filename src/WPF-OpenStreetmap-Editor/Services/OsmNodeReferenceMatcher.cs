@@ -17,9 +17,10 @@ internal static class OsmNodeReferenceMatcher {
         IReadOnlyList<GeoPoint> points,
         IReadOnlyList<OsmNodeReference>? originalNodes) {
         if (originalNodes is not null && points.Count == originalNodes.Count) {
-            return originalNodes
-                .Select((reference, index) => (OsmNodeReferenceMatch?)new OsmNodeReferenceMatch(reference, index))
-                .ToArray();
+            return TryMatchReorderedPoints(points, originalNodes) ??
+                originalNodes
+                    .Select((reference, index) => (OsmNodeReferenceMatch?)new OsmNodeReferenceMatch(reference, index))
+                    .ToArray();
         }
 
         return MatchWithIndexes(points, originalNodes);
@@ -58,5 +59,45 @@ internal static class OsmNodeReferenceMatcher {
         }
 
         return matches;
+    }
+
+    private static IReadOnlyList<OsmNodeReferenceMatch?>? TryMatchReorderedPoints(
+        IReadOnlyList<GeoPoint> points,
+        IReadOnlyList<OsmNodeReference> originalNodes) {
+        if (points.Count == 0) return [];
+        if (IsSameOrder(points, originalNodes)) return null;
+
+        var indexesByPoint = new Dictionary<GeoPoint, Queue<int>>();
+        for (var i = 0; i < originalNodes.Count; i++) {
+            var point = originalNodes[i].Point;
+            if (!indexesByPoint.TryGetValue(point, out var indexes)) {
+                indexes = new Queue<int>();
+                indexesByPoint[point] = indexes;
+            }
+
+            indexes.Enqueue(i);
+        }
+
+        var matches = new OsmNodeReferenceMatch?[points.Count];
+        for (var i = 0; i < points.Count; i++) {
+            if (!indexesByPoint.TryGetValue(points[i], out var indexes) || indexes.Count == 0) {
+                return null;
+            }
+
+            var originalIndex = indexes.Dequeue();
+            matches[i] = new OsmNodeReferenceMatch(originalNodes[originalIndex], originalIndex);
+        }
+
+        return indexesByPoint.Values.All(static indexes => indexes.Count == 0)
+            ? matches
+            : null;
+    }
+
+    private static bool IsSameOrder(IReadOnlyList<GeoPoint> points, IReadOnlyList<OsmNodeReference> originalNodes) {
+        for (var i = 0; i < points.Count; i++) {
+            if (points[i] != originalNodes[i].Point) return false;
+        }
+
+        return true;
     }
 }

@@ -8,17 +8,20 @@ namespace WPF_OpenStreetmap_Editor.Views;
 
 public enum SettingsSection {
     Appearance,
+    Data,
     Sources
 }
 
 public partial class SettingsWindow : Window {
     private readonly AppSettings _workingSettings;
     private readonly ObservableCollection<TileSourcePreset> _sources;
+    private readonly ObservableCollection<ProjectionDefinition> _projections;
     private readonly ObservableCollection<ThemeDefinition> _themes = [];
     private readonly string _originalThemeId;
     private readonly string _originalLanguageId;
     private TileSourcePreset? _selectedSource;
     private bool _loadingFields;
+    private bool _loadingProjectionFields;
     private bool _loadingThemes;
     private bool _loadingLanguages;
     private bool _accepted;
@@ -31,18 +34,23 @@ public partial class SettingsWindow : Window {
         ThemeService.ApplyWindowTheme(this);
         SettingsTabControl.SelectedItem = initialSection == SettingsSection.Sources
             ? SourcesTabItem
-            : AppearanceTabItem;
+            : initialSection == SettingsSection.Data
+                ? DataTabItem
+                : AppearanceTabItem;
 
         _workingSettings = settings.Clone();
         AppSettingsService.EnsureDefaults(_workingSettings);
         _originalThemeId = _workingSettings.ThemeId;
         _originalLanguageId = _workingSettings.LanguageId;
         _sources = new ObservableCollection<TileSourcePreset>(_workingSettings.TileSources);
+        _projections = new ObservableCollection<ProjectionDefinition>(ProjectionService.GetDefinitions());
         ResultSettings = _workingSettings.Clone();
 
         SourcesListBox.ItemsSource = _sources;
+        ImportProjectionComboBox.ItemsSource = _projections;
         ThemeComboBox.ItemsSource = _themes;
         ExperimentalSmoothZoomCheckBox.IsChecked = _workingSettings.ExperimentalSmoothZoom;
+        LoadProjectionFields();
         LoadThemes(_workingSettings.ThemeId);
         LoadLanguages(_workingSettings.LanguageId);
 
@@ -76,6 +84,13 @@ public partial class SettingsWindow : Window {
         if (ThemeComboBox.SelectedItem is ThemeDefinition theme) {
             UpdateThemeDetails(theme);
         }
+    }
+
+    private void ImportProjectionComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+        if (_loadingProjectionFields) return;
+
+        CustomProjectionWktTextBox.IsEnabled =
+            (ImportProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id == ProjectionService.CustomWktId;
     }
 
     private void ImportTheme_Click(object sender, RoutedEventArgs e) {
@@ -163,6 +178,7 @@ public partial class SettingsWindow : Window {
 
     private void Save_Click(object sender, RoutedEventArgs e) {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
+        if (!SaveProjectionFields()) return;
 
         _workingSettings.ThemeId = (ThemeComboBox.SelectedItem as ThemeDefinition)?.Id ?? ThemeService.SystemThemeId;
         _workingSettings.LanguageId = (LanguageComboBox.SelectedItem as LanguageOption)?.Id ?? LocalizationService.SystemLanguageId;
@@ -212,6 +228,35 @@ public partial class SettingsWindow : Window {
             : L.Format("Settings.ThemeMetadata", theme.Author, theme.Version);
         ThemeDescriptionTextBlock.Text = theme.Description;
         RemoveThemeButton.IsEnabled = !theme.IsBuiltIn;
+    }
+
+    private void LoadProjectionFields() {
+        _loadingProjectionFields = true;
+        try {
+            var selectedId = ProjectionService.NormalizeProjectionId(_workingSettings.DefaultImportProjectionId);
+            ImportProjectionComboBox.SelectedItem = _projections.First(projection => projection.Id == selectedId);
+            CustomProjectionWktTextBox.Text = _workingSettings.CustomImportProjectionWkt;
+            CustomProjectionWktTextBox.IsEnabled = selectedId == ProjectionService.CustomWktId;
+        } finally {
+            _loadingProjectionFields = false;
+        }
+    }
+
+    private bool SaveProjectionFields() {
+        var selectedId = (ImportProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id ?? ProjectionService.Wgs84Id;
+        var customWkt = CustomProjectionWktTextBox.Text.Trim();
+        if (selectedId == ProjectionService.CustomWktId) {
+            try {
+                _ = ProjectionService.CreateImportTransform(selectedId, customWkt);
+            } catch (InvalidDataException ex) {
+                MessageBox.Show(ex.Message, L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+        }
+
+        _workingSettings.DefaultImportProjectionId = selectedId;
+        _workingSettings.CustomImportProjectionWkt = customWkt;
+        return true;
     }
 
     private void LoadSourceFields(TileSourcePreset? source) {

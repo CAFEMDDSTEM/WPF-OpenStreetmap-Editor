@@ -14,6 +14,32 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
+    public void Clone_PreservesImportProjectionSettings() {
+        var settings = new AppSettings {
+            DefaultImportProjectionId = ProjectionService.CustomWktId,
+            CustomImportProjectionWkt = "GEOGCS[\"Custom\",DATUM[\"D\",SPHEROID[\"S\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]]"
+        };
+
+        var clone = settings.Clone();
+
+        Assert.Equal(ProjectionService.CustomWktId, clone.DefaultImportProjectionId);
+        Assert.Equal(settings.CustomImportProjectionWkt, clone.CustomImportProjectionWkt);
+    }
+
+    [Fact]
+    public void EnsureDefaults_NormalizesImportProjectionSettings() {
+        var settings = new AppSettings {
+            DefaultImportProjectionId = "EPSG900913",
+            CustomImportProjectionWkt = null!
+        };
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(ProjectionService.WebMercatorId, settings.DefaultImportProjectionId);
+        Assert.Equal(string.Empty, settings.CustomImportProjectionWkt);
+    }
+
+    [Fact]
     public void EnsureDefaults_ReplacesEmptyThemeWithSystemTheme() {
         var settings = new AppSettings { ThemeId = " " };
 

@@ -38,8 +38,8 @@ public sealed class MapDocument {
         _spatialIndex = null;
     }
 
-    public void MarkClean(bool updateOsmHistory = true) {
-        if (updateOsmHistory) CaptureOsmHistory();
+    public void MarkClean(bool updateOsmHistory = true, bool compactOsmHistory = false) {
+        if (updateOsmHistory) CaptureOsmHistory(compactOsmHistory);
         ClearSelection();
         IsDirty = false;
     }
@@ -79,7 +79,22 @@ public sealed class MapDocument {
         return projection;
     }
 
-    private void CaptureOsmHistory() {
+    private void CaptureOsmHistory(bool compactOsmHistory) {
+        if (compactOsmHistory && Osm is not null) {
+            _originalFeatures = Features
+                .Where(static feature => feature.Osm is not null)
+                .ToDictionary(
+                    static feature => feature.Id,
+                    static feature => new MapFeature {
+                        Id = feature.Id,
+                        GeometryType = feature.GeometryType,
+                        Osm = feature.Osm?.Clone()
+                    },
+                    StringComparer.Ordinal);
+            _originalOsm = Osm;
+            return;
+        }
+
         _originalFeatures = Features.ToDictionary(
             static feature => feature.Id,
             static feature => feature.Clone(),
