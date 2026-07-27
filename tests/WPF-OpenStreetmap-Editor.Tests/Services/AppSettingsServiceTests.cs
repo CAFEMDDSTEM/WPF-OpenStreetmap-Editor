@@ -5,6 +5,24 @@ namespace WPF_OpenStreetmap_Editor.Tests.Services;
 
 public class AppSettingsServiceTests {
     [Fact]
+    public void Clone_PreservesThemeSelection() {
+        var settings = new AppSettings { ThemeId = "community.high-contrast" };
+
+        var clone = settings.Clone();
+
+        Assert.Equal("community.high-contrast", clone.ThemeId);
+    }
+
+    [Fact]
+    public void EnsureDefaults_ReplacesEmptyThemeWithSystemTheme() {
+        var settings = new AppSettings { ThemeId = " " };
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(ThemeService.SystemThemeId, settings.ThemeId);
+    }
+
+    [Fact]
     public void EnsureDefaults_CreatesOneActiveImageLayerFromActiveSource() {
         var settings = new AppSettings();
 
@@ -15,6 +33,19 @@ public class AppSettingsServiceTests {
         Assert.Equal(settings.ActiveSourceName, layer.SourceName);
         Assert.True(layer.IsVisible);
         Assert.True(layer.IsPrimary);
+    }
+
+    [Theory]
+    [InlineData(-0.25, 0.0)]
+    [InlineData(1.25, 1.0)]
+    public void EnsureDefaults_ClampsLayerOpacity(double opacity, double expected) {
+        var settings = new AppSettings();
+        AppSettingsService.EnsureDefaults(settings);
+        settings.ImageLayers[0].Opacity = opacity;
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(expected, settings.ImageLayers[0].Opacity);
     }
 
     [Fact]
@@ -47,6 +78,36 @@ public class AppSettingsServiceTests {
 
         var primary = Assert.Single(settings.ImageLayers, layer => layer.IsPrimary);
         Assert.Equal(MapLayerKind.Data, primary.Kind);
+    }
+
+    [Fact]
+    public void MoveImageLayer_MovesLayerDownUsingOriginalInsertIndex() {
+        var settings = CreateLayerOrderSettings();
+
+        var moved = AppSettingsService.MoveImageLayer(settings, settings.ImageLayers[0], 3);
+
+        Assert.True(moved);
+        Assert.Equal(["b", "c", "a", "d"], settings.ImageLayers.Select(static layer => layer.Id));
+    }
+
+    [Fact]
+    public void MoveImageLayer_MovesLayerUp() {
+        var settings = CreateLayerOrderSettings();
+
+        var moved = AppSettingsService.MoveImageLayer(settings, settings.ImageLayers[3], 1);
+
+        Assert.True(moved);
+        Assert.Equal(["a", "d", "b", "c"], settings.ImageLayers.Select(static layer => layer.Id));
+    }
+
+    [Fact]
+    public void MoveImageLayer_ReturnsFalseWhenLayerStaysInPlace() {
+        var settings = CreateLayerOrderSettings();
+
+        var moved = AppSettingsService.MoveImageLayer(settings, settings.ImageLayers[1], 2);
+
+        Assert.False(moved);
+        Assert.Equal(["a", "b", "c", "d"], settings.ImageLayers.Select(static layer => layer.Id));
     }
 
     [Fact]
@@ -202,5 +263,25 @@ public class AppSettingsServiceTests {
         Assert.DoesNotContain("\"AccessToken\"", sanitized, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("UnknownSetting", sanitized, StringComparison.Ordinal);
         Assert.Contains("access_token={access_token}", sanitized, StringComparison.Ordinal);
+    }
+
+    private static AppSettings CreateLayerOrderSettings() {
+        return new AppSettings {
+            ImageLayers = [
+                Layer("a"),
+                Layer("b"),
+                Layer("c"),
+                Layer("d")
+            ]
+        };
+    }
+
+    private static MapImageLayer Layer(string id) {
+        return new MapImageLayer {
+            Id = id,
+            Name = id,
+            SourceName = id,
+            Source = $"xyz:https://tiles.example.com/{id}/{{z}}/{{x}}/{{y}}.png"
+        };
     }
 }

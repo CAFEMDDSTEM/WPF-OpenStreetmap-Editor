@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public sealed class AppSettings {
+    public string ThemeId { get; set; } = ThemeService.SystemThemeId;
     public string ActiveSourceName { get; set; } = "Esri 世界影像";
     public string ActiveLayerId { get; set; } = "";
     public int MapMaxZoom { get; set; } = GeoConverter.MaxZoom;
@@ -38,6 +39,7 @@ public sealed class AppSettings {
 
     public AppSettings Clone() {
         return new AppSettings {
+            ThemeId = ThemeId,
             ActiveSourceName = ActiveSourceName,
             ActiveLayerId = ActiveLayerId,
             MapMaxZoom = MapMaxZoom,
@@ -241,6 +243,10 @@ public static class AppSettingsService {
     }
 
     public static void EnsureDefaults(AppSettings settings) {
+        if (string.IsNullOrWhiteSpace(settings.ThemeId)) {
+            settings.ThemeId = ThemeService.SystemThemeId;
+        }
+
         var defaults = TileSourcePreset.CreateDefaults();
 
         foreach (var preset in defaults) {
@@ -323,6 +329,24 @@ public static class AppSettingsService {
         foreach (var layer in settings.ImageLayers) {
             layer.IsPrimary = ReferenceEquals(layer, primary);
         }
+    }
+
+    public static bool MoveImageLayer(AppSettings settings, MapImageLayer layer, int insertIndex) {
+        var oldIndex = settings.ImageLayers.FindIndex(candidate =>
+            ReferenceEquals(candidate, layer) || candidate.Id == layer.Id);
+        if (oldIndex < 0) return false;
+
+        insertIndex = Math.Clamp(insertIndex, 0, settings.ImageLayers.Count);
+        if (insertIndex > oldIndex) {
+            insertIndex--;
+        }
+
+        if (insertIndex == oldIndex) return false;
+
+        var settingsLayer = settings.ImageLayers[oldIndex];
+        settings.ImageLayers.RemoveAt(oldIndex);
+        settings.ImageLayers.Insert(Math.Clamp(insertIndex, 0, settings.ImageLayers.Count), settingsLayer);
+        return true;
     }
 
     private static bool SourcesMatch(string left, string right) {

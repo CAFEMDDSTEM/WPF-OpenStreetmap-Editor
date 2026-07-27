@@ -12,6 +12,8 @@ public static class AppPaths {
 
     public static string TileCacheDirectory => Combine(DataDirectory, "Cache", "tiles");
 
+    public static string ThemesDirectory => Combine(DataDirectory, "Themes");
+
     public static string LayersFile => Combine(DataDirectory, "layers.json");
 
     public static string SettingsFile => Combine(DataDirectory, "settings.json");
@@ -21,6 +23,12 @@ public static class AppPaths {
     public static string TileRequestsLogFile => Combine(DataDirectory, "tile_requests.log");
 
     public static string StartupLogFile => Combine(DataDirectory, "startup.log");
+
+    public static string PluginsDirectory => Combine(DataDirectory, "Plugins");
+
+    public static string PluginStateFile => Combine(DataDirectory, "plugins.state.json");
+
+    public static string OsmAccountsFile => Combine(DataDirectory, "osm.accounts.json");
 
     public static string LegacyLayersFile => Combine(BaseDirectory, "layers.json");
 

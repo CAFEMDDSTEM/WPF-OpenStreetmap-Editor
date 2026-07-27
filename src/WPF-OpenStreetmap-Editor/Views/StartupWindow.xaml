@@ -7,22 +7,14 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        Background="{DynamicResource SplashWindowBackgroundBrush}"
+        Background="{DynamicResource Theme.WindowBackgroundBrush}"
+        Foreground="{DynamicResource Theme.TextBrush}"
         ShowInTaskbar="False"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
-    <Window.Resources>
-        <SolidColorBrush x:Key="SplashWindowBackgroundBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="SplashTextBrush" Color="#111111" />
-        <SolidColorBrush x:Key="SplashMutedTextBrush" Color="#5E5E5E" />
-        <SolidColorBrush x:Key="SplashBorderBrush" Color="#CFCFCF" />
-        <SolidColorBrush x:Key="SplashProgressTrackBrush" Color="#E5E5E5" />
-        <SolidColorBrush x:Key="SplashProgressBrush" Color="#111111" />
-    </Window.Resources>
-
     <Border x:Name="RootCard"
-            Background="{DynamicResource SplashWindowBackgroundBrush}"
-            BorderBrush="{DynamicResource SplashBorderBrush}"
+            Background="{DynamicResource Theme.WindowBackgroundBrush}"
+            BorderBrush="{DynamicResource Theme.BorderBrush}"
             BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -41,15 +33,15 @@
                     <TextBlock Text="Wosm"
                                FontSize="32"
                                FontWeight="Bold"
-                               Foreground="{DynamicResource SplashTextBrush}" />
+                               Foreground="{DynamicResource Theme.TextBrush}" />
                     <TextBlock Text="OpenStreetMap Editor"
                                Margin="1,2,0,0"
                                FontSize="16"
-                               Foreground="{DynamicResource SplashTextBrush}" />
+                               Foreground="{DynamicResource Theme.TextBrush}" />
                     <TextBlock x:Name="VersionTextBlock"
                                Margin="1,14,0,0"
                                FontSize="12"
-                               Foreground="{DynamicResource SplashMutedTextBrush}" />
+                               Foreground="{DynamicResource Theme.MutedTextBrush}" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1"
@@ -58,14 +50,14 @@
                                Text="正在启动"
                                FontSize="15"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource SplashTextBrush}"
+                               Foreground="{DynamicResource Theme.TextBrush}"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="StatusTextBlock"
                                Margin="0,8,0,0"
                                MinHeight="38"
                                FontSize="12"
                                LineHeight="18"
-                               Foreground="{DynamicResource SplashMutedTextBrush}"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
                                Text="正在准备应用..."
                                TextWrapping="Wrap" />
                 </StackPanel>
@@ -77,11 +69,11 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="启动进度"
                                FontSize="11"
-                               Foreground="{DynamicResource SplashMutedTextBrush}" />
+                               Foreground="{DynamicResource Theme.MutedTextBrush}" />
                     <TextBlock x:Name="PercentTextBlock"
                                HorizontalAlignment="Right"
                                FontSize="11"
-                               Foreground="{DynamicResource SplashMutedTextBrush}"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
                                Text="0%" />
                     <ProgressBar x:Name="StartupProgressBar"
                                  Grid.Row="1"
@@ -90,8 +82,8 @@
                                  Minimum="0"
                                  Maximum="100"
                                  Value="0"
-                                 Background="{DynamicResource SplashProgressTrackBrush}"
-                                 Foreground="{DynamicResource SplashProgressBrush}"
+                                 Background="{DynamicResource Theme.SurfaceAltBrush}"
+                                 Foreground="{DynamicResource Theme.AccentBrush}"
                                  BorderThickness="0" />
                 </Grid>
             </Grid>
@@ -103,11 +95,11 @@
                        RenderOptions.BitmapScalingMode="HighQuality" />
                 <Border HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
-                        Background="#A0000000"
+                        Background="{DynamicResource Theme.ImageOverlayBrush}"
                         Padding="10,5">
                     <TextBlock Text="Source: Esri World Imagery"
                                FontSize="10"
-                               Foreground="White" />
+                               Foreground="{DynamicResource Theme.ImageOverlayTextBrush}" />
                 </Border>
             </Grid>
         </Grid>

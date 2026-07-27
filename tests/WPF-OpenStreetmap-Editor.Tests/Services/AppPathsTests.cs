@@ -18,11 +18,14 @@ public class AppPathsTests {
 
         Assert.Equal(Path.GetFullPath(expectedDataDirectory), AppPaths.DataDirectory);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.TileCacheDirectory);
+        Assert.StartsWith(AppPaths.DataDirectory, AppPaths.ThemesDirectory);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.LayersFile);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.SettingsFile);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.WindowStateFile);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.TileRequestsLogFile);
         Assert.StartsWith(AppPaths.DataDirectory, AppPaths.StartupLogFile);
+        Assert.StartsWith(AppPaths.DataDirectory, AppPaths.PluginsDirectory);
+        Assert.StartsWith(AppPaths.DataDirectory, AppPaths.PluginStateFile);
     }
 
     [Fact]

@@ -1,7 +1,9 @@
 <Window x:Class="WPF_OpenStreetmap_Editor.Views.LayersWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="图层管理" Height="420" Width="480">
+        Title="图层管理" Height="420" Width="480"
+        Background="{DynamicResource Theme.WindowBackgroundBrush}"
+        Foreground="{DynamicResource Theme.TextBrush}">
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

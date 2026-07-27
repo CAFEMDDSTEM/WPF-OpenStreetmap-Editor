@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "system",
+  "name": "跟随系统",
+  "author": "WOSM",
+  "version": "1.0.0",
+  "baseTheme": "light",
+  "colors": {
+    "window": "#F4F6F8",
+    "surface": "#FFFFFF",
+    "surfaceAlt": "#E9EDF2",
+    "text": "#171A1F",
+    "mutedText": "#5B6470",
+    "border": "#B8C0CA",
+    "accent": "#0067C0",
+    "accentText": "#FFFFFF",
+    "selection": "#CCE8FF",
+    "selectionText": "#171A1F",
+    "mapBackground": "#D8DEE6",
+    "error": "#C42B1C"
+  }
+}

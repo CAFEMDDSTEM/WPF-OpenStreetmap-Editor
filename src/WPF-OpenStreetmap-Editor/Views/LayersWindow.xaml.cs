@@ -7,6 +7,7 @@ namespace WPF_OpenStreetmap_Editor.Views;
 public partial class LayersWindow : Window {
     public LayersWindow() {
         InitializeComponent();
+        ThemeService.ApplyWindowTheme(this);
         Loaded += (_, _) => LoadLayersFromFile();
         Closed += (_, _) => SaveLayersToFile();
     }
