@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WPF_OpenStreetmap_Editor"
         mc:Ignorable="d"
-        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" KeyDown="Window_KeyDown">
+        Title="WPF OpenStreetmap Editor" Height="1080" Width="1920" KeyDown="Window_KeyDown"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
     <Grid>
         <!-- 顶部菜单行：先定义行（RowDefinitions），第1行为菜单，第2行为小按钮行，第3行为主内容 -->
         <Grid.RowDefinitions>
@@ -14,65 +16,42 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- 顶部使用 StackPanel 横向排列按钮，按钮透明无边框，黑色字体 -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Height="36" VerticalAlignment="Top" Background="Transparent">
-            <Button x:Name="FileButton" Content="文件" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="新建" Click="New_Click" />
-                        <MenuItem Header="打开" Click="Open_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="EditButton" Content="编辑" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="显示" Click="Show_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="ViewButton" Content="视图" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="显示" Click="Show_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="ProjectButton" Content="项目" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="显示" Click="Show_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="ToolsButton" Content="工具" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="图层" Click="Layer_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="WindowButton" Content="窗口" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="显示" Click="Show_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-
-            <Button x:Name="HelpButton" Content="帮助" Background="Transparent" BorderThickness="0" Foreground="Black" Padding="12,4" Click="TopMenu_Click">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="显示" Click="Show_Click" />
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-        </StackPanel>
+        <Menu Grid.Row="0" MinHeight="28" Padding="2" VerticalAlignment="Top">
+            <Menu.ItemContainerStyle>
+                <Style TargetType="{x:Type MenuItem}">
+                    <Setter Property="Padding" Value="7,2" />
+                    <Setter Property="VerticalAlignment" Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                </Style>
+            </Menu.ItemContainerStyle>
+            <MenuItem Header="文件(_F)">
+                <MenuItem Header="新建" Click="New_Click" />
+                <MenuItem Header="打开" Click="Open_Click" />
+            </MenuItem>
+            <MenuItem Header="编辑(_E)">
+                <MenuItem Header="显示" Click="Show_Click" />
+            </MenuItem>
+            <MenuItem Header="视图(_V)">
+                <MenuItem Header="显示" Click="Show_Click" />
+            </MenuItem>
+            <MenuItem x:Name="ImageryMenuItem" Header="影像(_I)">
+                <MenuItem Header="影像选项..." Click="Settings_Click" />
+                <Separator />
+            </MenuItem>
+            <MenuItem Header="项目(_P)">
+                <MenuItem Header="显示" Click="Show_Click" />
+            </MenuItem>
+            <MenuItem Header="工具(_T)">
+                <MenuItem Header="图层" Click="Layer_Click" />
+                <MenuItem Header="设置" Click="Settings_Click" />
+            </MenuItem>
+            <MenuItem Header="窗口(_W)">
+                <MenuItem Header="显示" Click="Show_Click" />
+            </MenuItem>
+            <MenuItem Header="帮助(_H)">
+                <MenuItem Header="显示" Click="Show_Click" />
+            </MenuItem>
+        </Menu>
 
         <!-- 在菜单下再加一行小的正方形按钮 T1..T9 -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Height="44" VerticalAlignment="Top" Background="Transparent" Margin="4,4,4,4">
@@ -116,15 +95,14 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
-                    <TextBlock VerticalAlignment="Center" Margin="0,0,6,0">地图 URL:</TextBlock>
-                    <TextBox x:Name="MapUrlTextBox" Width="520" VerticalAlignment="Center" />
-                    <TextBlock VerticalAlignment="Center" Margin="6,0,6,0">缩放:</TextBlock>
+                    <TextBlock VerticalAlignment="Center" Margin="0,0,6,0">图源:</TextBlock>
+                    <TextBlock x:Name="ActiveSourceTextBlock" MinWidth="220" MaxWidth="420" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <TextBlock VerticalAlignment="Center" Margin="8,0,6,0">缩放:</TextBlock>
                     <TextBox x:Name="ZoomTextBox" Width="48" VerticalAlignment="Center" Text="2" IsReadOnly="True" HorizontalContentAlignment="Center" />
                     <Button x:Name="ZoomInButton" Content="+" Width="28" Height="22" Margin="4,0,0,0" Click="ZoomIn_Click" />
                     <Button x:Name="ZoomOutButton" Content="-" Width="28" Height="22" Margin="2,0,0,0" Click="ZoomOut_Click" />
-                    <TextBlock VerticalAlignment="Center" Margin="8,0,6,0">Token:</TextBlock>
-                    <TextBox x:Name="AccessTokenTextBox" Width="200" VerticalAlignment="Center" ToolTip="用于替换 {access_token} 占位" />
-                    <Button Content="加载地图" Margin="6,0,0,0" Click="LoadMapButton_Click" />
+                    <TextBlock x:Name="ZoomLimitTextBlock" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="DimGray" />
+                    <Button Content="设置" Margin="10,0,0,0" Padding="10,2" Click="Settings_Click" />
                 </StackPanel>
 
                 <!-- 双层 Canvas 渲染：缩放旧画面时，新瓦片在透明前景层异步加载 -->
@@ -133,12 +111,35 @@
                           Background="LightGray"
                           ClipToBounds="True"
                           Focusable="True"
+                          UseLayoutRounding="True"
+                          SnapsToDevicePixels="True"
+                          RenderOptions.BitmapScalingMode="NearestNeighbor"
+                          RenderOptions.EdgeMode="Aliased"
                           MouseWheel="MapCanvas_MouseWheel"
                           MouseLeftButtonDown="MapCanvas_MouseLeftButtonDown"
                           MouseLeftButtonUp="MapCanvas_MouseLeftButtonUp"
                           MouseMove="MapCanvas_MouseMove"
                           SizeChanged="MapViewport_SizeChanged">
-                        <Grid x:Name="MapLayerHost" IsHitTestVisible="False" />
+                        <Grid x:Name="MapLayerHost"
+                              IsHitTestVisible="False"
+                              UseLayoutRounding="True"
+                              SnapsToDevicePixels="True"
+                              RenderOptions.BitmapScalingMode="NearestNeighbor"
+                              RenderOptions.EdgeMode="Aliased" />
+                        <Border x:Name="AttributionBorder"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom"
+                                Margin="6"
+                                Padding="5,2"
+                                Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                                BorderThickness="1"
+                                Visibility="Collapsed">
+                            <TextBlock x:Name="AttributionTextBlock"
+                                       FontSize="12"
+                                       MaxWidth="{Binding ActualWidth, ElementName=MapViewport}"
+                                       TextWrapping="Wrap" />
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
@@ -147,14 +148,71 @@
             <Grid Grid.Column="2" Margin="6">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" Background="White">
-                    <DataGrid AutoGenerateColumns="True" HeadersVisibility="Column" />
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="8,6,8,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="图层" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="移除" Padding="8,1" Click="RemoveImageLayer_Click" />
+                        </Grid>
+                        <ListBox x:Name="LayerListBox"
+                                 BorderThickness="0"
+                                 HorizontalContentAlignment="Stretch"
+                                 SelectionChanged="LayerListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="4,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton Grid.Column="0"
+                                                     GroupName="PrimaryMapLayer"
+                                                     IsChecked="{Binding IsPrimary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     VerticalAlignment="Center"
+                                                     ToolTip="主图层"
+                                                     Click="PrimaryLayer_Click" />
+                                        <Button Grid.Column="1"
+                                                Content="{Binding VisibilityLabel}"
+                                                Padding="6,1"
+                                                MinWidth="44"
+                                                Margin="6,0,0,0"
+                                                Click="LayerVisibilityButton_Click" />
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding Name}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="8,0,8,0" />
+                                        <TextBlock Grid.Column="3"
+                                                   Text="{Binding KindLabel}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="80"
+                                                   Foreground="DimGray" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
                 </Border>
 
-                <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" Background="White" Margin="0,6,0,0">
+                <GridSplitter Grid.Row="1"
+                              Height="6"
+                              HorizontalAlignment="Stretch"
+                              ResizeDirection="Rows"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="LightGray" />
+
+                <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" Background="White" Margin="0,6,0,0">
                     <TextBox Text="文件/编辑 区域（占位）" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="White" BorderThickness="0"/>
                 </Border>
             </Grid>

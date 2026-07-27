@@ -13,9 +13,8 @@
             <TextBlock VerticalAlignment="Center" Margin="0,0,6,0">图层 URL:</TextBlock>
             <TextBox x:Name="LayerUrlTextBox" Width="320" />
             <ComboBox x:Name="LayerTypeComboBox" Width="80" Margin="6,0,0,0" SelectedIndex="0">
-                <ComboBoxItem>WMS</ComboBoxItem>
-                <ComboBoxItem>TMS</ComboBoxItem>
                 <ComboBoxItem>XYZ</ComboBoxItem>
+                <ComboBoxItem>TMS</ComboBoxItem>
             </ComboBox>
         </StackPanel>
 

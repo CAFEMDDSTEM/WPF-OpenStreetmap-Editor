@@ -8,7 +8,7 @@ using System.Windows;
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public static class WindowStartupService {
-    private const double NormalWindowScreenRatio = 0.9;
+    private const double NormalWindowScreenRatio = 0.8;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private static readonly string[] FullScreenArguments = [
         "--fullscreen",
@@ -30,12 +30,12 @@ public static class WindowStartupService {
         }
 
         ApplyNormalWindowLimits(window);
+        CenterNormalWindow(window);
     }
 
     public static void ApplyNormalWindowLimits(Window window) {
         var maxSize = GetNormalWindowMaxSize();
-        window.MaxWidth = maxSize.Width;
-        window.MaxHeight = maxSize.Height;
+        ClearNormalWindowLimits(window);
 
         if (!double.IsNaN(window.Width) && window.Width > maxSize.Width) {
             window.Width = maxSize.Width;
@@ -52,12 +52,36 @@ public static class WindowStartupService {
     }
 
     public static Size GetNormalWindowMaxSize() {
-        var workArea = SystemParameters.WorkArea;
+        return GetNormalWindowMaxSize(SystemParameters.WorkArea);
+    }
+
+    public static Size GetNormalWindowMaxSize(Rect workArea) {
         return new Size(workArea.Width * NormalWindowScreenRatio, workArea.Height * NormalWindowScreenRatio);
     }
 
+    public static void CenterNormalWindow(Window window) {
+        var position = GetCenteredWindowPosition(new Size(window.Width, window.Height), SystemParameters.WorkArea);
+        window.WindowStartupLocation = WindowStartupLocation.Manual;
+        window.Left = position.X;
+        window.Top = position.Y;
+    }
+
+    public static Point GetCenteredWindowPosition(Size windowSize, Rect workArea) {
+        var left = workArea.Left + (workArea.Width - windowSize.Width) / 2.0;
+        var top = workArea.Top + (workArea.Height - windowSize.Height) / 2.0;
+        return new Point(left, top);
+    }
+
     public static bool ShouldStartFullScreen(IEnumerable<string> commandLineArgs) {
-        return Load().WasFullScreen || commandLineArgs.Any(IsFullScreenArgument);
+        return ShouldStartMaximized(commandLineArgs, Load().WasFullScreen);
+    }
+
+    public static bool ShouldStartMaximized(IEnumerable<string> commandLineArgs, bool savedAsMaximized) {
+        return savedAsMaximized || commandLineArgs.Any(IsFullScreenArgument);
+    }
+
+    public static WindowState GetStateToSave(WindowState currentWindowState, WindowState lastNonMinimizedWindowState) {
+        return currentWindowState == WindowState.Minimized ? lastNonMinimizedWindowState : currentWindowState;
     }
 
     public static void Save(WindowState lastWindowState) {
@@ -72,14 +96,14 @@ public static class WindowStartupService {
 
     private static WindowStartupState Load() {
         try {
-            if (!File.Exists(AppPaths.WindowStateFile)) {
+            var windowStateFile = AppPaths.ResolveReadPath(AppPaths.WindowStateFile, AppPaths.LegacyWindowStateFile);
+            if (!File.Exists(windowStateFile)) {
                 return new WindowStartupState();
             }
 
-            var json = File.ReadAllText(AppPaths.WindowStateFile);
+            var json = File.ReadAllText(windowStateFile);
             return JsonSerializer.Deserialize<WindowStartupState>(json) ?? new WindowStartupState();
-        }
-        catch {
+        } catch {
             return new WindowStartupState();
         }
     }

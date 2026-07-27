@@ -13,7 +13,7 @@ public partial class LayersWindow : Window {
 
     private void AddLayer_Click(object sender, RoutedEventArgs e) {
         var url = LayerUrlTextBox.Text?.Trim();
-        var type = (LayerTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "WMS";
+        var type = (LayerTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "XYZ";
         if (string.IsNullOrEmpty(url)) {
             MessageBox.Show("请输入图层 URL", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -44,6 +44,11 @@ public partial class LayersWindow : Window {
         if (item.StartsWith("[") && idx > 1) {
             type = item[1..idx].Trim();
             url = idx + 1 < item.Length ? item[(idx + 1)..].Trim() : "";
+        }
+
+        if (string.Equals(type, "WMS", StringComparison.OrdinalIgnoreCase)) {
+            MessageBox.Show("WMS 图层尚未实现，请添加 XYZ 或 TMS 瓦片图层。", "不支持的图层", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
         }
 
         if (Owner is MainWindow main) {

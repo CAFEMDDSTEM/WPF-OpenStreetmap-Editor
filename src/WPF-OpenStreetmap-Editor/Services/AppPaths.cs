@@ -6,15 +6,33 @@ namespace WPF_OpenStreetmap_Editor.Services;
 public static class AppPaths {
     public static string BaseDirectory { get; } = Normalize(AppDomain.CurrentDomain.BaseDirectory);
 
-    public static string TileCacheDirectory => Combine(BaseDirectory, "Cache", "tiles");
+    public static string DataDirectory { get; } = Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "WPF-OpenStreetmap-Editor");
 
-    public static string LayersFile => Combine(BaseDirectory, "layers.json");
+    public static string TileCacheDirectory => Combine(DataDirectory, "Cache", "tiles");
 
-    public static string WindowStateFile => Combine(BaseDirectory, "window_state.json");
+    public static string LayersFile => Combine(DataDirectory, "layers.json");
 
-    public static string TileRequestsLogFile => Combine(BaseDirectory, "tile_requests.log");
+    public static string SettingsFile => Combine(DataDirectory, "settings.json");
+
+    public static string WindowStateFile => Combine(DataDirectory, "window_state.json");
+
+    public static string TileRequestsLogFile => Combine(DataDirectory, "tile_requests.log");
+
+    public static string StartupLogFile => Combine(DataDirectory, "startup.log");
+
+    public static string LegacyLayersFile => Combine(BaseDirectory, "layers.json");
+
+    public static string LegacySettingsFile => Combine(BaseDirectory, "settings.json");
+
+    public static string LegacyWindowStateFile => Combine(BaseDirectory, "window_state.json");
 
     public static string Combine(params string[] parts) => Normalize(Path.Combine(parts));
 
     public static string Normalize(string path) => Path.GetFullPath(path);
+
+    public static string ResolveReadPath(string currentPath, string legacyPath) {
+        return File.Exists(currentPath) || !File.Exists(legacyPath) ? currentPath : legacyPath;
+    }
 }
