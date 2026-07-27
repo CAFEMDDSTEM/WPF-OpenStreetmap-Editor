@@ -9,6 +9,8 @@ public sealed class VectorLayerElement : FrameworkElement {
     private const double RenderOverscanPixels = 768;
     private const double PanRebaseThresholdPixels = RenderOverscanPixels * 0.5;
     private const double SimplifyDistanceSquared = 0.64;
+    private const double CoordinateTolerance = 1e-12;
+    private const double PixelTolerance = 0.5;
 
     private MapDocument? _document;
     private double _centerLatitude;
@@ -22,6 +24,32 @@ public sealed class VectorLayerElement : FrameworkElement {
     private double _lastRenderedHeight;
 
     public VectorRenderPlan? LastPlan { get; private set; }
+
+    internal bool RequiresDrawingRefresh(
+        MapDocument? document,
+        double centerLatitude,
+        double centerLongitude,
+        int zoom,
+        double panOffsetX,
+        double panOffsetY) {
+        return RequiresDrawingRefreshCore(
+            _document,
+            document,
+            _centerLatitude,
+            centerLatitude,
+            _centerLongitude,
+            centerLongitude,
+            _zoom,
+            zoom,
+            _lastRenderedWidth,
+            ActualWidth,
+            _lastRenderedHeight,
+            ActualHeight,
+            _drawPanOffsetX,
+            panOffsetX,
+            _drawPanOffsetY,
+            panOffsetY);
+    }
 
     public VectorLayerElement() {
         CacheMode = new BitmapCache();
@@ -37,15 +65,13 @@ public sealed class VectorLayerElement : FrameworkElement {
         int zoom,
         double panOffsetX,
         double panOffsetY) {
-        var viewChanged = !ReferenceEquals(_document, document) ||
-            !AreClose(_centerLatitude, centerLatitude) ||
-            !AreClose(_centerLongitude, centerLongitude) ||
-            _zoom != zoom;
-        var viewportChanged = !AreClose(_lastRenderedWidth, ActualWidth) ||
-            !AreClose(_lastRenderedHeight, ActualHeight);
-        var panNeedsRebase =
-            Math.Abs(panOffsetX - _drawPanOffsetX) > PanRebaseThresholdPixels ||
-            Math.Abs(panOffsetY - _drawPanOffsetY) > PanRebaseThresholdPixels;
+        var needsRefresh = RequiresDrawingRefresh(
+            document,
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            panOffsetX,
+            panOffsetY);
 
         _document = document;
         _centerLatitude = centerLatitude;
@@ -54,7 +80,7 @@ public sealed class VectorLayerElement : FrameworkElement {
         _panOffsetX = panOffsetX;
         _panOffsetY = panOffsetY;
 
-        if (viewChanged || viewportChanged || panNeedsRebase) {
+        if (needsRefresh) {
             _drawPanOffsetX = panOffsetX;
             _drawPanOffsetY = panOffsetY;
             InvalidateVisual();
@@ -161,7 +187,7 @@ public sealed class VectorLayerElement : FrameworkElement {
     private void ApplyPanTransform() {
         var offsetX = _panOffsetX - _drawPanOffsetX;
         var offsetY = _panOffsetY - _drawPanOffsetY;
-        RenderTransform = AreClose(offsetX, 0) && AreClose(offsetY, 0)
+        RenderTransform = AreClose(offsetX, 0, PixelTolerance) && AreClose(offsetY, 0, PixelTolerance)
             ? Transform.Identity
             : new TranslateTransform(offsetX, offsetY);
     }
@@ -170,7 +196,34 @@ public sealed class VectorLayerElement : FrameworkElement {
         return TryFindResource(key) as Brush ?? fallback;
     }
 
-    private static bool AreClose(double left, double right) {
-        return Math.Abs(left - right) < 0.5;
+    internal static bool RequiresDrawingRefreshCore(
+        MapDocument? currentDocument,
+        MapDocument? nextDocument,
+        double currentCenterLatitude,
+        double nextCenterLatitude,
+        double currentCenterLongitude,
+        double nextCenterLongitude,
+        int currentZoom,
+        int nextZoom,
+        double lastRenderedWidth,
+        double actualWidth,
+        double lastRenderedHeight,
+        double actualHeight,
+        double drawPanOffsetX,
+        double panOffsetX,
+        double drawPanOffsetY,
+        double panOffsetY) {
+        return !ReferenceEquals(currentDocument, nextDocument) ||
+            !AreClose(currentCenterLatitude, nextCenterLatitude, CoordinateTolerance) ||
+            !AreClose(currentCenterLongitude, nextCenterLongitude, CoordinateTolerance) ||
+            currentZoom != nextZoom ||
+            !AreClose(lastRenderedWidth, actualWidth, PixelTolerance) ||
+            !AreClose(lastRenderedHeight, actualHeight, PixelTolerance) ||
+            Math.Abs(panOffsetX - drawPanOffsetX) > PanRebaseThresholdPixels ||
+            Math.Abs(panOffsetY - drawPanOffsetY) > PanRebaseThresholdPixels;
+    }
+
+    private static bool AreClose(double left, double right, double tolerance) {
+        return Math.Abs(left - right) < tolerance;
     }
 }
