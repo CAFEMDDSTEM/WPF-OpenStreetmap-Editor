@@ -2,6 +2,9 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
+[![GitHub stars](https://img.shields.io/github/stars/CAFEMDDSTEM/WPF-OpenStreetmap-Editor?style=social)](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/stargazers)
+
 WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. Its long-term goal is to become a practical C# alternative to JOSM.
 
 The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
@@ -134,6 +137,10 @@ Contributor and maintenance documentation lives in [docs/README.md](docs/README.
 ## Contributing
 
 Issues and pull requests are welcome. Please use the GitHub issue and pull request templates, run the test suite before submitting changes, and follow the project code style documented in [docs/code-style.md](docs/code-style.md).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=CAFEMDDSTEM/WPF-OpenStreetmap-Editor&type=Date)](https://www.star-history.com/#CAFEMDDSTEM/WPF-OpenStreetmap-Editor&Date)
 
 ## License
 

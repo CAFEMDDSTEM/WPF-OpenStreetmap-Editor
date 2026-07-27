@@ -80,24 +80,38 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor
 dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- changeset --input data.geojson --output preview.osc --feature-id survey-path
 ```
 
-`download` writes raw OSM XML for a bounding box. `import` validates a file and
-prints feature, coordinate, skipped-feature, and bounds information. `convert`
-imports any supported read format and saves to a supported write format based
-on the output extension. `changeset` builds an OSM API 0.6 change preview
-without contacting OSM.
+`download` writes raw OSM XML for a bounding box. It uses `--api-base-url` when
+provided, otherwise it uses the active WOSM account API base URL or the public
+OpenStreetMap API. The CLI falls back to Overpass when the standard API rejects
+the request or the selection is larger than 0.25 square degrees, up to the
+25-square-degree safety limit.
+
+`import` validates a file and prints feature, coordinate, skipped-feature, and
+bounds information. `convert` imports any supported read format and saves to a
+supported write format based on the output extension. `changeset` builds an OSM
+API 0.6 change preview without contacting OSM; use `--changeset-id` to set the
+preview changeset id when needed.
 
 `upload` can submit selected data to OSM, but it is deliberately guarded because
 it writes to the live API. Real uploads require `--yes`, `--comment`, and a
 token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM
-account. Use `--dry-run --output preview.osc` before a real upload:
+account. Use `--dry-run` before a real upload; add `--output preview.osc` to
+write the generated OSM change XML:
 
 ```powershell
 dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --dry-run --output preview.osc
 dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
 ```
 
-Most data commands accept `--feature-id` and `--tag key=value` to process a
-specific subset. Output commands refuse to overwrite existing files unless
-`--force` is provided. `launch --app WPF-OpenStreetmap-Editor.exe --fullscreen`
-starts the GUI in the existing fullscreen startup mode when the published GUI
-executable is available.
+Commands that load an input document (`import`, `convert`, `changeset`, and
+`upload`) accept `--feature-id` and `--tag key=value` to process a specific
+subset. Repeat `--feature-id`, comma-separate IDs, or repeat `--tag` for exact
+tag filters. Feature IDs are combined as alternatives; tag filters must all
+match. For `changeset` and `upload`, use `--treat-input-as-new` to ignore
+imported OSM IDs and build creates instead of modifies.
+
+The CLI import safety defaults are `--max-features 1000000` and
+`--max-coordinates 8000000`. Output commands refuse to overwrite existing files
+unless `--force` is provided. `launch` and its `gui` alias start the WPF app;
+pass `--app` or a positional executable path when the published GUI executable
+is not next to `wosm-cli`, and use `--fullscreen` to start in fullscreen mode.
