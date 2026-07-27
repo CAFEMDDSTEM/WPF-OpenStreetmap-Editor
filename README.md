@@ -26,6 +26,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, add point features, and draw line features on top of imagery.
 - Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes through the built-in OpenStreetMap transfer addon.
+- Use the WOSM CLI to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
 - Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
 - Run startup diagnostics and log startup or tile-loading failures for troubleshooting.
 - Switch between system, light, dark, and validated third-party ZIP or 7z theme packages.
@@ -42,6 +43,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 
 ```text
 src/WPF-OpenStreetmap-Editor/          WPF application source
+src/WPF-OpenStreetmap-Editor.Cli/      WOSM command-line interface
 tests/WPF-OpenStreetmap-Editor.Tests/  Unit tests
 docs/                                  Contributor documentation
 sdk/native/                            Native plugin C ABI header
@@ -71,6 +73,12 @@ You can also run the application directly with the .NET CLI:
 dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj
 ```
 
+Run the WOSM CLI help from source:
+
+```powershell
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- help
+```
+
 ## Usage
 
 1. Start the application.
@@ -80,6 +88,18 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 5. Use **File > Open** to import vector map data, or use the built-in OpenStreetMap transfer toolbar to choose and download an OSM bounding box.
 6. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, drag the map to pan, and use the editor toolbar to select, box-select, hide, delete, add points, or draw lines.
 7. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API.
+
+For command-line workflows, pass CLI commands after `--` when running from source:
+
+```powershell
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- import --input map.geojson
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- convert --input map.geojson --output map.gpx
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- download --bbox minLon,minLat,maxLon,maxLat --output data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- changeset --input map.geojson --output preview.osc
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input map.geojson --dry-run --output preview.osc
+```
+
+Real OSM uploads require `--yes`, `--comment`, and an access token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM account.
 
 ## Tile Service Notes
 
