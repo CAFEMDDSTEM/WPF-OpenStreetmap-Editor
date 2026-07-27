@@ -66,12 +66,13 @@ public sealed class AppUpdateService : IDisposable {
     }
 
     public async Task<AppUpdateCheckResult> CheckAsync(string currentVersion, CancellationToken ct = default) {
+        var l = LocalizationService.Instance;
         if (!SemanticVersion.TryParse(currentVersion, out var parsedCurrent)) {
             return new AppUpdateCheckResult(
                 AppUpdateCheckState.Unavailable,
                 currentVersion,
                 null,
-                $"当前版本号无法识别：{currentVersion}");
+                l.Format("Update.CurrentVersionInvalid", currentVersion));
         }
 
         try {
@@ -89,7 +90,7 @@ public sealed class AppUpdateService : IDisposable {
                     AppUpdateCheckState.Unavailable,
                     currentVersion,
                     null,
-                    $"无法检查更新：GitHub HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+                    l.Format("Update.HttpFailed", (int)response.StatusCode, response.ReasonPhrase));
             }
 
             await using var stream = await response.Content.ReadAsStreamAsync(timeoutCts.Token).ConfigureAwait(false);
@@ -102,7 +103,7 @@ public sealed class AppUpdateService : IDisposable {
                     AppUpdateCheckState.Unavailable,
                     currentVersion,
                     null,
-                    "没有找到可用的发行版本");
+                    l.GetString("Update.NoRelease"));
             }
 
             return IsNewerVersion(latest.Version, currentVersion)
@@ -110,12 +111,12 @@ public sealed class AppUpdateService : IDisposable {
                     AppUpdateCheckState.UpdateAvailable,
                     currentVersion,
                     latest,
-                    $"发现新版本 {latest.Version}")
+                    l.Format("Update.Available", latest.Version))
                 : new AppUpdateCheckResult(
                     AppUpdateCheckState.UpToDate,
                     currentVersion,
                     latest,
-                    $"当前已是最新版本 {currentVersion}");
+                    l.Format("Update.UpToDate", currentVersion));
         } catch (OperationCanceledException) when (ct.IsCancellationRequested) {
             throw;
         } catch (OperationCanceledException) {
@@ -123,20 +124,20 @@ public sealed class AppUpdateService : IDisposable {
                 AppUpdateCheckState.Unavailable,
                 currentVersion,
                 null,
-                "检查更新超时");
+                l.GetString("Update.Timeout"));
         } catch (JsonException ex) {
             return new AppUpdateCheckResult(
                 AppUpdateCheckState.Unavailable,
                 currentVersion,
                 null,
-                $"更新响应无法解析：{ex.Message}");
+                l.Format("Update.JsonFailed", ex.Message));
         } catch (Exception unsafeException) {
             var message = Logger.RedactSensitiveData(unsafeException.Message);
             return new AppUpdateCheckResult(
                 AppUpdateCheckState.Unavailable,
                 currentVersion,
                 null,
-                $"无法检查更新：{message}");
+                l.Format("Update.GenericFailed", message));
         }
     }
 

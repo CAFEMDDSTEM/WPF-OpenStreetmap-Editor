@@ -1079,14 +1079,14 @@ public partial class MainWindow : Window {
                 var url = GetPluginArgument(action, "url");
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
                     uri.Scheme is not ("http" or "https")) {
-                    throw new InvalidOperationException("插件只能打开 HTTP 或 HTTPS 链接。");
+                    throw new InvalidOperationException(L.GetString("Main.PluginHttpOnly"));
                 }
                 Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
                 break;
             case PluginActionTypes.AddImagery:
                 var sourceUrl = GetPluginArgument(action, "url");
                 if (string.IsNullOrWhiteSpace(sourceUrl)) {
-                    throw new InvalidOperationException("addImagery 动作缺少 url。");
+                    throw new InvalidOperationException(L.GetString("Main.PluginAddImageryMissingUrl"));
                 }
                 LoadLayer(GetPluginArgument(action, "type") ?? "xyz", sourceUrl);
                 break;
@@ -1103,7 +1103,7 @@ public partial class MainWindow : Window {
                 await UploadOsmChangesAsync();
                 break;
             default:
-                throw new InvalidOperationException($"不支持插件动作“{action.Type}”。");
+                throw new InvalidOperationException(L.Format("Main.PluginUnsupportedAction", action.Type));
         }
     }
 
@@ -1118,7 +1118,7 @@ public partial class MainWindow : Window {
 
     private void Show_Click(object sender, RoutedEventArgs e) {
         if (sender is MenuItem mi) {
-            MessageBox.Show($"{mi.Header} 被点击", "菜单", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.Format("Main.MenuClicked", mi.Header), L.GetString("Main.MenuTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
