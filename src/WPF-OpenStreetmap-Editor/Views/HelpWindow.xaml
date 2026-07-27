@@ -1,0 +1,121 @@
+<Window x:Class="WPF_OpenStreetmap_Editor.Views.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="帮助和关于"
+        Height="640"
+        Width="840"
+        MinHeight="520"
+        MinWidth="680"
+        Background="{DynamicResource Theme.WindowBackgroundBrush}"
+        Foreground="{DynamicResource Theme.TextBrush}"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0">
+            <TabItem Header="使用帮助">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Sections}" Margin="14">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,18">
+                                    <TextBlock Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Margin="0,0,0,8" />
+                                    <ItemsControl ItemsSource="{Binding Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,7">
+                                                    <TextBlock DockPanel.Dock="Left"
+                                                               Text="-"
+                                                               Margin="0,0,7,0"
+                                                               Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                                                    <TextBlock Text="{Binding}"
+                                                               TextWrapping="Wrap" />
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="程序信息">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="14">
+                        <TextBlock Text="{Binding ProgramName}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Version, StringFormat=版本 {0}}"
+                                   Margin="0,4,0,18"
+                                   Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                        <ItemsControl ItemsSource="{Binding ProgramInfo}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Name}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Value}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Margin="0,12,0,0"
+                                Padding="12"
+                                Background="{DynamicResource Theme.SurfaceBrush}"
+                                BorderBrush="{DynamicResource Theme.BorderBrush}"
+                                BorderThickness="1">
+                            <TextBlock Text="本程序以 GPL v3 发布。你可以在许可证页查看完整许可文本。"
+                                       TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="GPL v3 许可证">
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{Binding LicenseName}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10" />
+                    <TextBox Grid.Row="1"
+                             Text="{Binding LicenseText, Mode=OneWay}"
+                             IsReadOnly="True"
+                             TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             Padding="8" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,10,0,0">
+            <Button Content="关闭"
+                    Width="88"
+                    IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

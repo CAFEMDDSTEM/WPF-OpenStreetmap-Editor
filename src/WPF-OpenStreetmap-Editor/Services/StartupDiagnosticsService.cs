@@ -44,6 +44,8 @@ public sealed class StartupDiagnosticsService : IDisposable {
     private readonly bool _ownsHttpClient;
     private bool _disposed;
 
+    public AppUpdateCheckResult? LastUpdateCheckResult { get; private set; }
+
     public StartupDiagnosticsService(AppSettings? settings = null, HttpClient? http = null) {
         _settings = settings ?? AppSettingsService.Load();
         AppSettingsService.EnsureDefaults(_settings);
@@ -100,6 +102,7 @@ public sealed class StartupDiagnosticsService : IDisposable {
             CheckDisk));
 
         results.AddRange(await ProbeTileSourcesAsync(progress, ct).ConfigureAwait(false));
+        results.Add(await CheckForUpdatesAsync(progress, ct).ConfigureAwait(false));
 
         Report(progress, "ready", "准备主界面", "启动检查完成", StartupCheckState.Passed, 1.0);
         Logger.Startup("启动诊断完成");
@@ -239,6 +242,26 @@ public sealed class StartupDiagnosticsService : IDisposable {
         Report(progress, aggregate.StepId, aggregate.Title, aggregate.Detail, aggregate.State, 0.94);
 
         return [aggregate, .. completedResults];
+    }
+
+    private async Task<StartupCheckResult> CheckForUpdatesAsync(
+        IProgress<StartupProgressUpdate>? progress,
+        CancellationToken ct) {
+        const string stepId = "updates";
+        const string title = "检查更新";
+
+        Report(progress, stepId, title, "正在连接 GitHub Releases", StartupCheckState.Running, 0.95);
+        using var updates = new AppUpdateService(_http);
+        LastUpdateCheckResult = await updates.CheckCurrentAssemblyAsync(ct).ConfigureAwait(false);
+
+        var state = LastUpdateCheckResult.State switch {
+            AppUpdateCheckState.UpToDate => StartupCheckState.Passed,
+            AppUpdateCheckState.UpdateAvailable => StartupCheckState.Warning,
+            _ => StartupCheckState.Warning
+        };
+        var result = new StartupCheckResult(stepId, title, LastUpdateCheckResult.Detail, state);
+        Report(progress, result.StepId, result.Title, result.Detail, result.State, 0.98);
+        return result;
     }
 
     private StartupCheckResult RunLocalStep(
