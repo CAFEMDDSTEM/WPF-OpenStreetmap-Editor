@@ -1,8 +1,10 @@
-# WPF OpenStreetMap Editor
+# WOSM
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-A Windows WPF desktop application for loading OpenStreetMap-compatible tile layers, previewing map imagery, and managing reusable tile service URLs.
+WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. Its long-term goal is to become a practical C# alternative to JOSM.
+
+The current application can load OpenStreetMap-compatible tile layers, preview map imagery, and manage reusable tile service URLs.
 
 > Project status: early development. The current application focuses on tile rendering, layer configuration, caching, and supporting infrastructure.
 

@@ -10,6 +10,8 @@ public static class AppPaths {
 
     public static string LayersFile => Combine(BaseDirectory, "layers.json");
 
+    public static string WindowStateFile => Combine(BaseDirectory, "window_state.json");
+
     public static string TileRequestsLogFile => Combine(BaseDirectory, "tile_requests.log");
 
     public static string Combine(params string[] parts) => Normalize(Path.Combine(parts));

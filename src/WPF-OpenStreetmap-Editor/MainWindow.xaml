@@ -127,16 +127,19 @@
                     <Button Content="加载地图" Margin="6,0,0,0" Click="LoadMapButton_Click" />
                 </StackPanel>
 
-                <!-- 直接在 Canvas 上渲染瓦片图片，通过 HTTP 下载并缓存 -->
+                <!-- 双层 Canvas 渲染：缩放旧画面时，新瓦片在透明前景层异步加载 -->
                 <Border Grid.Row="1" Margin="6" BorderBrush="LightGray" BorderThickness="1">
-                    <ScrollViewer x:Name="MapScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <Canvas x:Name="MapCanvas" Background="LightGray"
-                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                MouseWheel="MapCanvas_MouseWheel"
-                                MouseLeftButtonDown="MapCanvas_MouseLeftButtonDown"
-                                MouseLeftButtonUp="MapCanvas_MouseLeftButtonUp"
-                                MouseMove="MapCanvas_MouseMove" />
-                    </ScrollViewer>
+                    <Grid x:Name="MapViewport"
+                          Background="LightGray"
+                          ClipToBounds="True"
+                          Focusable="True"
+                          MouseWheel="MapCanvas_MouseWheel"
+                          MouseLeftButtonDown="MapCanvas_MouseLeftButtonDown"
+                          MouseLeftButtonUp="MapCanvas_MouseLeftButtonUp"
+                          MouseMove="MapCanvas_MouseMove"
+                          SizeChanged="MapViewport_SizeChanged">
+                        <Grid x:Name="MapLayerHost" IsHitTestVisible="False" />
+                    </Grid>
                 </Border>
             </Grid>
 

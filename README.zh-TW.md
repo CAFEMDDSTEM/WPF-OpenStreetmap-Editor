@@ -1,8 +1,10 @@
-# WPF OpenStreetMap Editor
+# WOSM
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
 
-一個 Windows WPF 桌面應用程式，用於載入相容 OpenStreetMap 的圖磚圖層、預覽地圖影像，並管理可重複使用的圖磚服務 URL。
+WOSM 是 WPF OpenStreetMap Editor 的簡稱，是一個使用 C# / WPF 編寫的 OpenStreetMap 編輯器，長期目標是成為 JOSM 的實用替代品。
+
+目前應用程式可用於載入相容 OpenStreetMap 的圖磚圖層、預覽地圖影像，並管理可重複使用的圖磚服務 URL。
 
 > 專案狀態：早期開發中。目前應用程式著重於圖磚渲染、圖層設定、快取和配套工程基礎設施。
 
