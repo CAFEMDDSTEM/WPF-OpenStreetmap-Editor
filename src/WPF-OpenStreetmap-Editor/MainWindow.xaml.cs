@@ -31,9 +31,18 @@ public partial class MainWindow : Window {
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
     private MapLayer? _stagingLayer;
-    private static readonly ConcurrentDictionary<string, BitmapSource?> TileCache = new();
-    private const int MaxTileCache = 500;
-    private static readonly SemaphoreSlim TileThrottle = new(6, 6);
+    private double _lastPanPrefetchOffsetX;
+    private double _lastPanPrefetchOffsetY;
+    private DateTime _lastPanPrefetchAt = DateTime.MinValue;
+    private static readonly ConcurrentDictionary<string, BitmapSource> TileCache = new();
+    private static readonly ConcurrentQueue<string> TileCacheOrder = new();
+    private const int MaxTileCache = 2048;
+    private const int TileBuffer = 3;
+    private const int MaxConcurrentTileLoads = 8;
+    private const int WheelRenderDelayMilliseconds = 30;
+    private const int PanPrefetchIntervalMilliseconds = 140;
+    private const double PanPrefetchDistance = GeoConverter.TileSize * 0.75;
+    private static readonly SemaphoreSlim TileThrottle = new(MaxConcurrentTileLoads, MaxConcurrentTileLoads);
 
     public MainWindow() {
         InitializeComponent();
@@ -117,27 +126,27 @@ public partial class MainWindow : Window {
         if (viewportH <= 0) viewportH = 768;
 
         var n = GeoConverter.GetTileCount(z);
-        var (centerPixelX, centerPixelY) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, z);
-        var startX = (int)Math.Floor((centerPixelX - viewportW / 2.0 - tileSize) / tileSize);
-        var endX = (int)Math.Floor((centerPixelX + viewportW / 2.0 + tileSize) / tileSize);
-        var startY = (int)Math.Floor((centerPixelY - viewportH / 2.0 - tileSize) / tileSize);
-        var endY = (int)Math.Floor((centerPixelY + viewportH / 2.0 + tileSize) / tileSize);
+        var (centerPixelX, centerPixelY) = GetRenderCenterPixel(z);
+        var tileMargin = TileBuffer * tileSize;
+        var startX = (int)Math.Floor((centerPixelX - viewportW / 2.0 - tileMargin) / tileSize);
+        var endX = (int)Math.Floor((centerPixelX + viewportW / 2.0 + tileMargin) / tileSize);
+        var startY = (int)Math.Floor((centerPixelY - viewportH / 2.0 - tileMargin) / tileSize);
+        var endY = (int)Math.Floor((centerPixelY + viewportH / 2.0 + tileMargin) / tileSize);
 
         var canvas = new Canvas {
             Width = viewportW,
             Height = viewportH,
             IsHitTestVisible = false
         };
-        RenderOptions.SetBitmapScalingMode(canvas, BitmapScalingMode.LowQuality);
+        RenderOptions.SetBitmapScalingMode(canvas, BitmapScalingMode.NearestNeighbor);
         var layer = new MapLayer(canvas, z, centerPixelX, centerPixelY, viewportW, viewportH);
 
         BeginStagingLayer(layer);
 
         if (ct.IsCancellationRequested) return;
 
-        List<Task> tasks = [];
         var accessToken = AccessTokenTextBox.Text;
-        var sourceKey = $"{_tileService.TileTemplate}|{_tileService.IsTms}";
+        var sourceKey = _tileService.CacheIdentity;
         var loadedTileCount = 0;
 
         var tileRequests = new List<(int X, int Y, double Distance)>();
@@ -153,8 +162,20 @@ public partial class MainWindow : Window {
             }
         }
 
+        var pendingRequests = new Queue<(int X, int Y)>();
         foreach (var request in tileRequests.OrderBy(static request => request.Distance)) {
-            tasks.Add(LoadAndAddTileAsync(request.X, request.Y));
+            var cachedSource = GetTileSourceFromCaches(request.X, request.Y);
+            if (cachedSource is not null) {
+                AddTile(cachedSource, request.X, request.Y);
+            } else {
+                pendingRequests.Enqueue((request.X, request.Y));
+            }
+        }
+
+        List<Task> tasks = [];
+        var workerCount = Math.Min(MaxConcurrentTileLoads, pendingRequests.Count);
+        for (var i = 0; i < workerCount; i++) {
+            tasks.Add(LoadPendingTilesAsync());
         }
 
         try {
@@ -175,12 +196,23 @@ public partial class MainWindow : Window {
 
         PromoteStagingLayer(layer);
 
+        async Task LoadPendingTilesAsync() {
+            while (!ct.IsCancellationRequested) {
+                (int X, int Y) request;
+                lock (pendingRequests) {
+                    if (pendingRequests.Count == 0) return;
+                    request = pendingRequests.Dequeue();
+                }
+
+                await LoadAndAddTileAsync(request.X, request.Y).ConfigureAwait(false);
+            }
+        }
+
         async Task LoadAndAddTileAsync(int tileX, int tileY) {
             try {
-                var wrappedX = ((tileX % n) + n) % n;
-                var tileKey = $"{sourceKey}|{z}/{wrappedX}/{tileY}";
-                if (TileCache.TryGetValue(tileKey, out var cached) && cached is not null) {
-                    AddTile(cached, tileX, tileY);
+                var cachedSource = GetTileSourceFromCaches(tileX, tileY);
+                if (cachedSource is not null) {
+                    await Dispatcher.InvokeAsync(() => AddTile(cachedSource, tileX, tileY));
                     return;
                 }
 
@@ -193,7 +225,7 @@ public partial class MainWindow : Window {
 
                     var source = LoadTileImage(bytes);
                     if (source is null) return;
-                    if (TileCache.Count < MaxTileCache) TileCache.TryAdd(tileKey, source);
+                    AddToTileCache(GetTileKey(tileX, tileY), source);
 
                     await Dispatcher.InvokeAsync(() => AddTile(source, tileX, tileY));
                 } finally {
@@ -205,6 +237,27 @@ public partial class MainWindow : Window {
             }
         }
 
+        BitmapSource? GetTileSourceFromCaches(int tileX, int tileY) {
+            var tileKey = GetTileKey(tileX, tileY);
+            if (TileCache.TryGetValue(tileKey, out var cached)) {
+                return cached;
+            }
+
+            var bytes = _tileService.TryReadCachedTile(z, tileX, tileY);
+            if (bytes is null) return null;
+
+            var source = LoadTileImage(bytes);
+            if (source is null) return null;
+
+            AddToTileCache(tileKey, source);
+            return source;
+        }
+
+        string GetTileKey(int tileX, int tileY) {
+            var wrappedX = ((tileX % n) + n) % n;
+            return $"{sourceKey}|{z}/{wrappedX}/{tileY}";
+        }
+
         void AddTile(BitmapSource source, int tileX, int tileY) {
             if (ct.IsCancellationRequested || !MapLayerHost.Children.Contains(layer.Canvas)) return;
 
@@ -213,10 +266,30 @@ public partial class MainWindow : Window {
                 Height = tileSize,
                 Source = source
             };
+            RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.NearestNeighbor);
             Canvas.SetLeft(image, tileX * tileSize - centerPixelX + viewportW / 2.0);
             Canvas.SetTop(image, tileY * tileSize - centerPixelY + viewportH / 2.0);
             layer.Canvas.Children.Add(image);
             Interlocked.Increment(ref loadedTileCount);
+        }
+    }
+
+    private (double PixelX, double PixelY) GetRenderCenterPixel(int zoom) {
+        var (centerPixelX, centerPixelY) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, zoom);
+        if (_panOffsetX == 0 && _panOffsetY == 0) {
+            return (centerPixelX, centerPixelY);
+        }
+
+        var worldSize = GeoConverter.TileSize * (double)GeoConverter.GetTileCount(zoom);
+        return (centerPixelX - _panOffsetX, Math.Clamp(centerPixelY - _panOffsetY, 0, worldSize));
+    }
+
+    private static void AddToTileCache(string tileKey, BitmapSource source) {
+        if (!TileCache.TryAdd(tileKey, source)) return;
+
+        TileCacheOrder.Enqueue(tileKey);
+        while (TileCache.Count > MaxTileCache && TileCacheOrder.TryDequeue(out var expiredKey)) {
+            TileCache.TryRemove(expiredKey, out _);
         }
     }
 
@@ -362,7 +435,7 @@ public partial class MainWindow : Window {
         ApplyLayerTransforms();
 
         if (!string.IsNullOrEmpty(_tileService.TileTemplate)) {
-            ScheduleRender(z, debounceRender ? 120 : 0);
+            ScheduleRender(z, debounceRender ? WheelRenderDelayMilliseconds : 0);
         }
     }
 
@@ -416,6 +489,9 @@ public partial class MainWindow : Window {
         _panStart = e.GetPosition(MapViewport);
         _panOffsetX = 0;
         _panOffsetY = 0;
+        _lastPanPrefetchOffsetX = 0;
+        _lastPanPrefetchOffsetY = 0;
+        _lastPanPrefetchAt = DateTime.MinValue;
         MapViewport.CaptureMouse();
         Cursor = Cursors.Hand;
         e.Handled = true;
@@ -427,6 +503,24 @@ public partial class MainWindow : Window {
         _panOffsetX = pos.X - _panStart.X;
         _panOffsetY = pos.Y - _panStart.Y;
         ApplyLayerTransforms();
+        SchedulePanPrefetch();
+    }
+
+    private void SchedulePanPrefetch() {
+        if (string.IsNullOrEmpty(_tileService.TileTemplate)) return;
+        if (!int.TryParse(ZoomTextBox.Text, out var zoom)) return;
+
+        var movedX = _panOffsetX - _lastPanPrefetchOffsetX;
+        var movedY = _panOffsetY - _lastPanPrefetchOffsetY;
+        if (movedX * movedX + movedY * movedY < PanPrefetchDistance * PanPrefetchDistance) return;
+
+        var now = DateTime.UtcNow;
+        if ((now - _lastPanPrefetchAt).TotalMilliseconds < PanPrefetchIntervalMilliseconds) return;
+
+        _lastPanPrefetchOffsetX = _panOffsetX;
+        _lastPanPrefetchOffsetY = _panOffsetY;
+        _lastPanPrefetchAt = now;
+        ScheduleRender(zoom, 0);
     }
 
     private void MapCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
@@ -452,6 +546,8 @@ public partial class MainWindow : Window {
 
             _panOffsetX = 0;
             _panOffsetY = 0;
+            _lastPanPrefetchOffsetX = 0;
+            _lastPanPrefetchOffsetY = 0;
             ApplyLayerTransforms();
             ScheduleRender(zoom, 0);
         } catch (Exception ex) {
@@ -459,6 +555,8 @@ public partial class MainWindow : Window {
         } finally {
             _panOffsetX = 0;
             _panOffsetY = 0;
+            _lastPanPrefetchOffsetX = 0;
+            _lastPanPrefetchOffsetY = 0;
         }
     }
 

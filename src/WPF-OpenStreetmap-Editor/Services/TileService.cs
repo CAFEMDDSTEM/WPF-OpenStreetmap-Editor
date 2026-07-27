@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +22,7 @@ public partial class TileService : IDisposable {
 
     public string? TileTemplate { get; set; }
     public bool IsTms { get; set; }
+    public string CacheIdentity => CreateCacheIdentity(TileTemplate, IsTms);
 
     public TileService(HttpClient? http = null, string? cacheRoot = null) {
         _http = http ?? new();
@@ -87,16 +90,23 @@ public partial class TileService : IDisposable {
     }
 
     public string GetCacheBasePath(int z, int x, int y) {
+        return GetCacheBasePath(z, x, y, createDirectory: true);
+    }
+
+    private string GetCacheBasePath(int z, int x, int y, bool createDirectory) {
         var n = 1 << z;
         var xWrapped = ((x % n) + n) % n;
 
-        var dir = Path.Combine(_cacheRoot, z.ToString(), xWrapped.ToString());
-        Directory.CreateDirectory(dir);
+        var dir = Path.Combine(_cacheRoot, CacheIdentity, z.ToString(), xWrapped.ToString());
+        if (createDirectory) {
+            Directory.CreateDirectory(dir);
+        }
+
         return Path.Combine(dir, y.ToString());
     }
 
     public string? FindCachedFile(int z, int x, int y) {
-        var basePath = GetCacheBasePath(z, x, y);
+        var basePath = GetCacheBasePath(z, x, y, createDirectory: false);
         foreach (var ext in ImageExtensions) {
             var path = basePath + ext;
             if (File.Exists(path))
@@ -105,23 +115,31 @@ public partial class TileService : IDisposable {
         return null;
     }
 
+    public byte[]? TryReadCachedTile(int z, int x, int y) {
+        try {
+            var cached = FindCachedFile(z, x, y);
+            return cached is null ? null : File.ReadAllBytes(cached);
+        } catch (Exception ex) {
+            Logger.Error($"Failed to read tile cache (z={z}, x={x}, y={y})", ex);
+            return null;
+        }
+    }
+
     public async Task<byte[]?> GetTileBytesAsync(int z, int x, int y, string? accessToken, CancellationToken ct = default) {
         try {
             if (string.IsNullOrEmpty(TileTemplate)) return null;
 
-            var cached = FindCachedFile(z, x, y);
-            if (cached is not null) {
-                return File.ReadAllBytes(cached);
-            }
+            var cachedBytes = TryReadCachedTile(z, x, y);
+            if (cachedBytes is not null) return cachedBytes;
 
-            var cacheKey = $"{z}/{x}/{y}";
+            var n = 1 << z;
+            var xWrapped = ((x % n) + n) % n;
+            var cacheKey = $"{CacheIdentity}/{z}/{xWrapped}/{y}";
             var semaphore = WriteLocks.GetOrAdd(cacheKey, static _ => new(1, 1));
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
             try {
-                cached = FindCachedFile(z, x, y);
-                if (cached is not null) {
-                    return File.ReadAllBytes(cached);
-                }
+                cachedBytes = TryReadCachedTile(z, x, y);
+                if (cachedBytes is not null) return cachedBytes;
 
                 var url = BuildTileUrl(z, x, y, accessToken);
                 if (string.IsNullOrEmpty(url)) return null;
@@ -163,8 +181,6 @@ public partial class TileService : IDisposable {
         var template = url;
         IsTms = false;
 
-        template = ApplyAccessToken(template, accessToken);
-
         if (template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase) >= 0) {
             var xPos = template.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
             var negYPos = template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase);
@@ -185,6 +201,14 @@ public partial class TileService : IDisposable {
         }
 
         TileTemplate = template;
+    }
+
+    private static string CreateCacheIdentity(string? template, bool isTms) {
+        if (string.IsNullOrEmpty(template)) return "default";
+
+        var key = $"{(isTms ? "tms" : "xyz")}|{template}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(key));
+        return Convert.ToHexString(hash).ToLowerInvariant()[..16];
     }
 
     public void Dispose() {
