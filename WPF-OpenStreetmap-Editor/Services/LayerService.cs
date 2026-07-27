@@ -8,8 +8,7 @@ using System.Text.Json;
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public static class LayerService {
-    private static readonly string LayersFile = Path.Combine(
-        AppDomain.CurrentDomain.BaseDirectory, "layers.json");
+    private static readonly string LayersFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "layers.json");
 
     public static List<string> LoadLayers() {
         try {

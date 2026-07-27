@@ -1,14 +1,21 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using WPF_OpenStreetmap_Editor.Services;
+
+
 
 namespace WPF_OpenStreetmap_Editor;
 
@@ -22,6 +29,11 @@ public partial class MainWindow : Window {
     private double _startTranslateY;
     private TranslateTransform? _translate;
     private ScrollViewer? _mapScrollViewer;
+    private CancellationTokenSource? _renderCts;
+    private CancellationTokenSource? _zoomDebounceCts;
+    private static readonly ConcurrentDictionary<string, BitmapSource?> TileCache = new();
+    private const int MaxTileCache = 500;
+    private static readonly SemaphoreSlim TileThrottle = new(6, 6);
 
     public MainWindow() {
         InitializeComponent();
@@ -32,7 +44,10 @@ public partial class MainWindow : Window {
         var defaultUrl = "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{-y}/{x}";
         Loaded += (_, _) => {
             MapUrlTextBox.Text = defaultUrl;
+            System.Diagnostics.Debug.WriteLine($"DEFAULT URL: {defaultUrl}");
+            System.Diagnostics.Debug.WriteLine($"TILE TEMPLATE BEFORE: {_tileService.TileTemplate}");
             LoadMapFromUrl(defaultUrl);
+            System.Diagnostics.Debug.WriteLine($"TILE TEMPLATE AFTER: {_tileService.TileTemplate}");
         };
     }
 
@@ -52,36 +67,29 @@ public partial class MainWindow : Window {
 
     public void LoadLayer(string type, string url) {
         if (string.IsNullOrEmpty(url)) return;
-
         MapUrlTextBox.Text = url;
-        _tileService.IsTms = false;
-        _tileService.TileTemplate = url;
-
+        _tileService.ParseUrlTemplate(url, AccessTokenTextBox.Text);
         var t = type.Trim().ToUpperInvariant();
         if (t == "TMS") _tileService.IsTms = true;
-
-        var template = url;
-        if (template.Contains("{-y}")) {
-            _tileService.IsTms = true;
-            template = template.Replace("{-y}", "{y}");
-        }
-        template = template.Replace("{zoom}", "{z}");
-
-        if (!string.IsNullOrEmpty(template) &&
-            (template.IndexOf("mapbox.com", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             template.IndexOf("api.mapbox", StringComparison.OrdinalIgnoreCase) >= 0)) {
-            template = template.Replace("{access_token}", AccessTokenTextBox.Text);
-        }
-
-        _tileService.TileTemplate = template;
         int zoom = int.TryParse(ZoomTextBox.Text, out var z) ? z : 2;
         _ = RenderTilesAsync(zoom);
     }
 
     private async Task RenderTilesAsync(int z) {
+        _renderCts?.Cancel();
+        _renderCts = new CancellationTokenSource();
+        var ct = _renderCts.Token;
+
+        if (_translate != null) {
+            _translate.X = 0;
+            _translate.Y = 0;
+        }
+
         const int tileSize = GeoConverter.TileSize;
 
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+        if (ct.IsCancellationRequested) return;
 
         double viewportW = _mapScrollViewer?.ViewportWidth ?? MapCanvas.ActualWidth;
         double viewportH = _mapScrollViewer?.ViewportHeight ?? MapCanvas.ActualHeight;
@@ -89,8 +97,8 @@ public partial class MainWindow : Window {
         if (viewportW <= 0) viewportW = 1024;
         if (viewportH <= 0) viewportH = 768;
 
-        int tilesX = Math.Max(3, (int)Math.Ceiling(viewportW / tileSize) + 2);
-        int tilesY = Math.Max(3, (int)Math.Ceiling(viewportH / tileSize) + 2);
+        int tilesX = Math.Max(5, (int)Math.Ceiling(viewportW / tileSize) + 4);
+        int tilesY = Math.Max(5, (int)Math.Ceiling(viewportH / tileSize) + 4);
 
         int n = GeoConverter.GetTileCount(z);
         var (centerTileX, centerTileY) = GeoConverter.LatLonToTileXY(_centerLat, _centerLon, z);
@@ -107,6 +115,8 @@ public partial class MainWindow : Window {
             MapCanvas.Children.Clear();
         });
 
+        if (ct.IsCancellationRequested) return;
+
         var tasks = new List<Task>();
         string accessToken = AccessTokenTextBox.Text;
 
@@ -114,23 +124,53 @@ public partial class MainWindow : Window {
             for (int tx = 0; tx < tilesX; tx++) {
                 int tileX = startX + tx;
                 int tileY = startY + ty;
-                if (tileY < 0 || tileY >= n) continue;
+                if (tileX < 0 || tileX >= n || tileY < 0 || tileY >= n) continue;
 
+                int capturedTx = tx;
+                int capturedTy = ty;
                 tasks.Add(Task.Run(async () => {
-                    var img = await _tileService.GetTileAsync(z, tileX, tileY, accessToken).ConfigureAwait(false);
-                    if (img != null) {
-                        double left = tx * tileSize;
-                        double top = ty * tileSize;
-                        await Dispatcher.InvokeAsync(() => {
-                            var iv = new Image {
-                                Width = tileSize,
-                                Height = tileSize,
-                                Source = img
-                            };
-                            Canvas.SetLeft(iv, left);
-                            Canvas.SetTop(iv, top);
-                            MapCanvas.Children.Add(iv);
-                        });
+                    try {
+                        string tileKey = $"{z}/{tileX}/{tileY}";
+                        if (TileCache.TryGetValue(tileKey, out var cached) && cached != null) {
+                            if (ct.IsCancellationRequested) return;
+                            double left = capturedTx * tileSize;
+                            double top = capturedTy * tileSize;
+                            await Dispatcher.InvokeAsync(() => {
+                                if (ct.IsCancellationRequested) return;
+                                var iv = new Image { Width = tileSize, Height = tileSize, Source = cached };
+                                Canvas.SetLeft(iv, left);
+                                Canvas.SetTop(iv, top);
+                                MapCanvas.Children.Add(iv);
+                            });
+                            return;
+                        }
+
+                        await TileThrottle.WaitAsync(ct).ConfigureAwait(false);
+                        try {
+                            var bytes = await _tileService.GetTileBytesAsync(z, tileX, tileY, accessToken).ConfigureAwait(false);
+                            if (bytes == null) return;
+                            if (ct.IsCancellationRequested) return;
+
+                            var source = LoadTileImage(bytes);
+                            if (source == null) return;
+                            if (TileCache.Count < MaxTileCache)
+                                TileCache.TryAdd(tileKey, source);
+
+                            double left = capturedTx * tileSize;
+                            double top = capturedTy * tileSize;
+                            await Dispatcher.InvokeAsync(() => {
+                                if (ct.IsCancellationRequested) return;
+                                var iv = new Image { Width = tileSize, Height = tileSize, Source = source };
+                                Canvas.SetLeft(iv, left);
+                                Canvas.SetTop(iv, top);
+                                MapCanvas.Children.Add(iv);
+                            });
+                        } finally {
+                            TileThrottle.Release();
+                        }
+                    } catch (OperationCanceledException) {
+                    } catch (Exception ex) {
+                        Logger.Error($"Tile task failed ({z},{tileX},{tileY})", ex);
                     }
                 }));
             }
@@ -139,6 +179,8 @@ public partial class MainWindow : Window {
         try { await Task.WhenAll(tasks); }
         catch (Exception ex) { Logger.Error("Tile rendering failed", ex); }
 
+        if (ct.IsCancellationRequested) return;
+
         if (_mapScrollViewer != null) {
             double vw = _mapScrollViewer.ViewportWidth > 0
                 ? _mapScrollViewer.ViewportWidth
@@ -146,12 +188,37 @@ public partial class MainWindow : Window {
             double vh = _mapScrollViewer.ViewportHeight > 0
                 ? _mapScrollViewer.ViewportHeight
                 : _mapScrollViewer.ActualHeight;
-            double offsetX = Math.Max(0, (MapCanvas.Width - vw) / 2.0);
-            double offsetY = Math.Max(0, (MapCanvas.Height - vh) / 2.0);
+
+            var (centerPx, centerPy) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, z);
+            double centerCanvasX = centerPx - startX * tileSize;
+            double centerCanvasY = centerPy - startY * tileSize;
+            double offsetX = Math.Max(0, centerCanvasX - vw / 2.0);
+            double offsetY = Math.Max(0, centerCanvasY - vh / 2.0);
+
             await Dispatcher.InvokeAsync(() => {
                 _mapScrollViewer.ScrollToHorizontalOffset(offsetX);
                 _mapScrollViewer.ScrollToVerticalOffset(offsetY);
             });
+        }
+    }
+
+    private static BitmapSource? LoadTileImage(byte[] data) {
+        try {
+            using var ms = new MemoryStream(data);
+            using var img = System.Drawing.Image.FromStream(ms);
+            using var bitmap = new System.Drawing.Bitmap(img);
+            var hBitmap = bitmap.GetHbitmap();
+            try {
+                var source = Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                source.Freeze();
+                return source;
+            } finally {
+                NativeMethods.DeleteObject(hBitmap);
+            }
+        } catch (Exception ex) {
+            Logger.Error("Failed to decode image bytes", ex);
+            return null;
         }
     }
 
@@ -227,12 +294,24 @@ public partial class MainWindow : Window {
     }
 
     private void MapCanvas_MouseWheel(object sender, MouseWheelEventArgs e) {
-        if (e.Delta > 0) ZoomIn_Click(this, new RoutedEventArgs());
-        else ZoomOut_Click(this, new RoutedEventArgs());
+        _zoomDebounceCts?.Cancel();
+        _zoomDebounceCts = new CancellationTokenSource();
+        var ct = _zoomDebounceCts.Token;
+        bool zoomIn = e.Delta > 0;
         e.Handled = true;
+        _ = Task.Run(async () => {
+            try {
+                await Task.Delay(200, ct);
+                await Dispatcher.InvokeAsync(() => {
+                    if (zoomIn) ZoomIn_Click(this, new RoutedEventArgs());
+                    else ZoomOut_Click(this, new RoutedEventArgs());
+                });
+            } catch (OperationCanceledException) {
+            }
+        });
     }
 
-    private void MapCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+    private void MapCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { 
         _isPanning = true;
         _panStart = e.GetPosition(this);
         _startTranslateX = _translate?.X ?? 0;
@@ -259,24 +338,23 @@ public partial class MainWindow : Window {
         try {
             if (!int.TryParse(ZoomTextBox.Text, out var zoom)) return;
 
-            var (oldPx, oldPy) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, zoom);
-
             double shiftX = _translate?.X ?? 0;
             double shiftY = _translate?.Y ?? 0;
 
+            if (shiftX == 0 && shiftY == 0)
+                return;
+
+            var (oldPx, oldPy) = GeoConverter.LatLonToPixelXY(_centerLat, _centerLon, zoom);
             double newPx = oldPx - shiftX;
             double newPy = oldPy - shiftY;
-
             (_centerLat, _centerLon) = GeoConverter.PixelXYToLatLon(newPx, newPy, zoom);
-
-            if (_translate != null) {
-                _translate.X = 0;
-                _translate.Y = 0;
-            }
-
-            _ = RenderTilesAsync(zoom);
         } catch (Exception ex) {
             Logger.Error("Pan update failed", ex);
         }
     }
+}
+
+internal static class NativeMethods {
+    [DllImport("gdi32.dll")]
+    public static extern bool DeleteObject(IntPtr hObject);
 }

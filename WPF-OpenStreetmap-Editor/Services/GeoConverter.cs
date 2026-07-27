@@ -8,8 +8,7 @@ public static class GeoConverter {
     public const int MinZoom = 0;
     public const int MaxZoom = 22;
 
-    public static double ClampLatitude(double lat) =>
-        Math.Max(Math.Min(lat, MaxLatitude), -MaxLatitude);
+    public static double ClampLatitude(double lat) => Math.Max(Math.Min(lat, MaxLatitude), -MaxLatitude);
 
     public static int GetTileCount(int zoom) => 1 << zoom;
 

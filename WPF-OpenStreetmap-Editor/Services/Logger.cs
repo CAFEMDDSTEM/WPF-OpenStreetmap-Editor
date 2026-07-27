@@ -33,11 +33,15 @@ public static class Logger {
         AppendToFile(line);
     }
 
+    private static readonly object LogLock = new();
+
     private static void AppendToFile(string line) {
-        try {
-            File.AppendAllText(LogPath, line + Environment.NewLine);
-        }
-        catch { 
+        lock (LogLock) {
+            try {
+                File.AppendAllText(LogPath, line + Environment.NewLine);
+            }
+            catch {
+            }
         }
     }
 }
