@@ -25,14 +25,14 @@ public partial class LayersWindow : Window {
     }
 
     private void RemoveLayer_Click(object sender, RoutedEventArgs e) {
-        if (LayersListBox.SelectedItem != null) {
+        if (LayersListBox.SelectedItem is not null) {
             LayersListBox.Items.Remove(LayersListBox.SelectedItem);
             SaveLayersToFile();
         }
     }
 
     private void LoadSelected_Click(object sender, RoutedEventArgs e) {
-        if (LayersListBox.SelectedItem == null) {
+        if (LayersListBox.SelectedItem is null) {
             MessageBox.Show("请选择一个图层以加载", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -42,14 +42,14 @@ public partial class LayersWindow : Window {
         var url = item;
         var idx = item.IndexOf(']');
         if (item.StartsWith("[") && idx > 1) {
-            type = item.Substring(1, idx - 1).Trim();
-            url = idx + 1 < item.Length ? item.Substring(idx + 1).Trim() : "";
+            type = item[1..idx].Trim();
+            url = idx + 1 < item.Length ? item[(idx + 1)..].Trim() : "";
         }
 
-        if (this.Owner is MainWindow main) {
+        if (Owner is MainWindow main) {
             if (!string.IsNullOrEmpty(type)) main.LoadLayer(type, url);
             else main.LoadMapFromUrl(url);
-            this.Close();
+            Close();
         } else {
             MessageBox.Show("未能找到主窗口来加载地图", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }

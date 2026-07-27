@@ -13,13 +13,13 @@ public static class LayerService {
     public static List<string> LoadLayers() {
         try {
             if (!File.Exists(LayersFile))
-                return new List<string>();
+                return [];
 
             var json = File.ReadAllText(LayersFile, Encoding.UTF8);
-            return JsonSerializer.Deserialize<string[]>(json)?.ToList() ?? new List<string>();
+            return JsonSerializer.Deserialize<string[]>(json)?.ToList() ?? [];
         } catch (Exception ex) {
             Logger.Error("Failed to load layers", ex);
-            return new List<string>();
+            return [];
         }
     }
 

@@ -25,7 +25,7 @@ public static class Logger {
 
     public static void Error(string message, Exception? ex = null) {
         var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {message}";
-        if (ex != null) {
+        if (ex is not null) {
             line += $" | {ex.GetType().Name}: {ex.Message}";
         }
         Debug.WriteLine(line);

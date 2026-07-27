@@ -14,7 +14,7 @@ public partial class TileService : IDisposable {
     private readonly string _cacheRoot;
     private bool _disposed;
 
-    private static readonly string[] ImageExtensions = { ".png", ".jpg", ".jpeg", ".gif", ".bmp" };
+    private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"];
 
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> WriteLocks = new();
 
@@ -22,7 +22,7 @@ public partial class TileService : IDisposable {
     public bool IsTms { get; set; }
 
     public TileService(HttpClient? http = null, string? cacheRoot = null) {
-        _http = http ?? new HttpClient();
+        _http = http ?? new();
         _cacheRoot = AppPaths.Normalize(cacheRoot ?? AppPaths.TileCacheDirectory);
     }
 
@@ -30,9 +30,9 @@ public partial class TileService : IDisposable {
         if (string.IsNullOrEmpty(TileTemplate))
             throw new InvalidOperationException("Tile template is not set");
 
-        int n = 1 << z;
-        int xWrapped = ((x % n) + n) % n;
-        int yForUrl = IsTms ? (n - 1) - y : y;
+        var n = 1 << z;
+        var xWrapped = ((x % n) + n) % n;
+        var yForUrl = IsTms ? (n - 1) - y : y;
 
         if (yForUrl < 0 || yForUrl >= n)
             return string.Empty;
@@ -61,7 +61,7 @@ public partial class TileService : IDisposable {
                 result = result.Replace(switchMatch.Value, sub);
             }
         } else if (result.IndexOf("{s}", StringComparison.OrdinalIgnoreCase) >= 0) {
-            var subs = new[] { "a", "b", "c" };
+            string[] subs = ["a", "b", "c"];
             var sub = subs[(Math.Abs(x + y) % subs.Length)];
             result = Regex.Replace(result, @"\{s\}", sub, RegexOptions.IgnoreCase);
         }
@@ -87,8 +87,8 @@ public partial class TileService : IDisposable {
     }
 
     public string GetCacheBasePath(int z, int x, int y) {
-        int n = 1 << z;
-        int xWrapped = ((x % n) + n) % n;
+        var n = 1 << z;
+        var xWrapped = ((x % n) + n) % n;
 
         var dir = Path.Combine(_cacheRoot, z.ToString(), xWrapped.ToString());
         Directory.CreateDirectory(dir);
@@ -110,20 +110,20 @@ public partial class TileService : IDisposable {
             if (string.IsNullOrEmpty(TileTemplate)) return null;
 
             var cached = FindCachedFile(z, x, y);
-            if (cached != null) {
+            if (cached is not null) {
                 return File.ReadAllBytes(cached);
             }
 
-            string cacheKey = $"{z}/{x}/{y}";
-            var semaphore = WriteLocks.GetOrAdd(cacheKey, _ => new SemaphoreSlim(1, 1));
+            var cacheKey = $"{z}/{x}/{y}";
+            var semaphore = WriteLocks.GetOrAdd(cacheKey, static _ => new(1, 1));
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
             try {
                 cached = FindCachedFile(z, x, y);
-                if (cached != null) {
+                if (cached is not null) {
                     return File.ReadAllBytes(cached);
                 }
 
-                string url = BuildTileUrl(z, x, y, accessToken);
+                var url = BuildTileUrl(z, x, y, accessToken);
                 if (string.IsNullOrEmpty(url)) return null;
 
                 System.Diagnostics.Debug.WriteLine($"TILE: z={z} x={x} y={y} url={url}");
@@ -166,8 +166,8 @@ public partial class TileService : IDisposable {
         template = ApplyAccessToken(template, accessToken);
 
         if (template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase) >= 0) {
-            int xPos = template.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
-            int negYPos = template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase);
+            var xPos = template.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
+            var negYPos = template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase);
             // TMS:  {z}/{x}/{-y}  → {-y} after {x}, flip Y
             // ArcGIS: {z}/{-y}/{x} → {-y} before {x}, NO flip
             IsTms = xPos >= 0 && negYPos > xPos;
