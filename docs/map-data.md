@@ -69,15 +69,17 @@ are not written to the JSON metadata file.
 
 ## CLI workflows
 
-The console project at `src/WPF-OpenStreetmap-Editor.Cli` exposes the same
-data pipeline for automation and batch work:
+The main WOSM executable exposes the same data pipeline for automation and
+batch work. Run without data commands to open the GUI, or use `gui`/`launch`
+with window startup options such as `--fullscreen`:
 
 ```powershell
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- help
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- download --bbox 103.8,1.3,103.9,1.4 --output data.osm
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- import --input data.osm
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- convert --input data.geojson --output data.gpx
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- changeset --input data.geojson --output preview.osc --feature-id survey-path
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- help
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- gui --fullscreen
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- download --bbox 103.8,1.3,103.9,1.4 --output data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- import --input data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- convert --input data.geojson --output data.gpx
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- changeset --input data.geojson --output preview.osc --feature-id survey-path
 ```
 
 `download` writes raw OSM XML for a bounding box. It uses `--api-base-url` when
@@ -99,8 +101,8 @@ account. Use `--dry-run` before a real upload; add `--output preview.osc` to
 write the generated OSM change XML:
 
 ```powershell
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --dry-run --output preview.osc
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- upload --input data.geojson --dry-run --output preview.osc
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- upload --input data.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
 ```
 
 Commands that load an input document (`import`, `convert`, `changeset`, and
@@ -112,6 +114,6 @@ imported OSM IDs and build creates instead of modifies.
 
 The CLI import safety defaults are `--max-features 1000000` and
 `--max-coordinates 8000000`. Output commands refuse to overwrite existing files
-unless `--force` is provided. `launch` and its `gui` alias start the WPF app;
-pass `--app` or a positional executable path when the published GUI executable
-is not next to `wosm-cli`, and use `--fullscreen` to start in fullscreen mode.
+unless `--force` is provided. `gui` and `launch` start the WPF interface from
+the same executable, and `--fullscreen`, `--full-screen`, or `--maximized`
+starts the window in fullscreen mode.

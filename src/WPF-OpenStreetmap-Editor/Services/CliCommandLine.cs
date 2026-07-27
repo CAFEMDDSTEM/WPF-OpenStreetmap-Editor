@@ -9,8 +9,7 @@ public enum CliCommandKind {
     Convert,
     Download,
     Changeset,
-    Upload,
-    Launch
+    Upload
 }
 
 public sealed record CliTagFilter(string Key, string Value);
@@ -32,8 +31,6 @@ public sealed class CliCommandLine {
     public bool ConfirmWrite { get; set; }
     public bool DryRun { get; set; }
     public bool TreatInputAsNew { get; set; }
-    public bool LaunchFullScreen { get; set; }
-    public string? LaunchAppPath { get; set; }
     public int MaxFeatures { get; set; } = 1_000_000;
     public int MaxCoordinates { get; set; } = 8_000_000;
     public List<string> FeatureIds { get; } = [];
@@ -52,7 +49,6 @@ public sealed class CliCommandLine {
             "download" => new CliCommandLine { Kind = CliCommandKind.Download },
             "changeset" => new CliCommandLine { Kind = CliCommandKind.Changeset },
             "upload" => new CliCommandLine { Kind = CliCommandKind.Upload },
-            "launch" or "gui" => new CliCommandLine { Kind = CliCommandKind.Launch },
             var unknown => throw new CliArgumentException($"Unknown CLI command '{unknown}'.")
         };
 
@@ -127,14 +123,6 @@ public sealed class CliCommandLine {
                 case "--treat-input-as-new":
                     command.TreatInputAsNew = true;
                     break;
-                case "--fullscreen":
-                case "--full-screen":
-                case "--maximized":
-                    command.LaunchFullScreen = true;
-                    break;
-                case "--app":
-                    command.LaunchAppPath = ReadValue(tokens, ref i, token);
-                    break;
                 default:
                     if (token.StartsWith("-", StringComparison.Ordinal)) {
                         throw new CliArgumentException($"Unknown option '{token}'.");
@@ -166,9 +154,6 @@ public sealed class CliCommandLine {
                 break;
             case CliCommandKind.Upload:
                 command.InputPath ??= positionals.ElementAtOrDefault(0);
-                break;
-            case CliCommandKind.Launch:
-                command.LaunchAppPath ??= positionals.ElementAtOrDefault(0);
                 break;
         }
     }

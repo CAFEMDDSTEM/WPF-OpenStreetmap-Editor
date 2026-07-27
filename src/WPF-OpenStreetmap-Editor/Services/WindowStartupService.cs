@@ -90,7 +90,7 @@ public static class WindowStartupService {
         File.WriteAllText(AppPaths.WindowStateFile, JsonSerializer.Serialize(state, JsonOptions));
     }
 
-    private static bool IsFullScreenArgument(string arg) {
+    internal static bool IsFullScreenArgument(string arg) {
         return FullScreenArguments.Contains(arg, StringComparer.OrdinalIgnoreCase);
     }
 

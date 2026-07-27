@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -35,7 +34,7 @@ public sealed class CliApplication {
             return await ExecuteAsync(command, ct);
         } catch (CliArgumentException ex) {
             _error.WriteLine(ex.Message);
-            _error.WriteLine("Run 'wosm-cli help' for usage.");
+            _error.WriteLine("Run 'WPF-OpenStreetmap-Editor.exe help' for usage.");
             return 2;
         } catch (OperationCanceledException) {
             _error.WriteLine("Operation canceled.");
@@ -87,8 +86,6 @@ public sealed class CliApplication {
                 return await WriteChangesetAsync(command, ct);
             case CliCommandKind.Upload:
                 return await UploadAsync(command, ct);
-            case CliCommandKind.Launch:
-                return Launch(command);
             default:
                 throw new CliArgumentException("Unsupported CLI command.");
         }
@@ -173,17 +170,6 @@ public sealed class CliApplication {
             }
         }
 
-        return 0;
-    }
-
-    private int Launch(CliCommandLine command) {
-        var appPath = ResolveLaunchAppPath(command.LaunchAppPath);
-        var arguments = command.LaunchFullScreen ? "--fullscreen" : "";
-        Process.Start(new ProcessStartInfo(appPath) {
-            Arguments = arguments,
-            UseShellExecute = true
-        });
-        _output.WriteLine($"Started {appPath}{(arguments.Length > 0 ? " " + arguments : "")}.");
         return 0;
     }
 
@@ -309,33 +295,19 @@ public sealed class CliApplication {
         return activeAccount is null ? null : store?.GetAccessToken(activeAccount);
     }
 
-    private static string ResolveLaunchAppPath(string? requestedPath) {
-        if (!string.IsNullOrWhiteSpace(requestedPath)) {
-            var fullPath = Path.GetFullPath(requestedPath);
-            if (File.Exists(fullPath)) return fullPath;
-            throw new FileNotFoundException("The requested WOSM app path does not exist.", fullPath);
-        }
-
-        var siblingPath = Path.Combine(AppContext.BaseDirectory, "WPF-OpenStreetmap-Editor.exe");
-        if (File.Exists(siblingPath)) return siblingPath;
-
-        throw new FileNotFoundException(
-            "Could not find WPF-OpenStreetmap-Editor.exe next to wosm-cli. Pass --app with the GUI executable path.",
-            siblingPath);
-    }
-
     private static string GetHelpText() {
         return """
-            WOSM CLI
+            WOSM Command Line
 
             Usage:
-              wosm-cli import --input map.geojson
-              wosm-cli convert --input map.geojson --output map.gpx [--force]
-              wosm-cli download --bbox minLon,minLat,maxLon,maxLat --output data.osm [--api-base-url url]
-              wosm-cli changeset --input map.geojson --output preview.osc [--feature-id id] [--tag key=value]
-              wosm-cli upload --input map.geojson --dry-run [--output preview.osc]
-              wosm-cli upload --input map.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
-              wosm-cli launch --app WPF-OpenStreetmap-Editor.exe --fullscreen
+              WPF-OpenStreetmap-Editor.exe
+              WPF-OpenStreetmap-Editor.exe gui --fullscreen
+              WPF-OpenStreetmap-Editor.exe import --input map.geojson
+              WPF-OpenStreetmap-Editor.exe convert --input map.geojson --output map.gpx [--force]
+              WPF-OpenStreetmap-Editor.exe download --bbox minLon,minLat,maxLon,maxLat --output data.osm [--api-base-url url]
+              WPF-OpenStreetmap-Editor.exe changeset --input map.geojson --output preview.osc [--feature-id id] [--tag key=value]
+              WPF-OpenStreetmap-Editor.exe upload --input map.geojson --dry-run [--output preview.osc]
+              WPF-OpenStreetmap-Editor.exe upload --input map.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
 
             Common options:
               --feature-id id           Select one feature id; repeat or comma-separate for more.

@@ -94,7 +94,7 @@ public partial class MainWindow : Window {
         RefreshImageryMenu();
         RefreshLayerList(_settings.GetActiveLayer());
 
-        WindowStartupService.ApplyStartupState(this);
+        WindowStartupService.ApplyStartupState(this, App.StartupArguments);
         _lastNonMinimizedWindowState = WindowState;
         StateChanged += Window_StateChanged;
         Closing += MainWindow_Closing;

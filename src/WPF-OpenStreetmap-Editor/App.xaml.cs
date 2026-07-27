@@ -12,6 +12,12 @@ public partial class App : Application {
     private static readonly TimeSpan MinimumSplashDuration = TimeSpan.FromMilliseconds(1200);
     private readonly PluginHost _pluginHost = new();
 
+    public static IReadOnlyList<string> StartupArguments { get; private set; } = [];
+
+    public static void SetStartupArguments(IEnumerable<string> args) {
+        StartupArguments = args.ToArray();
+    }
+
     protected override async void OnStartup(StartupEventArgs e) {
         base.OnStartup(e);
 

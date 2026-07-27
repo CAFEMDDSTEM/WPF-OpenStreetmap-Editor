@@ -1,23 +1,41 @@
-# WOSM
+<div align="center">
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md) | [Deutsch](README.de.md)
+<h1>WOSM</h1>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
-[![GitHub stars](https://img.shields.io/github/stars/CAFEMDDSTEM/WPF-OpenStreetmap-Editor?style=social)](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/stargazers)
+<p>
+  <a href="README.md">English</a> |
+  <a href="README.zh-CN.md">简体中文</a> |
+  <a href="README.zh-TW.md">繁體中文</a> |
+  <a href="README.ja.md">日本語</a> |
+  <a href="README.de.md">Deutsch</a>
+</p>
+
+<p>
+  <a href="LICENSE.txt"><img alt="License: GPL v3" src="https://img.shields.io/badge/License-GPLv3-blue.svg"></a>
+  <a href="https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/CAFEMDDSTEM/WPF-OpenStreetmap-Editor?style=social"></a>
+</p>
+
+</div>
 
 WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. Its long-term goal is to become a practical C# alternative to JOSM.
 
 The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
 
-> Project status: early development. The current application focuses on imagery rendering, vector data handling, local editing, theming, plugin infrastructure, and basic OpenStreetMap transfer workflows.
+> Project status: first official release, still early development. WOSM v0.1.0 focuses on imagery rendering, vector data handling, local editing, theming, plugin infrastructure, and basic OpenStreetMap transfer workflows.
 
-## Test Release
+## Release
 
-The first public test build is available as a Windows x64 self-contained package:
+The first official WOSM release is available as a Windows x64 self-contained package:
 
-[Download WOSM v0.1.0-beta.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0-beta.1/WOSM-v0.1.0-beta.1-win-x64.zip)
+[Download WOSM v0.1.0](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0/WOSM-v0.1.0-win-x64.zip)
 
-Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the required .NET runtime. This is an unsigned pre-release build, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
+Verify the ZIP against [`SHA256SUMS-v0.1.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0/SHA256SUMS-v0.1.0.txt) before signing in to OpenStreetMap or uploading changes:
+
+```powershell
+Get-FileHash .\WOSM-v0.1.0-win-x64.zip -Algorithm SHA256
+```
+
+Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also accepts command-line data workflow commands such as `help`, `import`, `convert`, `download`, `changeset`, and `upload`. This build is unsigned, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
 
 ## Features
 
@@ -29,7 +47,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, add point features, and draw line features on top of imagery.
 - Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes through the built-in OpenStreetMap transfer addon.
-- Use the WOSM CLI to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
+- Use `WPF-OpenStreetmap-Editor.exe` from the command line to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
 - Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
 - Run startup diagnostics and log startup or tile-loading failures for troubleshooting.
 - Switch between system, light, dark, and validated third-party ZIP or 7z theme packages.
@@ -39,14 +57,13 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the
 
 ## Requirements
 
-- Windows 10 or later, x64, for the prebuilt test release
+- Windows 10 or later, x64, for the prebuilt Windows release
 - .NET SDK 10.0 or newer when building from source
 
 ## Project Layout
 
 ```text
 src/WPF-OpenStreetmap-Editor/          WPF application source
-src/WPF-OpenStreetmap-Editor.Cli/      WOSM command-line interface
 tests/WPF-OpenStreetmap-Editor.Tests/  Unit tests
 docs/                                  Contributor documentation
 sdk/native/                            Native plugin C ABI header
@@ -76,10 +93,10 @@ You can also run the application directly with the .NET CLI:
 dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj
 ```
 
-Run the WOSM CLI help from source:
+Run the WOSM command-line help from source:
 
 ```powershell
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- help
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- help
 ```
 
 ## Usage
@@ -95,11 +112,11 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor
 For command-line workflows, pass CLI commands after `--` when running from source:
 
 ```powershell
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- import --input map.geojson
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- convert --input map.geojson --output map.gpx
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- download --bbox minLon,minLat,maxLon,maxLat --output data.osm
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- changeset --input map.geojson --output preview.osc
-dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input map.geojson --dry-run --output preview.osc
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- import --input map.geojson
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- convert --input map.geojson --output map.gpx
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- download --bbox minLon,minLat,maxLon,maxLat --output data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- changeset --input map.geojson --output preview.osc
+dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csproj -- upload --input map.geojson --dry-run --output preview.osc
 ```
 
 Real OSM uploads require `--yes`, `--comment`, and an access token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM account.
@@ -128,7 +145,7 @@ Contributor and maintenance documentation lives in [docs/README.md](docs/README.
 - [Development Guide](docs/development.md)
 - [Code Style](docs/code-style.md)
 - [Testing Guide](docs/testing.md)
-- [Map data and OSM transfer](docs/map-data.md)
+- [Map data, CLI workflows, and OSM transfer](docs/map-data.md)
 - [Theme packages](docs/themes.md)
 - [Plugin architecture](docs/plugins.md)
 - [Issues and Bug Reports](docs/issues.md)
