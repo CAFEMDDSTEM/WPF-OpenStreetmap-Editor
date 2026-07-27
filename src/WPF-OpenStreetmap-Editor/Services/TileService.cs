@@ -21,9 +21,9 @@ public partial class TileService : IDisposable {
     public string? TileTemplate { get; set; }
     public bool IsTms { get; set; }
 
-    public TileService(HttpClient? http = null) {
+    public TileService(HttpClient? http = null, string? cacheRoot = null) {
         _http = http ?? new HttpClient();
-        _cacheRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache", "tiles");
+        _cacheRoot = AppPaths.Normalize(cacheRoot ?? AppPaths.TileCacheDirectory);
     }
 
     public string BuildTileUrl(int z, int x, int y, string? accessToken) {
@@ -142,8 +142,7 @@ public partial class TileService : IDisposable {
                 }
 
                 var cachePath = GetCacheBasePath(z, x, y) + ext;
-                try { File.WriteAllBytes(cachePath, bytes); }
-                catch (Exception ex) { Logger.Error("Failed to write tile cache", ex); }
+                try { File.WriteAllBytes(cachePath, bytes); } catch (Exception ex) { Logger.Error("Failed to write tile cache", ex); }
 
                 return bytes;
             } finally {

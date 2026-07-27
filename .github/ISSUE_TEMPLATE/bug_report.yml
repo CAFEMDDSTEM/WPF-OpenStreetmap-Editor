@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a reproducible defect in the application.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for someone else to reproduce and verify the issue.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: The map canvas fails to render tiles after loading a TMS URL.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List exact steps from a clean app launch.
+      placeholder: |
+        1. Start the application.
+        2. Enter ...
+        3. Click ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include errors, screenshots, or log excerpts when useful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS, .NET SDK/runtime, branch/commit, and whether the app was run from source or a build artifact.
+      value: |
+        - OS:
+        - .NET SDK:
+        - App version or commit:
+        - Run mode: source / build artifact
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or diagnostics
+      description: Paste relevant output from `tile_requests.log`, Visual Studio, terminal, or CI. Remove secrets and access tokens.
+      render: text
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues before opening this report.
+          required: true
+        - label: I removed secrets, private tokens, and private map service URLs where necessary.
+          required: true
+        - label: I can reproduce this on the latest target branch or have named the affected commit.
+          required: true

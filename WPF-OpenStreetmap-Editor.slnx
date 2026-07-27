@@ -1,3 +1,4 @@
 <Solution>
-  <Project Path="WPF-OpenStreetmap-Editor/WPF-OpenStreetmap-Editor.csproj" />
+  <Project Path="src/WPF-OpenStreetmap-Editor/WPF-OpenStreetmap-Editor.csproj" />
+  <Project Path="tests/WPF-OpenStreetmap-Editor.Tests/WPF-OpenStreetmap-Editor.Tests.csproj" />
 </Solution>

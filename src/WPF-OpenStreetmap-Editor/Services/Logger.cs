@@ -1,20 +1,19 @@
 using System;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public static class Logger {
-    private static readonly string LogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tile_requests.log");
+    private static readonly string LogPath = AppPaths.TileRequestsLogFile;
 
     static Logger() {
         try {
             var dir = Path.GetDirectoryName(LogPath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-        }
-        catch {
-        
+        } catch {
+
         }
     }
 
@@ -39,8 +38,7 @@ public static class Logger {
         lock (LogLock) {
             try {
                 File.AppendAllText(LogPath, line + Environment.NewLine);
-            }
-            catch {
+            } catch {
             }
         }
     }

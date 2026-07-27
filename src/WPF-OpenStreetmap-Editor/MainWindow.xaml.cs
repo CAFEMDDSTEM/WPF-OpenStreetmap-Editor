@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -176,8 +175,7 @@ public partial class MainWindow : Window {
             }
         }
 
-        try { await Task.WhenAll(tasks); }
-        catch (Exception ex) { Logger.Error("Tile rendering failed", ex); }
+        try { await Task.WhenAll(tasks); } catch (Exception ex) { Logger.Error("Tile rendering failed", ex); }
 
         if (ct.IsCancellationRequested) return;
 
@@ -205,17 +203,13 @@ public partial class MainWindow : Window {
     private static BitmapSource? LoadTileImage(byte[] data) {
         try {
             using var ms = new MemoryStream(data);
-            using var img = System.Drawing.Image.FromStream(ms);
-            using var bitmap = new System.Drawing.Bitmap(img);
-            var hBitmap = bitmap.GetHbitmap();
-            try {
-                var source = Imaging.CreateBitmapSourceFromHBitmap(
-                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                source.Freeze();
-                return source;
-            } finally {
-                NativeMethods.DeleteObject(hBitmap);
-            }
+            var source = new BitmapImage();
+            source.BeginInit();
+            source.CacheOption = BitmapCacheOption.OnLoad;
+            source.StreamSource = ms;
+            source.EndInit();
+            source.Freeze();
+            return source;
         } catch (Exception ex) {
             Logger.Error("Failed to decode image bytes", ex);
             return null;
@@ -311,7 +305,7 @@ public partial class MainWindow : Window {
         });
     }
 
-    private void MapCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { 
+    private void MapCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
         _isPanning = true;
         _panStart = e.GetPosition(this);
         _startTranslateX = _translate?.X ?? 0;
@@ -352,9 +346,4 @@ public partial class MainWindow : Window {
             Logger.Error("Pan update failed", ex);
         }
     }
-}
-
-internal static class NativeMethods {
-    [DllImport("gdi32.dll")]
-    public static extern bool DeleteObject(IntPtr hObject);
 }
