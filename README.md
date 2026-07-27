@@ -4,24 +4,33 @@
 
 WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. Its long-term goal is to become a practical C# alternative to JOSM.
 
-The current application can load OpenStreetMap-compatible tile layers, preview map imagery, and manage reusable tile service URLs.
+The current application can load OpenStreetMap-compatible tile layers, preview map imagery, and manage reusable tile sources and layers.
 
 > Project status: early development. The current application focuses on tile rendering, layer configuration, caching, and supporting infrastructure.
 
+## Test Release
+
+The first public test build is available as a Windows x64 self-contained package:
+
+[Download WOSM v0.1.0-beta.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.1.0-beta.1/WOSM-v0.1.0-beta.1-win-x64.zip)
+
+Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The package includes the required .NET runtime. This is an unsigned pre-release build, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
+
 ## Features
 
-- Load XYZ, TMS, ArcGIS-style, and WMTS-like tile URL templates.
+- Load XYZ, TMS, ArcGIS-style, WMTS-like, and Bing imagery sources.
 - Support common placeholders such as `{z}`, `{x}`, `{y}`, `{-y}`, `{s}`, `{switch:a,b,c}`, `{zoom}`, `{TileMatrix}`, `{TileCol}`, `{TileRow}`, and `{access_token}`.
-- Render map tiles in a WPF canvas with mouse panning and zoom controls.
-- Cache downloaded tiles under the application runtime directory.
-- Store reusable layer URLs in `layers.json`.
-- Log tile requests and tile loading errors for troubleshooting.
-- Include unit tests for coordinate conversion, URL parsing, cache paths, and runtime path handling.
+- Manage reusable imagery presets, access tokens, attribution, zoom limits, and no-tile markers.
+- Render multiple imagery layers with visibility, primary-layer selection, opacity, mouse panning, and zoom controls.
+- Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
+- Run startup diagnostics and log startup or tile-loading failures for troubleshooting.
+- Keep settings, layers, window state, caches, and logs in the current user's local application data directory.
+- Include focused unit tests for settings, rendering layout, startup diagnostics, caching, validation, coordinate conversion, and URL parsing.
 
 ## Requirements
 
-- Windows
-- .NET SDK 10.0 or newer
+- Windows 10 or later, x64, for the prebuilt test release
+- .NET SDK 10.0 or newer when building from source
 
 ## Project Layout
 
@@ -35,7 +44,9 @@ scripts/                               Local CLI helpers
 
 ## Getting Started
 
-Clone the repository and build from the repository root:
+For the prebuilt application, download the ZIP from the [Releases page](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases), extract it to a writable directory, and run `WPF-OpenStreetmap-Editor.exe`.
+
+To build from source, clone the repository and run:
 
 ```powershell
 .\scripts\build.ps1
@@ -56,11 +67,11 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 ## Usage
 
 1. Start the application.
-2. Enter a tile URL template in the map URL field.
-3. Enter an access token if the provider requires `{access_token}`.
-4. Load the map, then use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom.
-5. Drag the map canvas to pan.
-6. Open the layer window from the tools menu to manage saved layer URLs.
+2. Open **Tools > Settings** to select a built-in imagery source or add a custom tile URL template.
+3. Enter an access token in Settings when a provider requires `{access_token}`. Access tokens are used for the current session and are not saved to disk.
+4. Use the **Imagery** menu to add a source as a map layer.
+5. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, and drag the map to pan.
+6. Use the layer list to select the primary layer, toggle visibility, or remove a layer.
 
 ## Tile Service Notes
 
@@ -68,11 +79,13 @@ Tile providers may apply rate limits, attribution requirements, or access restri
 
 ## Runtime Files
 
-The application writes runtime data under the application base directory:
+The application writes runtime data under `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor\`:
 
 - `Cache/tiles/` for downloaded tile images
 - `layers.json` for saved layer URLs
-- `tile_requests.log` for tile request diagnostics
+- `settings.json` for imagery and application settings
+- `window_state.json` for the saved window position and size
+- `tile_requests.log` and `startup.log` for diagnostics
 
 ## Documentation
 
