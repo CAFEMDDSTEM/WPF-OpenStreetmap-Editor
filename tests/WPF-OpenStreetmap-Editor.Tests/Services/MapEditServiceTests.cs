@@ -155,6 +155,19 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void MovePartsByMeters_ConvertsRealDistanceAtReferenceLatitude() {
+        var feature = new MapFeature {
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(0, 0)]]
+        };
+
+        var moved = MapEditService.MovePartsByMeters(feature.Parts, eastMeters: 2, northMeters: 2, referenceLatitude: 0);
+
+        Assert.Equal(0.0000179663057, moved[0][0].Longitude, 10);
+        Assert.Equal(0.0000179663057, moved[0][0].Latitude, 10);
+    }
+
+    [Fact]
     public void OrthogonalizeParts_MakesSkewedPolygonCornersRightAngles() {
         var feature = new MapFeature {
             GeometryType = MapGeometryType.Polygon,

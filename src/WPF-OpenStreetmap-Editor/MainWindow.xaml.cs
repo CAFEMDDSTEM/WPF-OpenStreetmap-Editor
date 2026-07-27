@@ -53,6 +53,7 @@ public partial class MainWindow : Window {
             }
             _featureRotation = null;
             _featureMove = null;
+            _keyboardEditCommand = "";
             Editor.ReplaceDocument(value);
             _featureClipboard = [];
             _clipboardPasteCount = 0;
@@ -63,6 +64,7 @@ public partial class MainWindow : Window {
     private int _clipboardPasteCount;
     private FeatureRotation? _featureRotation;
     private FeatureMove? _featureMove;
+    private string _keyboardEditCommand = "";
     private Point? _boxSelectionStart;
     private GeoBounds? _selectionBounds;
     private MouseButton? _panButton;
@@ -1337,37 +1339,26 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.None && e.Key == Key.F1) {
             ShowHelp();
             e.Handled = true;
-        } else if (modifiers == ModifierKeys.None && e.Key == Key.A) {
-            SetEditorMode(EditorMode.DrawLine);
+        } else if (modifiers == ModifierKeys.None && HandleKeyboardEditCommandKey(e)) {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.S) {
+            ClearKeyboardEditCommand(updateUi: false);
             SetEditorMode(EditorMode.Select);
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.V) {
+            ClearKeyboardEditCommand(updateUi: false);
             SetEditorMode(EditorMode.BoxSelect);
             e.Handled = true;
-        } else if (modifiers == ModifierKeys.None && e.Key == Key.R) {
-            if (!e.IsRepeat) {
-                if (_featureRotation is null) BeginFeatureRotation();
-                else CommitFeatureRotation();
-            }
-            e.Handled = true;
-        } else if (modifiers == ModifierKeys.None && e.Key == Key.M) {
-            if (!e.IsRepeat) {
-                if (_featureMove is null) BeginFeatureMove();
-                else CommitFeatureMove();
-            }
-            e.Handled = true;
-        } else if (modifiers == ModifierKeys.None && e.Key == Key.Q) {
-            if (!e.IsRepeat) OrthogonalizeSelectedFeatures();
-            e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Insert) {
+            ClearKeyboardEditCommand(updateUi: false);
             AddNodeAtCenter();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Delete) {
+            ClearKeyboardEditCommand(updateUi: false);
             DeleteSelectedFeatures();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.H) {
+            ClearKeyboardEditCommand(updateUi: false);
             HideSelectedFeatures();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Escape) {
@@ -1386,6 +1377,133 @@ public partial class MainWindow : Window {
             ZoomOut_Click(this, new());
             e.Handled = true;
         }
+    }
+
+    private bool HandleKeyboardEditCommandKey(KeyEventArgs e) {
+        if (e.Key == Key.Return) return ApplyKeyboardEditCommandOrActiveInteraction();
+        if (e.Key == Key.Back && _keyboardEditCommand.Length > 0) {
+            _keyboardEditCommand = _keyboardEditCommand[..^1];
+            UpdateDocumentUi();
+            return true;
+        }
+
+        if (_keyboardEditCommand.Length > 0 && TryGetKeyboardCommandText(e.Key, out var text)) {
+            if ((_keyboardEditCommand == "r" && text == "r") ||
+                (_keyboardEditCommand == "m" && text == "m")) {
+                return ApplyKeyboardEditCommandOrActiveInteraction();
+            }
+
+            _keyboardEditCommand += text;
+            UpdateDocumentUi();
+            return true;
+        }
+
+        if (e.IsRepeat) return false;
+
+        if (e.Key == Key.A) {
+            SetKeyboardEditCommand("a");
+            SetEditorMode(EditorMode.DrawLine);
+            return true;
+        }
+        if (e.Key == Key.R) {
+            if (_featureRotation is not null) return ApplyKeyboardEditCommandOrActiveInteraction();
+
+            BeginFeatureRotation();
+            if (_featureRotation is not null) SetKeyboardEditCommand("r");
+            return true;
+        }
+        if (e.Key == Key.M) {
+            if (_featureMove is not null) return ApplyKeyboardEditCommandOrActiveInteraction();
+
+            BeginFeatureMove();
+            if (_featureMove is not null) SetKeyboardEditCommand("m");
+            return true;
+        }
+        if (e.Key == Key.Q) {
+            ClearKeyboardEditCommand(updateUi: false);
+            OrthogonalizeSelectedFeatures();
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ApplyKeyboardEditCommandOrActiveInteraction() {
+        if (_keyboardEditCommand.Length > 0) {
+            var commandText = _keyboardEditCommand;
+            ClearKeyboardEditCommand(updateUi: false);
+            if (!EditKeyboardCommandParser.TryParse(commandText, out var command)) {
+                UpdateDocumentUi();
+                return true;
+            }
+
+            ApplyKeyboardEditCommand(command);
+            return true;
+        }
+
+        if (_featureRotation is not null) {
+            CommitFeatureRotation();
+            return true;
+        }
+        if (_featureMove is not null) {
+            CommitFeatureMove();
+            return true;
+        }
+        if (_editorMode == EditorMode.DrawLine) {
+            FinishDraftLine();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ApplyKeyboardEditCommand(EditKeyboardCommand command) {
+        switch (command.Kind) {
+            case EditKeyboardCommandKind.DrawLine:
+                FinishDraftLine();
+                break;
+            case EditKeyboardCommandKind.Rotate when command.RotationDegrees.HasValue:
+                RotateSelectedFeaturesByDegrees(command.RotationDegrees.Value);
+                break;
+            case EditKeyboardCommandKind.Rotate:
+                CommitFeatureRotation();
+                break;
+            case EditKeyboardCommandKind.Move when command.HasMoveDistance:
+                MoveSelectedFeaturesByDecimeters(command.MoveEastDecimeters, command.MoveNorthDecimeters);
+                break;
+            case EditKeyboardCommandKind.Move:
+                CommitFeatureMove();
+                break;
+        }
+    }
+
+    private static bool TryGetKeyboardCommandText(Key key, out string text) {
+        text = key switch {
+            Key.X => "x",
+            Key.Y => "y",
+            Key.D => "d",
+            Key.M => "m",
+            >= Key.D0 and <= Key.D9 => ((char)('0' + (int)key - (int)Key.D0)).ToString(),
+            >= Key.NumPad0 and <= Key.NumPad9 => ((char)('0' + (int)key - (int)Key.NumPad0)).ToString(),
+            Key.Space => " ",
+            Key.OemPeriod or Key.Decimal => ".",
+            Key.OemMinus or Key.Subtract => "-",
+            Key.OemPlus or Key.Add => "+",
+            _ => ""
+        };
+        return text.Length > 0;
+    }
+
+    private void SetKeyboardEditCommand(string commandText) {
+        _keyboardEditCommand = commandText;
+        UpdateDocumentUi();
+    }
+
+    private void ClearKeyboardEditCommand(bool updateUi = true) {
+        if (_keyboardEditCommand.Length == 0) return;
+
+        _keyboardEditCommand = "";
+        if (updateUi) UpdateDocumentUi();
     }
 
     private void MapCanvas_MouseWheel(object sender, MouseWheelEventArgs e) {
@@ -1418,6 +1536,11 @@ public partial class MainWindow : Window {
 
         var position = e.GetPosition(MapViewport);
         if (_editorMode == EditorMode.Select) {
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && TryBeginSelectedFeatureDrag(position)) {
+                e.Handled = true;
+                return;
+            }
+
             SelectFeatureAt(position, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
             e.Handled = true;
             return;
@@ -1515,6 +1638,12 @@ public partial class MainWindow : Window {
     }
 
     private void MapCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+        if (_featureMove is not null) {
+            CommitFeatureMove();
+            e.Handled = true;
+            return;
+        }
+
         if (_boxSelectionStart is { } boxStart) {
             var rect = new Rect(boxStart, e.GetPosition(MapViewport));
             _boxSelectionStart = null;
@@ -1677,6 +1806,21 @@ public partial class MainWindow : Window {
             EditorMode.Move => Cursors.SizeAll,
             _ => Cursors.Arrow
         };
+    }
+
+    private bool TryBeginSelectedFeatureDrag(Point position) {
+        if (_document is null || Selection.Count == 0 || !int.TryParse(ZoomTextBox.Text, out var zoom)) return false;
+
+        var feature = VectorMapInteraction.HitTest(
+            VectorLayer.LastPlan?.Features ?? [],
+            position,
+            _centerLat,
+            _centerLon,
+            zoom,
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+        if (feature is null || !Selection.Features.Contains(feature)) return false;
+
+        return TryBeginFeatureMove(position);
     }
 
     private void SelectFeatureAt(Point point, bool extendSelection) {
@@ -1927,24 +2071,29 @@ public partial class MainWindow : Window {
         rotation.LastPointerAngleRadians = pointerAngle;
         var angleDegrees = -rotation.ScreenAngleRadians * 180.0 / Math.PI;
 
+        ApplyFeatureRotation(rotation, angleDegrees);
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void ApplyFeatureRotation(FeatureRotation rotation, double angleDegrees) {
         foreach (var state in rotation.OriginalStates) {
             Editor.Dataset.ReplaceParts(
                 state.Feature,
                 MapEditService.RotateParts(state.Parts, rotation.Center, angleDegrees),
                 markDirty: false);
         }
-        UpdateVectorLayer();
-        UpdateDocumentUi();
     }
 
-    private void CommitFeatureRotation() {
+    private void CommitFeatureRotation(bool forceCommit = false) {
         if (_featureRotation is not { } rotation) return;
 
         _featureRotation = null;
+        ClearKeyboardEditCommand(updateUi: false);
         if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
         var afterStates = rotation.OriginalStates.Select(state => CaptureFeatureParts(state.Feature)).ToList();
         var angleDegrees = Math.Abs(rotation.ScreenAngleRadians * 180.0 / Math.PI);
-        var committed = angleDegrees >= MinimumCommittedRotationDegrees &&
+        var committed = (forceCommit || angleDegrees >= MinimumCommittedRotationDegrees) &&
             Editor.Execute(new SetFeaturePartsCommand(rotation.OriginalStates, afterStates));
         if (!committed) RestoreFeatureRotation(rotation);
 
@@ -1958,6 +2107,7 @@ public partial class MainWindow : Window {
         if (_featureRotation is not { } rotation) return;
 
         _featureRotation = null;
+        ClearKeyboardEditCommand(updateUi: false);
         RestoreFeatureRotation(rotation);
         if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
         SetEditorMode(rotation.PreviousMode == EditorMode.Rotate ? EditorMode.Select : rotation.PreviousMode);
@@ -2004,14 +2154,27 @@ public partial class MainWindow : Window {
         return radians;
     }
 
+    private bool RotateSelectedFeaturesByDegrees(double angleDegrees) {
+        if (_featureRotation is null) BeginFeatureRotation();
+        if (_featureRotation is not { } rotation) return false;
+
+        rotation.ScreenAngleRadians = -angleDegrees * Math.PI / 180.0;
+        ApplyFeatureRotation(rotation, angleDegrees);
+        CommitFeatureRotation(forceCommit: true);
+        return true;
+    }
+
     private void BeginFeatureMove() {
-        if (_featureRotation is not null) return;
+        _ = TryBeginFeatureMove(Mouse.GetPosition(MapViewport));
+    }
+
+    private bool TryBeginFeatureMove(Point pointer) {
+        if (_featureRotation is not null) return false;
         if (Editor.HasDraftLine) FinishDraftLine();
 
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
-        if (_featureMove is not null || selectedFeatures.Count == 0) return;
+        if (_featureMove is not null || selectedFeatures.Count == 0) return false;
 
-        var pointer = Mouse.GetPosition(MapViewport);
         MapViewport.Focus();
         _featureMove = new FeatureMove(
             _editorMode,
@@ -2021,6 +2184,7 @@ public partial class MainWindow : Window {
         SetEditorMode(EditorMode.Move);
         MapViewport.CaptureMouse();
         UpdateDocumentUi();
+        return true;
     }
 
     private void UpdateFeatureMove(Point pointerPosition) {
@@ -2031,24 +2195,29 @@ public partial class MainWindow : Window {
         var longitudeOffset = pointerGeo.Longitude - move.StartPointerGeo.Longitude;
         var latitudeOffset = pointerGeo.Latitude - move.StartPointerGeo.Latitude;
 
+        ApplyFeatureMove(move, longitudeOffset, latitudeOffset);
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void ApplyFeatureMove(FeatureMove move, double longitudeOffset, double latitudeOffset) {
         foreach (var state in move.OriginalStates) {
             Editor.Dataset.ReplaceParts(
                 state.Feature,
                 MapEditService.MoveParts(state.Parts, longitudeOffset, latitudeOffset),
                 markDirty: false);
         }
-        UpdateVectorLayer();
-        UpdateDocumentUi();
     }
 
-    private void CommitFeatureMove() {
+    private void CommitFeatureMove(bool forceCommit = false) {
         if (_featureMove is not { } move) return;
 
         _featureMove = null;
+        ClearKeyboardEditCommand(updateUi: false);
         if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
         var afterStates = move.OriginalStates.Select(state => CaptureFeatureParts(state.Feature)).ToList();
         var pointerDelta = move.CurrentPointer - move.StartPointer;
-        var committed = pointerDelta.Length >= MinimumCommittedMovePixels &&
+        var committed = (forceCommit || pointerDelta.Length >= MinimumCommittedMovePixels) &&
             Editor.Execute(new SetFeaturePartsCommand(move.OriginalStates, afterStates));
         if (!committed) RestoreFeatureMove(move);
 
@@ -2062,6 +2231,7 @@ public partial class MainWindow : Window {
         if (_featureMove is not { } move) return;
 
         _featureMove = null;
+        ClearKeyboardEditCommand(updateUi: false);
         RestoreFeatureMove(move);
         if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
         SetEditorMode(move.PreviousMode == EditorMode.Move ? EditorMode.Select : move.PreviousMode);
@@ -2077,6 +2247,31 @@ public partial class MainWindow : Window {
                 state.Parts.Select(static part => part.ToList()),
                 markDirty: false);
         }
+    }
+
+    private bool MoveSelectedFeaturesByDecimeters(double eastDecimeters, double northDecimeters) {
+        if (_featureMove is null) BeginFeatureMove();
+        if (_featureMove is not { } move) return false;
+
+        var bounds = GeoBounds.FromPoints(move.OriginalStates
+            .SelectMany(static state => state.Parts)
+            .SelectMany(static part => part));
+        if (!bounds.IsValid) {
+            CancelFeatureMove();
+            return false;
+        }
+
+        var eastMeters = eastDecimeters / 10.0;
+        var northMeters = northDecimeters / 10.0;
+        foreach (var state in move.OriginalStates) {
+            Editor.Dataset.ReplaceParts(
+                state.Feature,
+                MapEditService.MovePartsByMeters(state.Parts, eastMeters, northMeters, bounds.Center.Latitude),
+                markDirty: false);
+        }
+
+        CommitFeatureMove(forceCommit: true);
+        return true;
     }
 
     private GeoPoint GetPointerGeo(Point pointerPosition) {
@@ -2189,9 +2384,10 @@ public partial class MainWindow : Window {
     private void UpdateDocumentUi() {
         var total = _document?.Features.Count ?? 0;
         var hidden = _document?.Features.Count(static feature => feature.IsHidden) ?? 0;
+        var command = _keyboardEditCommand.Length > 0 ? $"，命令 {_keyboardEditCommand}" : "";
         FeatureCountTextBlock.Text = hidden > 0 ? $"{total:N0} / 隐藏 {hidden:N0}" : $"{total:N0}";
         if (_document is null) {
-            DocumentStatusTextBlock.Text = "未打开地图数据";
+            DocumentStatusTextBlock.Text = $"未打开地图数据{command}";
             return;
         }
 
@@ -2199,7 +2395,7 @@ public partial class MainWindow : Window {
         var selection = Selection.Count > 0 ? $"，选中 {Selection.Count:N0}" : "";
         var area = _selectionBounds.HasValue ? "，已框选下载区域" : "";
         var skipped = _document.SkippedFeatureCount > 0 ? $"，跳过 {_document.SkippedFeatureCount:N0}" : "";
-        DocumentStatusTextBlock.Text = $"{_document.Name}{dirty}：{total:N0} 个要素{selection}{area}{skipped}";
+        DocumentStatusTextBlock.Text = $"{_document.Name}{dirty}：{total:N0} 个要素{selection}{area}{skipped}{command}";
     }
 
     private bool ConfirmDiscardChanges(string message) {
@@ -2227,6 +2423,7 @@ public partial class MainWindow : Window {
             return;
         }
 
+        ClearKeyboardEditCommand(updateUi: false);
         _boxSelectionStart = null;
         _isPanning = false;
         _panButton = null;

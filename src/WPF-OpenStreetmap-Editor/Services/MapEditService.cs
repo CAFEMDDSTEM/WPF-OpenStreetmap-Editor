@@ -3,6 +3,8 @@ using WPF_OpenStreetmap_Editor.Models;
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public static class MapEditService {
+    private const double EarthRadiusMeters = 6378137.0;
+
     public static IReadOnlyList<MapFeature> CopyFeatures(IEnumerable<MapFeature> sourceFeatures) {
         ArgumentNullException.ThrowIfNull(sourceFeatures);
 
@@ -67,6 +69,15 @@ public static class MapEditService {
             .ToList();
     }
 
+    public static List<List<GeoPoint>> MovePartsByMeters(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        double eastMeters,
+        double northMeters,
+        double referenceLatitude) {
+        var (longitudeOffset, latitudeOffset) = GetMeterOffsets(eastMeters, northMeters, referenceLatitude);
+        return MoveParts(parts, longitudeOffset, latitudeOffset);
+    }
+
     public static List<List<GeoPoint>> OrthogonalizeParts(IEnumerable<IEnumerable<GeoPoint>> parts) {
         ArgumentNullException.ThrowIfNull(parts);
 
@@ -111,6 +122,20 @@ public static class MapEditService {
         return new GeoPoint(
             Math.Clamp(point.Longitude + longitudeOffset, -180.0, 180.0),
             GeoConverter.ClampLatitude(point.Latitude + latitudeOffset));
+    }
+
+    private static (double Longitude, double Latitude) GetMeterOffsets(
+        double eastMeters,
+        double northMeters,
+        double referenceLatitude) {
+        var latitudeRadians = GeoConverter.ClampLatitude(referenceLatitude) * Math.PI / 180.0;
+        var latitudeOffset = northMeters / EarthRadiusMeters * 180.0 / Math.PI;
+        var longitudeScale = EarthRadiusMeters * Math.Cos(latitudeRadians);
+        var longitudeOffset = Math.Abs(longitudeScale) <= double.Epsilon
+            ? 0
+            : eastMeters / longitudeScale * 180.0 / Math.PI;
+
+        return (longitudeOffset, latitudeOffset);
     }
 
     private static GeoPoint RotatePoint(GeoPoint point, GeoPoint center, double sin, double cos) {
