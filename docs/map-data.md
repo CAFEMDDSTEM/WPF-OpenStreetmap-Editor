@@ -66,3 +66,38 @@ servers may use HTTP.
 Account metadata is written to `osm.accounts.json` under local application
 data. Access tokens are stored separately in Windows Credential Manager and
 are not written to the JSON metadata file.
+
+## CLI workflows
+
+The console project at `src/WPF-OpenStreetmap-Editor.Cli` exposes the same
+data pipeline for automation and batch work:
+
+```powershell
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- help
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- download --bbox 103.8,1.3,103.9,1.4 --output data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- import --input data.osm
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- convert --input data.geojson --output data.gpx
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- changeset --input data.geojson --output preview.osc --feature-id survey-path
+```
+
+`download` writes raw OSM XML for a bounding box. `import` validates a file and
+prints feature, coordinate, skipped-feature, and bounds information. `convert`
+imports any supported read format and saves to a supported write format based
+on the output extension. `changeset` builds an OSM API 0.6 change preview
+without contacting OSM.
+
+`upload` can submit selected data to OSM, but it is deliberately guarded because
+it writes to the live API. Real uploads require `--yes`, `--comment`, and a
+token from `--token`, `--token-env`, `OSM_ACCESS_TOKEN`, or the active WOSM
+account. Use `--dry-run --output preview.osc` before a real upload:
+
+```powershell
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --dry-run --output preview.osc
+dotnet run --project .\src\WPF-OpenStreetmap-Editor.Cli\WPF-OpenStreetmap-Editor.Cli.csproj -- upload --input data.geojson --comment "Add surveyed paths" --token-env OSM_ACCESS_TOKEN --yes
+```
+
+Most data commands accept `--feature-id` and `--tag key=value` to process a
+specific subset. Output commands refuse to overwrite existing files unless
+`--force` is provided. `launch --app WPF-OpenStreetmap-Editor.exe --fullscreen`
+starts the GUI in the existing fullscreen startup mode when the published GUI
+executable is available.
