@@ -1,7 +1,8 @@
 <Window x:Class="WPF_OpenStreetmap_Editor.Views.OsmUploadWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Upload to OpenStreetMap"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+        Title="{services:Loc Osm.Upload.Title}"
         Height="560"
         Width="860"
         MinHeight="460"
@@ -28,13 +29,13 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <GroupBox x:Name="CreateGroupBox" Grid.Row="0" Header="Create" Margin="0,0,0,6">
+                <GroupBox x:Name="CreateGroupBox" Grid.Row="0" Header="{services:Loc Osm.Upload.Create}" Margin="0,0,0,6">
                     <ListBox x:Name="CreateListBox" DisplayMemberPath="Label" SelectionChanged="ChangeList_SelectionChanged" />
                 </GroupBox>
-                <GroupBox x:Name="ModifyGroupBox" Grid.Row="1" Header="Modify" Margin="0,0,0,6">
+                <GroupBox x:Name="ModifyGroupBox" Grid.Row="1" Header="{services:Loc Osm.Upload.Modify}" Margin="0,0,0,6">
                     <ListBox x:Name="ModifyListBox" DisplayMemberPath="Label" SelectionChanged="ChangeList_SelectionChanged" />
                 </GroupBox>
-                <GroupBox x:Name="DeleteGroupBox" Grid.Row="2" Header="Delete">
+                <GroupBox x:Name="DeleteGroupBox" Grid.Row="2" Header="{services:Loc Osm.Upload.Delete}">
                     <ListBox x:Name="DeleteListBox" DisplayMemberPath="Label" SelectionChanged="ChangeList_SelectionChanged" />
                 </GroupBox>
             </Grid>
@@ -53,7 +54,7 @@
                 <TextBlock x:Name="ChangeSummaryTextBlock" Grid.Row="1" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,12" />
 
                 <StackPanel Grid.Row="2" Margin="0,0,0,10">
-                    <TextBlock Text="Changeset comment" Margin="0,0,0,4" />
+                    <TextBlock Text="{services:Loc Osm.Upload.ChangesetComment}" Margin="0,0,0,4" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -65,7 +66,7 @@
                                   MaxDropDownHeight="160" />
                         <Button x:Name="AiSummaryButton"
                                 Grid.Column="1"
-                                Content="AI 生成"
+                                Content="{services:Loc Osm.Upload.GenerateAi}"
                                 Padding="10,1"
                                 Margin="8,0,0,0"
                                 Click="AiSummary_Click" />
@@ -74,11 +75,11 @@
 
                 <CheckBox x:Name="ReviewRequestedCheckBox"
                           Grid.Row="3"
-                          Content="Request review from other mappers"
+                          Content="{services:Loc Osm.Upload.RequestReview}"
                           Margin="0,0,0,10" />
 
                 <StackPanel Grid.Row="4">
-                    <TextBlock Text="Source" Margin="0,0,0,4" />
+                    <TextBlock Text="{services:Loc Osm.Upload.Source}" Margin="0,0,0,4" />
                     <ComboBox x:Name="SourceComboBox" IsEditable="True" MaxDropDownHeight="160" />
                     <TextBlock x:Name="SettingsTextBlock"
                                TextWrapping="Wrap"
@@ -95,9 +96,9 @@
         </Grid>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button x:Name="EditMetadataButton" Content="Edit Raw ID" Click="EditMetadata_Click" Margin="0,0,8,0" />
-            <Button Content="Upload Changes" IsDefault="True" Click="Upload_Click" Margin="0,0,8,0" />
-            <Button Content="Cancel" IsCancel="True" />
+            <Button x:Name="EditMetadataButton" Content="{services:Loc Osm.Upload.EditRawId}" Click="EditMetadata_Click" Margin="0,0,8,0" />
+            <Button Content="{services:Loc Osm.Upload.UploadChanges}" IsDefault="True" Click="Upload_Click" Margin="0,0,8,0" />
+            <Button Content="{services:Loc Common.Cancel}" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

@@ -8,18 +8,19 @@ namespace WPF_OpenStreetmap_Editor.Views;
 
 public partial class OsmAccountsWindow : Window {
     private static readonly IReadOnlyList<AuthMethodOption> AuthenticationMethods = [
-        new(OsmAuthenticationMethod.BasicPassword, "账号密码"),
+        new(OsmAuthenticationMethod.BasicPassword, "Osm.Accounts.BasicPassword"),
         new(OsmAuthenticationMethod.OAuth2, "OAuth 2.0")
     ];
 
     private readonly OsmAccountStore _store;
     private OsmAccount? _editingAccount;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public OsmAccountsWindow(OsmAccountStore store) {
         InitializeComponent();
         _store = store;
         AuthenticationMethodComboBox.ItemsSource = AuthenticationMethods;
-        AuthenticationMethodComboBox.DisplayMemberPath = nameof(AuthMethodOption.DisplayName);
+        AuthenticationMethodComboBox.DisplayMemberPath = nameof(AuthMethodOption.LocalizedDisplayName);
         AuthenticationMethodComboBox.SelectedValuePath = nameof(AuthMethodOption.Method);
         RefreshAccounts();
         NewAccount();
@@ -54,8 +55,8 @@ public partial class OsmAccountsWindow : Window {
         if (AccountsListView.SelectedItem is not OsmAccountListItem item) return;
         var account = item.Account;
         var answer = MessageBox.Show(
-            $"确定删除账号“{account.DisplayName}”及其本机凭据吗？",
-            "删除 OSM 账号",
+            L.Format("Osm.Accounts.DeleteConfirm", account.DisplayName),
+            L.GetString("Osm.Accounts.DeleteTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No);
@@ -76,7 +77,7 @@ public partial class OsmAccountsWindow : Window {
             _editingAccount = account;
             CredentialPasswordBox.Clear();
             RefreshAccounts(account.Id);
-            StatusTextBlock.Text = "账号已保存。";
+            StatusTextBlock.Text = L.GetString("Osm.Accounts.SavedStatus");
         } catch (Exception ex) {
             ShowError(ex);
         }
@@ -89,7 +90,7 @@ public partial class OsmAccountsWindow : Window {
             IsEnabled = false;
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
             var displayName = await new OsmApiClient(client).GetUserDisplayNameAsync(account.ApiBaseUrl, credential);
-            StatusTextBlock.Text = $"验证成功：{displayName}";
+            StatusTextBlock.Text = L.Format("Osm.Accounts.TestSucceeded", displayName);
         } catch (Exception ex) {
             ShowError(ex);
         } finally {
@@ -164,32 +165,40 @@ public partial class OsmAccountsWindow : Window {
 
     private static string GetMissingCredentialMessage(OsmAccount account) {
         return account.AuthenticationMethod == OsmAuthenticationMethod.BasicPassword
-            ? "请先输入密码。"
-            : "请先输入访问令牌。";
+            ? L.GetString("Osm.Accounts.PasswordRequired")
+            : L.GetString("Osm.Accounts.TokenRequired");
     }
 
     private void UpdateCredentialFields() {
         var isBasicPassword = GetSelectedAuthenticationMethod() == OsmAuthenticationMethod.BasicPassword;
         UserNameTextBox.IsEnabled = isBasicPassword;
         UserNameLabelTextBlock.Opacity = isBasicPassword ? 1 : 0.55;
-        CredentialLabelTextBlock.Text = isBasicPassword ? "密码" : "OAuth 2 访问令牌";
+        CredentialLabelTextBlock.Text = isBasicPassword
+            ? L.GetString("Osm.Accounts.Password")
+            : L.GetString("Osm.Accounts.AccessToken");
     }
 
     private void ShowError(Exception ex) {
         StatusTextBlock.Text = ex.Message;
-        MessageBox.Show(ex.Message, "OSM 账号", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(ex.Message, L.GetString("Osm.Accounts.DialogTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
-    private sealed record AuthMethodOption(OsmAuthenticationMethod Method, string DisplayName);
+    private sealed record AuthMethodOption(OsmAuthenticationMethod Method, string DisplayName) {
+        public string LocalizedDisplayName => DisplayName.StartsWith("Osm.", StringComparison.Ordinal)
+            ? L.GetString(DisplayName)
+            : DisplayName;
+    }
 
     private sealed class OsmAccountListItem {
         public OsmAccountListItem(OsmAccount account, bool hasCredential) {
             Account = account;
-            CredentialStatus = hasCredential ? "已保存" : "未保存";
+            CredentialStatus = hasCredential
+                ? L.GetString("Osm.Accounts.Saved")
+                : L.GetString("Osm.Accounts.NotSaved");
         }
 
         public OsmAccount Account { get; }
-        public string CurrentText => Account.IsActive ? "✓" : "";
+        public string CurrentText => Account.IsActive ? "*" : "";
         public string DisplayName => Account.DisplayName;
         public string Platform => "OpenStreetMap";
         public string AuthenticationMethod => OsmAuthenticationMethodDisplay.GetName(Account.AuthenticationMethod);

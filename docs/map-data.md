@@ -68,6 +68,26 @@ Use **File > Save** for formats that can be updated in place. WOSM prompts for
 **Save As** when the source format is import-only, such as PBF, Shapefile, or
 KMZ.
 
+## AI-assisted editing
+
+The main editing window includes a BetterID AI tag assistant for a single
+selected feature. The request includes the description entered by the mapper,
+the feature's current tags, a coarse geometry type, and a representative
+location when one is available. Returned suggestions are normalized before
+display: unsafe source-only tags, unchanged values, invalid keys or values, and
+non-HTTP sources are filtered out. The mapper must review the suggestions and
+choose which ones to apply; WOSM does not silently edit tags.
+
+The OSM upload dialog can also ask BetterID AI to draft a changeset comment.
+WOSM sends a bounded summary of the pending create, modify, and delete actions,
+including feature types, names, tag keys, and representative tag changes. The
+generated comment is only a draft and must be reviewed before a guarded upload.
+
+Both AI helpers use the default BetterID AI endpoint at
+`https://map.osm.asia/api/osm-ai/` and require network access. They are GUI-only
+helpers; CLI `changeset` and `upload` commands continue to build deterministic
+local previews unless a user-provided comment is supplied.
+
 ## OpenStreetMap transfer
 
 OpenStreetMap transfer is available from the keyboard shortcuts below. The

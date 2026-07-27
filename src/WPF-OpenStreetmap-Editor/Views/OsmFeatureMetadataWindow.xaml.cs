@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using WPF_OpenStreetmap_Editor.Models;
+using WPF_OpenStreetmap_Editor.Services;
 
 namespace WPF_OpenStreetmap_Editor.Views;
 
@@ -13,13 +14,14 @@ public partial class OsmFeatureMetadataWindow : Window {
     ];
 
     private readonly MapFeature _feature;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public OsmFeatureMetadataWindow(MapFeature feature) {
         InitializeComponent();
         _feature = feature;
         Metadata = feature.Osm?.Clone();
         PrimitiveTypeComboBox.ItemsSource = PrimitiveTypes;
-        FeatureTextBlock.Text = $"要素：{feature.Id}    几何：{feature.GeometryType}";
+        FeatureTextBlock.Text = L.Format("Osm.Metadata.FeatureFormat", feature.Id, feature.GeometryType);
         PrimitiveTypeComboBox.SelectedItem = feature.Osm?.PrimitiveType ?? GetDefaultPrimitiveType(feature);
         OsmIdTextBox.Text = feature.Osm?.Id > 0 ? feature.Osm.Id.ToString(CultureInfo.InvariantCulture) : "";
         VersionTextBox.Text = feature.Osm?.Version > 0 ? feature.Osm.Version.ToString(CultureInfo.InvariantCulture) : "1";
@@ -34,10 +36,10 @@ public partial class OsmFeatureMetadataWindow : Window {
                 ? selected
                 : GetDefaultPrimitiveType(_feature);
             if (!long.TryParse(OsmIdTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0) {
-                throw new InvalidDataException("OSM ID 必须是正整数。");
+                throw new InvalidDataException(L.GetString("Osm.Metadata.IdRequired"));
             }
             if (!int.TryParse(VersionTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var version) || version <= 0) {
-                throw new InvalidDataException("版本号必须是正整数。");
+                throw new InvalidDataException(L.GetString("Osm.Metadata.VersionRequired"));
             }
 
             Metadata = new OsmFeatureMetadata {
@@ -48,7 +50,7 @@ public partial class OsmFeatureMetadataWindow : Window {
             };
             DialogResult = true;
         } catch (Exception ex) {
-            MessageBox.Show(ex.Message, "编辑原始 OSM 元数据", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(ex.Message, L.GetString("Osm.Metadata.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -64,19 +66,19 @@ public partial class OsmFeatureMetadataWindow : Window {
 
         var points = _feature.Parts.Count == 1 ? _feature.Parts[0] : [];
         if (points.Count != lines.Length) {
-            throw new InvalidDataException($"节点引用数量必须与当前几何点数量一致（当前 {points.Count:N0} 个点）。");
+            throw new InvalidDataException(L.Format("Osm.Metadata.NodeReferenceCount", points.Count));
         }
 
         var references = new List<OsmNodeReference>(lines.Length);
         for (var i = 0; i < lines.Length; i++) {
             var parts = lines[i].Split(':', StringSplitOptions.TrimEntries);
             if (!long.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var nodeId) || nodeId <= 0) {
-                throw new InvalidDataException($"第 {i + 1:N0} 行节点 ID 无效。");
+                throw new InvalidDataException(L.Format("Osm.Metadata.NodeIdInvalid", i + 1));
             }
             var version = 1;
             if (parts.Length > 1 &&
                 (!int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out version) || version <= 0)) {
-                throw new InvalidDataException($"第 {i + 1:N0} 行节点版本号无效。");
+                throw new InvalidDataException(L.Format("Osm.Metadata.NodeVersionInvalid", i + 1));
             }
             references.Add(new OsmNodeReference(nodeId, version, points[i]));
         }

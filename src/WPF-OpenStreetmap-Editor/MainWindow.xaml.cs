@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -106,6 +107,7 @@ public partial class MainWindow : Window {
     private const double PanPrefetchDistance = GeoConverter.TileSize * 0.75;
     private static readonly SemaphoreSlim TileThrottle = new(MaxConcurrentTileLoads, MaxConcurrentTileLoads);
     private static readonly HttpClient OsmHttpClient = new() { Timeout = TimeSpan.FromMinutes(3) };
+    private static LocalizationService L => LocalizationService.Instance;
     private static readonly BetterIdAiClient BetterIdAi = new(OsmHttpClient);
 
     public MainWindow() : this(null, null, null) {
@@ -180,8 +182,8 @@ public partial class MainWindow : Window {
         }
 
         var response = MessageBox.Show(
-            $"发现新版本 {latest.Version}。\n当前版本：{_startupUpdateCheck.CurrentVersion}\n\n是否打开下载页面？",
-            "发现更新",
+            L.Format("Main.UpdateAvailableMessage", latest.Version, _startupUpdateCheck.CurrentVersion),
+            L.GetString("Main.UpdateAvailableTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Information,
             MessageBoxResult.Yes);
@@ -198,7 +200,7 @@ public partial class MainWindow : Window {
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
-        if (!ConfirmDiscardChanges("退出前尚有未保存的地图修改。是否放弃这些修改？")) {
+        if (!ConfirmDiscardChanges(L.GetString("Main.Discard.Exit"))) {
             e.Cancel = true;
         }
     }
@@ -221,7 +223,7 @@ public partial class MainWindow : Window {
     public void LoadMapFromUrl(string url) {
         if (string.IsNullOrWhiteSpace(url)) return;
 
-        var source = GetOrCreateCustomSource("自定义图源", url.Trim());
+        var source = GetOrCreateCustomSource(L.GetString("Main.CustomSource"), url.Trim());
         AddImageLayer(source);
     }
 
@@ -229,7 +231,7 @@ public partial class MainWindow : Window {
         if (string.IsNullOrWhiteSpace(url)) return;
 
         var normalizedSource = NormalizeLayerSource(type, url);
-        var source = GetOrCreateCustomSource("自定义图层", normalizedSource);
+        var source = GetOrCreateCustomSource(L.GetString("Main.CustomLayer"), normalizedSource);
         AddImageLayer(source);
     }
 
@@ -779,7 +781,7 @@ public partial class MainWindow : Window {
     }
 
     private void New_Click(object sender, RoutedEventArgs e) {
-        if (!ConfirmDiscardChanges("当前地图尚未保存。是否放弃修改并新建地图？")) return;
+        if (!ConfirmDiscardChanges(L.GetString("Main.Discard.New"))) return;
 
         _document = new MapDocument();
         _document.MarkClean();
@@ -791,10 +793,10 @@ public partial class MainWindow : Window {
     }
 
     private async void Open_Click(object sender, RoutedEventArgs e) {
-        if (!ConfirmDiscardChanges("当前地图尚未保存。是否放弃修改并打开其他文件？")) return;
+        if (!ConfirmDiscardChanges(L.GetString("Main.Discard.Open"))) return;
 
         var dialog = new OpenFileDialog {
-            Title = "导入地图数据",
+            Title = L.GetString("Main.ImportDialogTitle"),
             Filter = SpatialDataService.OpenFileFilter,
             CheckFileExists = true,
             Multiselect = false
@@ -815,9 +817,9 @@ public partial class MainWindow : Window {
     private async Task ImportDocumentAsync(string path) {
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = $"正在导入 {Path.GetFileName(path)}...";
+            DocumentStatusTextBlock.Text = L.Format("Main.Status.Importing", Path.GetFileName(path));
             var progress = new Progress<SpatialImportProgress>(update =>
-                DocumentStatusTextBlock.Text = $"{update.Stage}：{update.FeaturesRead:N0} 个要素");
+                DocumentStatusTextBlock.Text = L.Format("Main.Status.ImportProgress", update.Stage, update.FeaturesRead));
             var document = await SpatialDataService.ImportAsync(path, progress: progress);
             _document = document;
             _selectionBounds = null;
@@ -828,7 +830,7 @@ public partial class MainWindow : Window {
             UpdateDocumentUi();
         } catch (Exception ex) {
             Logger.Error($"Failed to import spatial data '{path}'", ex);
-            MessageBox.Show(ex.Message, "无法导入地图数据", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Main.ImportErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         } finally {
             IsEnabled = true;
         }
@@ -840,7 +842,7 @@ public partial class MainWindow : Window {
         if (Editor.HasDraftLine) FinishDraftLine();
 
         if (_document is null) {
-            MessageBox.Show("当前没有可保存的地图数据。", "保存地图", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Main.NoMapToSave"), L.GetString("Main.SaveDialogTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -852,14 +854,14 @@ public partial class MainWindow : Window {
 
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = $"正在保存 {Path.GetFileName(path)}...";
+            DocumentStatusTextBlock.Text = L.Format("Main.Status.Saving", Path.GetFileName(path));
             await SpatialDataService.SaveAsync(_document, path);
             Editor.CommandStack.Clear();
             RefreshFeatureList();
             UpdateDocumentUi();
         } catch (Exception ex) {
             Logger.Error($"Failed to save spatial data '{path}'", ex);
-            MessageBox.Show(ex.Message, "无法保存地图", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Main.SaveErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         } finally {
             IsEnabled = true;
         }
@@ -868,7 +870,7 @@ public partial class MainWindow : Window {
     private string? ChooseSavePath(MapDocument document) {
         var baseName = Path.GetFileNameWithoutExtension(document.SourcePath ?? document.Name);
         var dialog = new SaveFileDialog {
-            Title = "保存地图",
+            Title = L.GetString("Main.SaveDialogTitle"),
             Filter = SpatialDataService.SaveFileFilter,
             FileName = string.IsNullOrWhiteSpace(baseName) ? "map.geojson" : $"{baseName}.geojson",
             AddExtension = true,
@@ -908,7 +910,7 @@ public partial class MainWindow : Window {
 
     private void Plugins_Click(object sender, RoutedEventArgs e) {
         if (_pluginHost is null) {
-            MessageBox.Show("插件宿主尚未初始化。", "插件", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Main.PluginHostNotReady"), L.GetString("Plugins.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -1131,7 +1133,7 @@ public partial class MainWindow : Window {
                 Header = source.Name,
                 Tag = source,
                 IsEnabled = isSupported,
-                ToolTip = isSupported ? null : "此旧图源不再受支持，请在影像选项中替换或删除。"
+                ToolTip = isSupported ? null : L.GetString("Main.UnsupportedLegacySource")
             };
             item.Click += AddImageSourceMenuItem_Click;
             ImageryMenuItem.Items.Add(item);
@@ -1811,12 +1813,12 @@ public partial class MainWindow : Window {
         };
         activeButton.SetResourceReference(Control.BackgroundProperty, "Theme.SelectionBrush");
         EditorModeTextBlock.Text = mode switch {
-            EditorMode.Pan => "拖动模式",
-            EditorMode.Select => "选择模式 (S)",
-            EditorMode.BoxSelect => "框选工具 (V)",
-            EditorMode.DrawLine => "画线模式 (A)",
-            EditorMode.Rotate => "旋转模式 (R)",
-            EditorMode.Move => "移动模式 (M)",
+            EditorMode.Pan => L.GetString("Main.Mode.Pan"),
+            EditorMode.Select => L.GetString("Main.Mode.Select"),
+            EditorMode.BoxSelect => L.GetString("Main.Mode.BoxSelect"),
+            EditorMode.DrawLine => L.GetString("Main.Mode.DrawLine"),
+            EditorMode.Rotate => L.GetString("Main.Mode.Rotate"),
+            EditorMode.Move => L.GetString("Main.Mode.Move"),
             _ => ""
         };
         Cursor = GetEditorModeCursor();
@@ -1949,8 +1951,8 @@ public partial class MainWindow : Window {
         var selectedFeatures = Selection.Features.ToList();
         if (_document is null || selectedFeatures.Count == 0) return;
         var answer = MessageBox.Show(
-            $"确定删除选定的 {selectedFeatures.Count:N0} 个对象吗？",
-            "删除对象",
+            L.Format("Main.DeleteSelectedConfirm", selectedFeatures.Count),
+            L.GetString("Main.DeleteSelectedTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No);
@@ -2008,7 +2010,7 @@ public partial class MainWindow : Window {
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
         if (selectedFeatures.Count == 0) return;
         if (selectedFeatures.Count > 1) {
-            MessageBox.Show("请选择一个对象编辑标签。", "编辑标签", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Main.EditTagsSelectOne"), L.GetString("FeatureTags.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -2386,7 +2388,7 @@ public partial class MainWindow : Window {
         _aiTagFeatureId = feature.Id;
         _aiTagCts?.Cancel();
         AiTagDescriptionTextBox.Text = "";
-        ClearAiTagResults("输入对象描述后点击“识别标签”。");
+        ClearAiTagResults(L.GetString("Main.AiTags.Ready"));
     }
 
     private MapFeature? GetSingleSelectedFeature() {
@@ -2396,13 +2398,13 @@ public partial class MainWindow : Window {
     private async void AiTagSuggest_Click(object sender, RoutedEventArgs e) {
         var feature = GetSingleSelectedFeature();
         if (feature is null) {
-            AiTagStatusTextBlock.Text = "请先选择一个地图要素。";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.SelectFeature");
             return;
         }
 
         var description = AiTagDescriptionTextBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(description)) {
-            AiTagStatusTextBlock.Text = "请先输入对象描述。";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.EnterDescription");
             return;
         }
 
@@ -2414,7 +2416,7 @@ public partial class MainWindow : Window {
         try {
             AiTagSuggestButton.IsEnabled = false;
             AiTagApplyButton.IsEnabled = false;
-            AiTagStatusTextBlock.Text = "正在请求 BetterID AI 识别标签...";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.Requesting");
             AiTagSuggestionsItemsControl.ItemsSource = null;
 
             var request = BetterIdAiClient.CreateTagSuggestionRequest(
@@ -2433,7 +2435,7 @@ public partial class MainWindow : Window {
         } catch (OperationCanceledException) {
         } catch (Exception ex) {
             Logger.Error("Failed to request BetterID AI tag suggestions", ex);
-            ClearAiTagResults($"AI 标签识别失败：{ex.Message}");
+            ClearAiTagResults(L.Format("Main.AiTags.Failed", ex.Message));
         } finally {
             if (!ct.IsCancellationRequested) {
                 AiTagSuggestButton.IsEnabled = GetSingleSelectedFeature() is not null;
@@ -2448,7 +2450,7 @@ public partial class MainWindow : Window {
     private void AiTagApply_Click(object sender, RoutedEventArgs e) {
         var feature = GetSingleSelectedFeature();
         if (feature is null) {
-            AiTagStatusTextBlock.Text = "请先选择一个地图要素。";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.SelectFeature");
             return;
         }
 
@@ -2457,19 +2459,19 @@ public partial class MainWindow : Window {
             changes[suggestion.Key] = suggestion.Action == "remove" ? null : suggestion.Value;
         }
         if (changes.Count == 0) {
-            AiTagStatusTextBlock.Text = "请至少勾选一条建议。";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.SelectSuggestion");
             return;
         }
 
         if (!Editor.Execute(SetFeatureAttributesCommand.CreatePatch(feature, changes))) {
-            AiTagStatusTextBlock.Text = "选中的建议没有产生标签变化。";
+            AiTagStatusTextBlock.Text = L.GetString("Main.AiTags.NoChanges");
             return;
         }
 
         FeatureDataGrid.Items.Refresh();
         UpdateVectorLayer();
         UpdateDocumentUi();
-        AiTagStatusTextBlock.Text = $"已应用 {changes.Count:N0} 条标签建议，可用撤销恢复。";
+        AiTagStatusTextBlock.Text = L.Format("Main.AiTags.Applied", changes.Count);
         ClearAiTagSuggestionsOnly();
     }
 
@@ -2494,11 +2496,13 @@ public partial class MainWindow : Window {
         var lines = new List<string>();
         if (!string.IsNullOrWhiteSpace(result.Summary)) lines.Add(result.Summary);
         lines.Add(result.Suggestions.Count == 0
-            ? "没有可用标签建议。"
-            : $"识别到 {result.Suggestions.Count:N0} 条标签建议，请检查后应用。");
+            ? L.GetString("Main.AiTags.NoSuggestions")
+            : L.Format("Main.AiTags.SuggestionCount", result.Suggestions.Count));
         lines.AddRange(result.Warnings);
         if (result.Sources.Count > 0) {
-            lines.Add($"参考来源：{string.Join("；", result.Sources.Select(static source => string.IsNullOrWhiteSpace(source.Title) ? source.Url : source.Title))}");
+            lines.Add(L.Format(
+                "Main.AiTags.Sources",
+                string.Join("; ", result.Sources.Select(static source => string.IsNullOrWhiteSpace(source.Title) ? source.Url : source.Title))));
         }
 
         return string.Join(Environment.NewLine, lines);
@@ -2594,18 +2598,28 @@ public partial class MainWindow : Window {
     private void UpdateDocumentUi() {
         var total = _document?.Features.Count ?? 0;
         var hidden = _document?.Features.Count(static feature => feature.IsHidden) ?? 0;
-        var command = _keyboardEditCommand.Length > 0 ? $"，命令 {_keyboardEditCommand}" : "";
-        FeatureCountTextBlock.Text = hidden > 0 ? $"{total:N0} / 隐藏 {hidden:N0}" : $"{total:N0}";
+        var command = _keyboardEditCommand.Length > 0 ? L.Format("Main.Status.Command", _keyboardEditCommand) : "";
+        FeatureCountTextBlock.Text = hidden > 0
+            ? L.Format("Main.FeatureCountWithHidden", total, hidden)
+            : total.ToString("N0", CultureInfo.CurrentCulture);
         if (_document is null) {
-            DocumentStatusTextBlock.Text = $"未打开地图数据{command}";
+            DocumentStatusTextBlock.Text = L.Format("Main.Status.NoMapOpen", command);
             return;
         }
 
         var dirty = _document.IsDirty ? " *" : "";
-        var selection = Selection.Count > 0 ? $"，选中 {Selection.Count:N0}" : "";
-        var area = _selectionBounds.HasValue ? "，已框选下载区域" : "";
-        var skipped = _document.SkippedFeatureCount > 0 ? $"，跳过 {_document.SkippedFeatureCount:N0}" : "";
-        DocumentStatusTextBlock.Text = $"{_document.Name}{dirty}：{total:N0} 个要素{selection}{area}{skipped}{command}";
+        var selection = Selection.Count > 0 ? L.Format("Main.Status.Selection", Selection.Count) : "";
+        var area = _selectionBounds.HasValue ? L.GetString("Main.Status.DownloadAreaSelected") : "";
+        var skipped = _document.SkippedFeatureCount > 0 ? L.Format("Main.Status.Skipped", _document.SkippedFeatureCount) : "";
+        DocumentStatusTextBlock.Text = L.Format(
+            "Main.Status.Document",
+            _document.Name,
+            dirty,
+            total,
+            selection,
+            area,
+            skipped,
+            command);
     }
 
     private bool ConfirmDiscardChanges(string message) {
@@ -2617,7 +2631,7 @@ public partial class MainWindow : Window {
         }
         return MessageBox.Show(
             message,
-            "未保存的修改",
+            L.GetString("Main.UnsavedChangesTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning,
             MessageBoxResult.No) == MessageBoxResult.Yes;
@@ -2689,7 +2703,7 @@ public partial class MainWindow : Window {
         GeoBounds bounds,
         IProgress<OsmDownloadStage> progress,
         CancellationToken ct) {
-        if (!ConfirmDiscardChanges("下载的数据将替换当前未保存的地图。是否放弃当前修改？")) return false;
+        if (!ConfirmDiscardChanges(L.GetString("Main.Discard.OsmDownload"))) return false;
 
         string? temporaryPath = null;
         try {
@@ -2701,7 +2715,7 @@ public partial class MainWindow : Window {
             temporaryPath = Path.Combine(temporaryDirectory, $"osm-download-{Guid.NewGuid():N}.osm");
             await File.WriteAllBytesAsync(temporaryPath, bytes, ct);
             var document = await SpatialDataService.ImportAsync(temporaryPath);
-            document.Name = $"OSM 下载 {DateTime.Now:yyyy-MM-dd HHmm}";
+            document.Name = L.Format("Main.OsmDownloadDocumentName", DateTime.Now);
             document.SourcePath = null;
             document.SourceFormat = SpatialFileFormat.OsmXml;
             document.MarkClean();
@@ -2730,7 +2744,7 @@ public partial class MainWindow : Window {
         if (Editor.HasDraftLine) FinishDraftLine();
 
         if (_document is null) {
-            MessageBox.Show("当前没有可上传的地图数据。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Main.OsmUpload.NoMap"), L.GetString("Main.OsmUpload.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var account = _osmAccountStore.GetActive();
@@ -2741,13 +2755,13 @@ public partial class MainWindow : Window {
         }
         var credential = _osmAccountStore.GetCredential(account);
         if (credential is null) {
-            MessageBox.Show("当前 OSM 账号没有保存凭据。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Main.OsmUpload.NoCredential"), L.GetString("Main.OsmUpload.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var preview = OsmChangeSerializer.Build(_document, 0);
         if (preview.TotalCount == 0) {
-            MessageBox.Show("当前地图没有可上传的变更。", "上传到 OSM", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Main.OsmUpload.NoChanges"), L.GetString("Main.OsmUpload.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var uploadWindow = new Views.OsmUploadWindow(
@@ -2770,7 +2784,7 @@ public partial class MainWindow : Window {
         long? changesetId = null;
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = "正在创建 OSM 变更集...";
+            DocumentStatusTextBlock.Text = L.GetString("Main.OsmUpload.CreatingChangeset");
             changesetId = await api.CreateChangesetAsync(
                 account.ApiBaseUrl,
                 credential,
@@ -2779,7 +2793,7 @@ public partial class MainWindow : Window {
                 uploadWindow.ReviewRequested,
                 CancellationToken.None);
             var changes = OsmChangeSerializer.Build(_document, changesetId.Value);
-            DocumentStatusTextBlock.Text = $"正在上传 {changes.TotalCount:N0} 个变更...";
+            DocumentStatusTextBlock.Text = L.Format("Main.OsmUpload.UploadingChanges", changes.TotalCount);
             var response = await api.UploadChangesAsync(
                 account.ApiBaseUrl,
                 credential,
@@ -2790,7 +2804,7 @@ public partial class MainWindow : Window {
             RefreshFeatureList();
             UpdateVectorLayer();
             UpdateDocumentUi();
-            MessageBox.Show($"已上传到 OSM 变更集 {changesetId.Value}。", "上传完成", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.Format("Main.OsmUpload.Completed", changesetId.Value), L.GetString("Main.OsmUpload.CompletedTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         } finally {
             if (changesetId.HasValue) {
                 try {
@@ -2954,8 +2968,10 @@ public partial class MainWindow : Window {
             return;
         }
 
-        ZoomLimitTextBlock.Text =
-            $"地图 0-{mapMaxZoom ?? _activeSource.MapMaxZoom} / 影像 0-{imageMaxZoom ?? _activeSource.ImageMaxZoom}";
+        ZoomLimitTextBlock.Text = L.Format(
+            "Main.ZoomLimit",
+            mapMaxZoom ?? _activeSource.MapMaxZoom,
+            imageMaxZoom ?? _activeSource.ImageMaxZoom);
         UpdateAttribution();
     }
 
@@ -3082,7 +3098,7 @@ public partial class MainWindow : Window {
             ProposedText = suggestion.ProposedText;
             DetailText = FormatDetailText(suggestion);
             Reason = string.IsNullOrWhiteSpace(suggestion.Reason)
-                ? "BetterID AI 未返回说明，请人工核验。"
+                ? L.GetString("Main.AiTags.NoReason")
                 : suggestion.Reason;
             Selected = suggestion.Selected;
         }
@@ -3103,9 +3119,9 @@ public partial class MainWindow : Window {
 
         private static string FormatDetailText(BetterIdAiNormalizedTagSuggestion suggestion) {
             var confidence = suggestion.ConfidenceLabel switch {
-                "high" => "高置信度",
-                "medium" => "中置信度",
-                _ => "低置信度"
+                "high" => L.GetString("Main.AiTags.Confidence.High"),
+                "medium" => L.GetString("Main.AiTags.Confidence.Medium"),
+                _ => L.GetString("Main.AiTags.Confidence.Low")
             };
             if (suggestion.ConfidenceScore.HasValue) {
                 confidence = $"{confidence} {suggestion.ConfidenceScore.Value:P0}";
@@ -3113,7 +3129,7 @@ public partial class MainWindow : Window {
 
             return suggestion.CurrentValue is null
                 ? confidence
-                : $"{confidence}，当前值：{suggestion.CurrentValue}";
+                : L.Format("Main.AiTags.CurrentValue", confidence, suggestion.CurrentValue);
         }
     }
 

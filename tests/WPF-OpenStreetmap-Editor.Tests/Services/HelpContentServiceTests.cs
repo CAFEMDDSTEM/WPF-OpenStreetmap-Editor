@@ -8,9 +8,9 @@ public sealed class HelpContentServiceTests {
         var content = HelpContentService.Create();
 
         Assert.Equal("WPF OpenStreetmap Editor", content.ProgramName);
-        Assert.Contains(content.Sections, section => section.Title == "快捷键");
+        Assert.Contains(content.Sections, section => section.Title == "Keyboard shortcuts");
         Assert.Contains(content.ProgramInfo, item =>
-            item.Name == "许可证" &&
+            item.Name == "License" &&
             item.Value.Contains("GPL v3", StringComparison.OrdinalIgnoreCase));
     }
 

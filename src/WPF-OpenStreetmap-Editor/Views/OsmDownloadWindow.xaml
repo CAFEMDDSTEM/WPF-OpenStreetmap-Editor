@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
         xmlns:controls="clr-namespace:WPF_OpenStreetmap_Editor.Controls"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
         xmlns:iconPacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Lucide"
-        Title="下载 OpenStreetMap 数据"
+        Title="{services:Loc Osm.Download.Title}"
         Width="1000"
         Height="720"
         MinWidth="720"
@@ -20,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <DockPanel Grid.Row="0" Margin="12,10">
-            <TextBlock Text="OpenStreetMap 标准地图"
+            <TextBlock Text="{services:Loc Osm.Download.StandardMap}"
                        FontSize="15"
                        FontWeight="SemiBold"
                        VerticalAlignment="Center" />
@@ -40,7 +41,7 @@
                   Focusable="True"
                   Cursor="Cross"
                   Background="{DynamicResource Theme.MapBackgroundBrush}"
-                  automation:AutomationProperties.Name="OSM 下载范围地图"
+                  automation:AutomationProperties.Name="{services:Loc Osm.Download.MapAutomationName}"
                   MouseLeftButtonDown="MapViewport_MouseLeftButtonDown"
                   MouseLeftButtonUp="MapViewport_MouseLeftButtonUp"
                   MouseRightButtonDown="MapViewport_MouseRightButtonDown"
@@ -70,7 +71,7 @@
                                 Height="34"
                                 Padding="0"
                                 Click="ZoomIn_Click"
-                                ToolTip="放大地图">
+                                ToolTip="{services:Loc Osm.Download.ZoomIn}">
                             <iconPacks:PackIconLucide Kind="Plus" Width="18" Height="18" />
                         </Button>
                         <Button Width="34"
@@ -78,7 +79,7 @@
                                 Margin="0,3,0,0"
                                 Padding="0"
                                 Click="ZoomOut_Click"
-                                ToolTip="缩小地图">
+                                ToolTip="{services:Loc Osm.Download.ZoomOut}">
                             <iconPacks:PackIconLucide Kind="Minus" Width="18" Height="18" />
                         </Button>
                     </StackPanel>
@@ -110,7 +111,7 @@
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="SelectionStatusTextBlock"
                        VerticalAlignment="Center"
-                       Text="尚未选择下载区域"
+                       Text="{services:Loc Osm.Download.NoSelection}"
                        TextWrapping="Wrap"
                        TextTrimming="CharacterEllipsis"
                        Foreground="{DynamicResource Theme.MutedTextBrush}" />
@@ -122,10 +123,10 @@
                         Margin="0,0,6,0">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconLucide Kind="Download" Width="17" Height="17" Margin="0,0,6,0" />
-                        <TextBlock Text="下载" />
+                        <TextBlock Text="{services:Loc Common.Download}" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="CancelButton" Content="取消" Click="Cancel_Click" />
+                <Button x:Name="CancelButton" Content="{services:Loc Common.Cancel}" Click="Cancel_Click" />
             </StackPanel>
             <ProgressBar x:Name="DownloadProgressBar"
                          Grid.Row="1"

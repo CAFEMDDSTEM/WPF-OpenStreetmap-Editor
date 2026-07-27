@@ -27,6 +27,7 @@ public partial class OsmDownloadWindow : Window {
     private CancellationTokenSource? _renderDebounceCts;
     private CancellationTokenSource? _downloadCts;
     private bool _isDownloading;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public OsmDownloadWindow(
         Func<GeoBounds, IProgress<OsmDownloadStage>, CancellationToken, Task<bool>> downloadAsync) {
@@ -108,7 +109,7 @@ public partial class OsmDownloadWindow : Window {
         TileLayer.RenderTransform = Transform.Identity;
         TileLayer.SetTiles(tiles.OrderBy(static tile => tile.Placement.Top).ThenBy(static tile => tile.Placement.Left));
         if (tiles.Count == 0 && SelectedBounds is null) {
-            SelectionStatusTextBlock.Text = "标准地图图块暂时无法加载";
+            SelectionStatusTextBlock.Text = L.GetString("Osm.Download.TileUnavailable");
         }
     }
 
@@ -221,7 +222,7 @@ public partial class OsmDownloadWindow : Window {
     private void ClearSelection() {
         SelectedBounds = null;
         SelectionRectangle.Visibility = Visibility.Collapsed;
-        SetStatus("尚未选择下载区域");
+        SetStatus(L.GetString("Osm.Download.NoSelection"));
         DownloadButton.IsEnabled = false;
     }
 
@@ -237,12 +238,17 @@ public partial class OsmDownloadWindow : Window {
             OsmApiClient.ValidateDownloadBounds(bounds);
             if (OsmApiClient.RequiresOverpassFallback(bounds)) {
                 SetStatus(
-                    $"范围为 {area:0.####} 平方度，超过 OSM 标准接口限制，将通过 Overpass API 下载。",
+                    L.Format("Osm.Download.AreaOverpass", area),
                     isError: true);
             } else {
                 SetStatus(
-                    $"范围：{bounds.MinLongitude:0.#####}, {bounds.MinLatitude:0.#####} - " +
-                    $"{bounds.MaxLongitude:0.#####}, {bounds.MaxLatitude:0.#####} · {area:0.####} 平方度");
+                    L.Format(
+                        "Osm.Download.AreaSelected",
+                        bounds.MinLongitude,
+                        bounds.MinLatitude,
+                        bounds.MaxLongitude,
+                        bounds.MaxLatitude,
+                        area));
             }
             DownloadButton.IsEnabled = true;
         } catch (InvalidDataException ex) {
@@ -252,7 +258,7 @@ public partial class OsmDownloadWindow : Window {
     }
 
     private void UpdateZoomText() {
-        ZoomTextBlock.Text = $"缩放级别 {_zoom}";
+        ZoomTextBlock.Text = L.Format("Osm.Download.ZoomLevel", _zoom);
     }
 
     private async void Download_Click(object sender, RoutedEventArgs e) {
@@ -268,9 +274,9 @@ public partial class OsmDownloadWindow : Window {
                 return;
             }
 
-            SetStatus("已取消下载。可调整选择范围后重试。");
+            SetStatus(L.GetString("Osm.Download.CanceledRetry"));
         } catch (OperationCanceledException) {
-            SetStatus("下载已取消。可调整选择范围后重试。");
+            SetStatus(L.GetString("Osm.Download.CanceledRetry"));
         } catch (Exception ex) {
             Logger.Error("OSM download failed", ex);
             SetStatus(OsmDownloadErrorFormatter.GetMessage(ex), isError: true);
@@ -284,7 +290,7 @@ public partial class OsmDownloadWindow : Window {
     private void Cancel_Click(object sender, RoutedEventArgs e) {
         if (_isDownloading) {
             CancelButton.IsEnabled = false;
-            SetStatus("正在取消下载...");
+            SetStatus(L.GetString("Osm.Download.Canceling"));
             _downloadCts?.Cancel();
             return;
         }
@@ -309,10 +315,10 @@ public partial class OsmDownloadWindow : Window {
 
     private static string GetProgressMessage(OsmDownloadStage stage) {
         return stage switch {
-            OsmDownloadStage.StandardApi => "正在从 OpenStreetMap 下载数据...",
-            OsmDownloadStage.OverpassFallback => "标准接口无法处理该范围，正在通过 Overpass API 重试...",
-            OsmDownloadStage.Importing => "下载完成，正在导入地图数据...",
-            _ => "正在下载地图数据..."
+            OsmDownloadStage.StandardApi => L.GetString("Osm.Download.Progress.StandardApi"),
+            OsmDownloadStage.OverpassFallback => L.GetString("Osm.Download.Progress.Overpass"),
+            OsmDownloadStage.Importing => L.GetString("Osm.Download.Progress.Importing"),
+            _ => L.GetString("Osm.Download.Progress.Default")
         };
     }
 

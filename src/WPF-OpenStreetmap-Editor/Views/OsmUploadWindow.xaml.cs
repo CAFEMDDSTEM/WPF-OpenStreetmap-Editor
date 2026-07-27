@@ -15,6 +15,7 @@ public partial class OsmUploadWindow : Window {
     private OsmChangeBuildResult _preview;
     private CancellationTokenSource? _aiSummaryCts;
     private bool _updatingSelection;
+    private static LocalizationService L => LocalizationService.Instance;
 
     public OsmUploadWindow(OsmAccount account, OsmChangeBuildResult preview)
         : this(account, preview, () => preview, ApplyMetadataDirectly) {
@@ -37,11 +38,15 @@ public partial class OsmUploadWindow : Window {
         _metadataUpdater = metadataUpdater;
         _document = document;
         _aiClient = aiClient;
-        AccountTextBlock.Text = $"上传到“{account.ApiBaseUrl}”    账号：{account.DisplayName}    认证：{OsmAuthenticationMethodDisplay.GetName(account.AuthenticationMethod)}";
+        AccountTextBlock.Text = L.Format(
+            "Osm.Upload.AccountFormat",
+            account.ApiBaseUrl,
+            account.DisplayName,
+            OsmAuthenticationMethodDisplay.GetName(account.AuthenticationMethod));
         CommentComboBox.ItemsSource = new[] {
-            "更新 OpenStreetMap 数据",
-            "修正地图要素",
-            "添加缺失地图要素"
+            L.GetString("Osm.Upload.DefaultComment.Update"),
+            L.GetString("Osm.Upload.DefaultComment.Fix"),
+            L.GetString("Osm.Upload.DefaultComment.Add")
         };
         SourceComboBox.ItemsSource = new[] {
             "survey",
@@ -51,8 +56,8 @@ public partial class OsmUploadWindow : Window {
         };
         AiSummaryButton.IsEnabled = _document is not null && _aiClient is not null;
         AiSummaryButton.ToolTip = AiSummaryButton.IsEnabled
-            ? "根据当前上传预览生成中文变更说明"
-            : "AI 生成需要从主窗口打开上传流程";
+            ? L.GetString("Osm.Upload.AiAvailable")
+            : L.GetString("Osm.Upload.AiUnavailableTooltip");
         Closed += (_, _) => _aiSummaryCts?.Cancel();
         RefreshPreview();
     }
@@ -64,11 +69,11 @@ public partial class OsmUploadWindow : Window {
 
     private void Upload_Click(object sender, RoutedEventArgs e) {
         if (string.IsNullOrWhiteSpace(Comment)) {
-            MessageBox.Show("请输入变更说明。", "上传到 OpenStreetMap", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.GetString("Osm.Upload.CommentRequired"), L.GetString("Osm.Upload.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (_preview.TotalCount == 0) {
-            MessageBox.Show("当前没有可上传的变更。", "上传到 OpenStreetMap", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Osm.Upload.NoChanges"), L.GetString("Osm.Upload.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -77,7 +82,7 @@ public partial class OsmUploadWindow : Window {
 
     private void EditMetadata_Click(object sender, RoutedEventArgs e) {
         if (GetSelectedChangeItem()?.Feature is not { } feature) {
-            MessageBox.Show("请选择一个当前文档中的对象。删除项和共享节点不能在这里编辑原始 ID。", "编辑原始 ID", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(L.GetString("Osm.Upload.SelectEditableFeature"), L.GetString("Osm.Upload.EditRawIdTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -90,16 +95,16 @@ public partial class OsmUploadWindow : Window {
             MetadataChanged = true;
             _preview = _previewFactory();
             RefreshPreview();
-            StatusTextBlock.Text = "原始 OSM 元数据已更新，上传预览已刷新。";
+            StatusTextBlock.Text = L.GetString("Osm.Upload.MetadataUpdated");
         } catch (Exception ex) {
             StatusTextBlock.Text = ex.Message;
-            MessageBox.Show(ex.Message, "刷新上传预览", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(ex.Message, L.GetString("Osm.Upload.RefreshPreviewTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private async void AiSummary_Click(object sender, RoutedEventArgs e) {
         if (_document is null || _aiClient is null) {
-            StatusTextBlock.Text = "AI 生成不可用。";
+            StatusTextBlock.Text = L.GetString("Osm.Upload.AiUnavailable");
             return;
         }
 
@@ -109,16 +114,16 @@ public partial class OsmUploadWindow : Window {
 
         try {
             AiSummaryButton.IsEnabled = false;
-            StatusTextBlock.Text = "正在请求 BetterID AI 生成变更说明...";
+            StatusTextBlock.Text = L.GetString("Osm.Upload.AiGenerating");
             _preview = _previewFactory();
             var summary = OsmAiChangesetSummaryBuilder.Build(_document, _preview);
             var comment = await _aiClient.SummarizeChangesAsync(summary, ct);
             CommentComboBox.Text = comment;
-            StatusTextBlock.Text = "AI 变更说明已生成，请检查后再上传。";
+            StatusTextBlock.Text = L.GetString("Osm.Upload.AiGenerated");
         } catch (OperationCanceledException) {
         } catch (Exception ex) {
             Logger.Error("Failed to generate AI changeset summary", ex);
-            StatusTextBlock.Text = $"AI 生成失败：{ex.Message}";
+            StatusTextBlock.Text = L.Format("Osm.Upload.AiFailed", ex.Message);
         } finally {
             if (!ct.IsCancellationRequested) {
                 AiSummaryButton.IsEnabled = _document is not null && _aiClient is not null;
@@ -153,14 +158,15 @@ public partial class OsmUploadWindow : Window {
         CreateListBox.ItemsSource = creates;
         ModifyListBox.ItemsSource = modifies;
         DeleteListBox.ItemsSource = deletes;
-        CreateGroupBox.Header = $"待创建对象：{creates.Count:N0}";
-        ModifyGroupBox.Header = $"待修改对象：{modifies.Count:N0}";
-        DeleteGroupBox.Header = $"待删除对象：{deletes.Count:N0}";
-        ChangeSummaryTextBlock.Text = $"新建 {_preview.CreateCount:N0}，修改 {_preview.ModifyCount:N0}，删除 {_preview.DeleteCount:N0}";
-        SettingsTextBlock.Text =
-            "对象会上传到新的修改集。\n" +
-            $"这次上传包含 {_preview.TotalCount:N0} 个 OSM 原始对象。\n" +
-            "上传前可以选中当前文档中的对象并编辑其原始 OSM ID 和版本。";
+        CreateGroupBox.Header = L.Format("Osm.Upload.CreateCount", creates.Count);
+        ModifyGroupBox.Header = L.Format("Osm.Upload.ModifyCount", modifies.Count);
+        DeleteGroupBox.Header = L.Format("Osm.Upload.DeleteCount", deletes.Count);
+        ChangeSummaryTextBlock.Text = L.Format(
+            "Osm.Upload.Summary",
+            _preview.CreateCount,
+            _preview.ModifyCount,
+            _preview.DeleteCount);
+        SettingsTextBlock.Text = L.Format("Osm.Upload.SettingsText", _preview.TotalCount);
 
         SelectFirstChangeItem();
         UpdateEditButton();
@@ -211,8 +217,8 @@ public partial class OsmUploadWindow : Window {
 
     private static string GetPrimitiveDetails(XElement element) {
         return element.Name.LocalName switch {
-            "way" => $"（{element.Elements("nd").Count().ToString("N0", CultureInfo.InvariantCulture)} 个节点）",
-            "relation" => $"（{element.Elements("member").Count().ToString("N0", CultureInfo.InvariantCulture)} 个成员）",
+            "way" => L.Format("Osm.Upload.WayDetails", element.Elements("nd").Count()),
+            "relation" => L.Format("Osm.Upload.RelationDetails", element.Elements("member").Count()),
             _ => ""
         };
     }
@@ -245,9 +251,9 @@ public partial class OsmUploadWindow : Window {
 
         private static string FormatPrimitiveType(string value) {
             return value switch {
-                "node" => "节点",
-                "way" => "路径",
-                "relation" => "关系",
+                "node" => L.GetString("Osm.Upload.Primitive.Node"),
+                "way" => L.GetString("Osm.Upload.Primitive.Way"),
+                "relation" => L.GetString("Osm.Upload.Primitive.Relation"),
                 _ => value
             };
         }

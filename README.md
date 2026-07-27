@@ -46,6 +46,7 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also
 - Import `.osm`, `.pbf`, Shapefile, GeoJSON, GML, KML/KMZ, and GPX map data.
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, copy, paste, duplicate, add point features, draw line features, rotate, move, and orthogonalize features on top of imagery.
+- Request BetterID AI tag suggestions for a selected feature and generate draft OSM changeset comments for review before upload.
 - Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes; an optional first-party OpenStreetMap transfer addon can add toolbar and menu entry points.
 - Use `WPF-OpenStreetmap-Editor.exe` from the command line to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
 - Use bounded memory and disk caches, validate downloaded images, and fall back to cached parent tiles while loading.
@@ -111,7 +112,8 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 8. Press `R` or `M` to rotate or move selected features with the mouse, then press `Enter` or left-click to apply. In select mode, drag an already-selected feature to move the selection.
 9. Use precision commands such as `r20`, `mx2`, or `mx20y20`, then press `Enter`. Rotation values are degrees; move values are decimeters, with `x` moving east and `y` moving north.
 10. Press `Q` to orthogonalize selected line or polygon features.
-11. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API.
+11. Select a single feature and use the AI tag assistant to request suggested OSM tags from BetterID AI. Review and choose suggestions before applying them.
+12. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API; the upload dialog can ask BetterID AI for a draft changeset comment.
 
 For command-line workflows, pass CLI commands after `--` when running from source:
 

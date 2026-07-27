@@ -11,7 +11,7 @@ public class OsmDownloadErrorFormatterTests {
 
         var message = OsmDownloadErrorFormatter.GetMessage(exception);
 
-        Assert.Equal("OSM 服务器拒绝了这个范围。请缩小选择区域后重试。", message);
+        Assert.Equal("The OSM server rejected this area. Shrink the selected area and try again.", message);
         Assert.DoesNotContain("Bad Request", message);
     }
 
@@ -21,21 +21,21 @@ public class OsmDownloadErrorFormatterTests {
 
         var message = OsmDownloadErrorFormatter.GetMessage(exception);
 
-        Assert.Equal("OSM 服务器请求过于频繁。请稍后重试。", message);
+        Assert.Equal("The OSM server received too many requests. Try again later.", message);
     }
 
     [Fact]
     public void GetMessage_TaskCanceled_ReportsTimeout() {
         var message = OsmDownloadErrorFormatter.GetMessage(new TaskCanceledException());
 
-        Assert.Equal("连接 OSM 服务器超时。请检查网络后重试。", message);
+        Assert.Equal("The connection to the OSM server timed out. Check the network and try again.", message);
     }
 
     [Fact]
     public void GetMessage_HttpRequestWithoutStatus_ReportsNetworkFailure() {
         var message = OsmDownloadErrorFormatter.GetMessage(new HttpRequestException("Connection refused"));
 
-        Assert.Equal("无法连接 OSM 服务器。请检查网络后重试。", message);
+        Assert.Equal("Could not connect to the OSM server. Check the network and try again.", message);
         Assert.DoesNotContain("Connection refused", message);
     }
 
@@ -56,6 +56,6 @@ public class OsmDownloadErrorFormatterTests {
         var message = OsmDownloadErrorFormatter.GetMessage(
             new OsmDownloadFallbackException(standardError, fallbackError));
 
-        Assert.Equal("OSM 标准接口和 Overpass API 都无法处理这个范围。请缩小选择区域后重试。", message);
+        Assert.Equal("The OSM standard API and Overpass API could not process this area. Shrink the selected area and try again.", message);
     }
 }

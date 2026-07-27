@@ -145,6 +145,37 @@
     <sys:String x:Key="Help.License">GPL v3 License</sys:String>
     <sys:String x:Key="Help.VersionFormat">Version {0}</sys:String>
     <sys:String x:Key="Help.GplNotice">This program is distributed under GPL v3. You can view the full license text on the License tab.</sys:String>
+    <sys:String x:Key="Help.Section.GetStarted">Getting started</sys:String>
+    <sys:String x:Key="Help.GetStarted.Open">Open or import map data from the File menu, then pan and zoom to inspect the area.</sys:String>
+    <sys:String x:Key="Help.GetStarted.Save">Save the current map with File &gt; Save as after editing.</sys:String>
+    <sys:String x:Key="Help.GetStarted.Layers">Use the layer panel to choose imagery and data layers, then adjust visibility and opacity.</sys:String>
+    <sys:String x:Key="Help.Section.MapEditing">Map editing</sys:String>
+    <sys:String x:Key="Help.MapEditing.Tools">Use the toolbar to select, draw lines, and add nodes.</sys:String>
+    <sys:String x:Key="Help.MapEditing.Zoom">Use the mouse wheel or zoom controls to change map scale.</sys:String>
+    <sys:String x:Key="Help.MapEditing.Selection">Select features on the map or in the feature table before editing them.</sys:String>
+    <sys:String x:Key="Help.Section.SourcesThemes">Sources and themes</sys:String>
+    <sys:String x:Key="Help.SourcesThemes.Settings">Configure imagery sources and application theme from Settings.</sys:String>
+    <sys:String x:Key="Help.SourcesThemes.Imagery">Use XYZ or TMS imagery sources for background layers.</sys:String>
+    <sys:String x:Key="Help.SourcesThemes.Attribution">Keep imagery attribution accurate when adding or changing sources.</sys:String>
+    <sys:String x:Key="Help.Section.OsmPlugins">OSM and plugins</sys:String>
+    <sys:String x:Key="Help.OsmPlugins.Plugins">Manage plugins from the Plugins window.</sys:String>
+    <sys:String x:Key="Help.OsmPlugins.Accounts">Add an OSM account before uploading changes.</sys:String>
+    <sys:String x:Key="Help.OsmPlugins.DownloadUpload">Download OSM data for the selected area and review upload previews before sending changes.</sys:String>
+    <sys:String x:Key="Help.Section.Keyboard">Keyboard shortcuts</sys:String>
+    <sys:String x:Key="Help.Keyboard.F1">F1 opens Help and About.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Save">Ctrl+S saves the current map.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z and Ctrl+Y undo and redo edits.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Modes">S selects features, V box-selects, and A draws lines.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R rotates, M moves, and Q orthogonalizes selected features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.TypedCommands">Type supported edit commands when keyboard command input is active.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Drag">Drag selected features on the map when move mode is active.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Nodes">Insert adds a node at the map center.</sys:String>
+    <sys:String x:Key="Help.Info.Program">Program</sys:String>
+    <sys:String x:Key="Help.Info.Version">Version</sys:String>
+    <sys:String x:Key="Help.Info.License">License</sys:String>
+    <sys:String x:Key="Help.Info.Runtime">Runtime</sys:String>
+    <sys:String x:Key="Help.Info.Features">Features</sys:String>
+    <sys:String x:Key="Help.Info.FeaturesValue">WPF map editing, OSM download/upload, imagery layers, plugins, and theme support</sys:String>
 
     <sys:String x:Key="Layers.Title">Layer manager</sys:String>
     <sys:String x:Key="Layers.Url">Layer URL:</sys:String>
@@ -184,6 +215,10 @@
     <sys:String x:Key="Osm.Accounts.PasswordRequired">Enter a password first.</sys:String>
     <sys:String x:Key="Osm.Accounts.TokenRequired">Enter an access token first.</sys:String>
     <sys:String x:Key="Osm.Accounts.DialogTitle">OSM account</sys:String>
+    <sys:String x:Key="Osm.Auth.MissingPassword">The OSM account is missing a password.</sys:String>
+    <sys:String x:Key="Osm.Auth.MissingToken">The OSM account is missing an access token.</sys:String>
+    <sys:String x:Key="Osm.Auth.MissingUserName">The OSM account is missing a user name.</sys:String>
+    <sys:String x:Key="Osm.Auth.UnsupportedMethod">Unsupported OSM authentication method.</sys:String>
 
     <sys:String x:Key="Osm.Download.Title">Download OpenStreetMap data</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
@@ -201,6 +236,13 @@
     <sys:String x:Key="Osm.Download.Progress.Overpass">The standard API cannot handle this area. Retrying with Overpass API...</sys:String>
     <sys:String x:Key="Osm.Download.Progress.Importing">Download complete. Importing map data...</sys:String>
     <sys:String x:Key="Osm.Download.Progress.Default">Downloading map data...</sys:String>
+    <sys:String x:Key="Osm.Download.Error.FallbackFailed">The OSM standard API and Overpass API could not process this area. Shrink the selected area and try again.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.BadRequest">The OSM server rejected this area. Shrink the selected area and try again.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.TooManyRequests">The OSM server received too many requests. Try again later.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.HttpStatus">The OSM server returned HTTP {0}. Try again later.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.Timeout">The connection to the OSM server timed out. Check the network and try again.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.Connection">Could not connect to the OSM server. Check the network and try again.</sys:String>
+    <sys:String x:Key="Osm.Download.Error.Generic">OSM download failed. Try again later.</sys:String>
 
     <sys:String x:Key="Osm.Upload.Title">Upload to OpenStreetMap</sys:String>
     <sys:String x:Key="Osm.Upload.Create">Create</sys:String>

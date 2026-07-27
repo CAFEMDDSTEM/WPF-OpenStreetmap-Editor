@@ -20,9 +20,58 @@ public sealed class LocalizationService : INotifyPropertyChanged {
             ["ja"] = "ja",
             ["de"] = "de"
         };
+    private static readonly IReadOnlyDictionary<string, string> HeadlessEnglishStrings =
+        new Dictionary<string, string>(StringComparer.Ordinal) {
+            ["Help.VersionFormat"] = "Version {0}",
+            ["Help.Section.GetStarted"] = "Getting started",
+            ["Help.GetStarted.Open"] = "Open or import map data from the File menu, then pan and zoom to inspect the area.",
+            ["Help.GetStarted.Save"] = "Save the current map with File > Save as after editing.",
+            ["Help.GetStarted.Layers"] = "Use the layer panel to choose imagery and data layers, then adjust visibility and opacity.",
+            ["Help.Section.MapEditing"] = "Map editing",
+            ["Help.MapEditing.Tools"] = "Use the toolbar to select, draw lines, and add nodes.",
+            ["Help.MapEditing.Zoom"] = "Use the mouse wheel or zoom controls to change map scale.",
+            ["Help.MapEditing.Selection"] = "Select features on the map or in the feature table before editing them.",
+            ["Help.Section.SourcesThemes"] = "Sources and themes",
+            ["Help.SourcesThemes.Settings"] = "Configure imagery sources and application theme from Settings.",
+            ["Help.SourcesThemes.Imagery"] = "Use XYZ or TMS imagery sources for background layers.",
+            ["Help.SourcesThemes.Attribution"] = "Keep imagery attribution accurate when adding or changing sources.",
+            ["Help.Section.OsmPlugins"] = "OSM and plugins",
+            ["Help.OsmPlugins.Plugins"] = "Manage plugins from the Plugins window.",
+            ["Help.OsmPlugins.Accounts"] = "Add an OSM account before uploading changes.",
+            ["Help.OsmPlugins.DownloadUpload"] = "Download OSM data for the selected area and review upload previews before sending changes.",
+            ["Help.Section.Keyboard"] = "Keyboard shortcuts",
+            ["Help.Keyboard.F1"] = "F1 opens Help and About.",
+            ["Help.Keyboard.Save"] = "Ctrl+S saves the current map.",
+            ["Help.Keyboard.Edit"] = "Ctrl+Z and Ctrl+Y undo and redo edits.",
+            ["Help.Keyboard.Modes"] = "S selects features, V box-selects, and A draws lines.",
+            ["Help.Keyboard.Transform"] = "R rotates, M moves, and Q orthogonalizes selected features.",
+            ["Help.Keyboard.TypedCommands"] = "Type supported edit commands when keyboard command input is active.",
+            ["Help.Keyboard.Drag"] = "Drag selected features on the map when move mode is active.",
+            ["Help.Keyboard.Nodes"] = "Insert adds a node at the map center.",
+            ["Help.Info.Program"] = "Program",
+            ["Help.Info.Version"] = "Version",
+            ["Help.Info.License"] = "License",
+            ["Help.Info.Runtime"] = "Runtime",
+            ["Help.Info.Features"] = "Features",
+            ["Help.Info.FeaturesValue"] = "WPF map editing, OSM download/upload, imagery layers, plugins, and theme support",
+            ["Osm.Download.Error.FallbackFailed"] = "The OSM standard API and Overpass API could not process this area. Shrink the selected area and try again.",
+            ["Osm.Download.Error.BadRequest"] = "The OSM server rejected this area. Shrink the selected area and try again.",
+            ["Osm.Download.Error.TooManyRequests"] = "The OSM server received too many requests. Try again later.",
+            ["Osm.Download.Error.HttpStatus"] = "The OSM server returned HTTP {0}. Try again later.",
+            ["Osm.Download.Error.Timeout"] = "The connection to the OSM server timed out. Check the network and try again.",
+            ["Osm.Download.Error.Connection"] = "Could not connect to the OSM server. Check the network and try again.",
+            ["Osm.Download.Error.Generic"] = "OSM download failed. Try again later.",
+            ["Osm.Accounts.BasicPassword"] = "User name and password",
+            ["Osm.Accounts.Unknown"] = "Unknown",
+            ["Osm.Auth.MissingPassword"] = "The OSM account is missing a password.",
+            ["Osm.Auth.MissingToken"] = "The OSM account is missing an access token.",
+            ["Osm.Auth.MissingUserName"] = "The OSM account is missing a user name.",
+            ["Osm.Auth.UnsupportedMethod"] = "Unsupported OSM authentication method."
+        };
 
     private readonly CultureInfo _startupUiCulture = CultureInfo.CurrentUICulture;
     private readonly Dictionary<string, string> _strings = new(StringComparer.Ordinal);
+    private readonly object _sync = new();
     private string _languageId = SystemLanguageId;
     private string _resolvedLanguageId = "en";
 
@@ -64,7 +113,9 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         Thread.CurrentThread.CurrentUICulture = culture;
 
         var dictionary = LoadDictionary(resolvedLanguageId);
-        RefreshStrings(dictionary);
+        lock (_sync) {
+            RefreshStrings(dictionary);
+        }
         ApplyApplicationResources(dictionary);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LanguageId)));
@@ -72,7 +123,10 @@ public sealed class LocalizationService : INotifyPropertyChanged {
     }
 
     public string GetString(string key) {
-        return _strings.TryGetValue(key, out var value) ? value : key;
+        lock (_sync) {
+            EnsureStringsLoaded();
+            return _strings.TryGetValue(key, out var value) ? value : key;
+        }
     }
 
     public string Format(string key, params object?[] args) {
@@ -128,6 +182,23 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         return new ResourceDictionary {
             Source = new Uri($"/WPF-OpenStreetmap-Editor;component/Localization/Strings.{languageId}.xaml", UriKind.Relative)
         };
+    }
+
+    private void EnsureStringsLoaded() {
+        if (_strings.Count > 0) return;
+
+        try {
+            RefreshStrings(LoadDictionary(_resolvedLanguageId));
+        } catch (Exception ex) when (ex is IOException or NotSupportedException or XamlParseException) {
+            RefreshStrings(HeadlessEnglishStrings);
+        }
+    }
+
+    private void RefreshStrings(IReadOnlyDictionary<string, string> strings) {
+        _strings.Clear();
+        foreach (var item in strings) {
+            _strings[item.Key] = item.Value;
+        }
     }
 
     private void RefreshStrings(ResourceDictionary dictionary) {
