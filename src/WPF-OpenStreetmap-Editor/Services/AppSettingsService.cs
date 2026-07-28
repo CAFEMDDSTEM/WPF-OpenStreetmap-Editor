@@ -28,6 +28,22 @@ public enum GpsHeatmapBlendMode {
     Multiply
 }
 
+public sealed class WorkbenchLayoutSettings {
+    public const double DefaultRightPanelWidth = 380;
+    public const double MinRightPanelWidth = 280;
+    public const double MaxRightPanelWidth = 640;
+
+    public bool IsRightPanelVisible { get; set; } = true;
+    public double RightPanelWidth { get; set; } = DefaultRightPanelWidth;
+
+    public WorkbenchLayoutSettings Clone() {
+        return new WorkbenchLayoutSettings {
+            IsRightPanelVisible = IsRightPanelVisible,
+            RightPanelWidth = RightPanelWidth
+        };
+    }
+}
+
 public sealed class AppSettings {
     public const int DefaultTileCacheMaxAgeDays = 30;
     public const int MinTileCacheMaxAgeDays = 1;
@@ -68,6 +84,7 @@ public sealed class AppSettings {
     public int AutosaveFilesPerLayer { get; set; } = DefaultAutosaveFilesPerLayer;
     public bool KeepBackupFileOnSave { get; set; }
     public bool NotifyOnEverySave { get; set; }
+    public WorkbenchLayoutSettings WorkbenchLayout { get; set; } = new();
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
 
@@ -122,6 +139,7 @@ public sealed class AppSettings {
             AutosaveFilesPerLayer = AutosaveFilesPerLayer,
             KeepBackupFileOnSave = KeepBackupFileOnSave,
             NotifyOnEverySave = NotifyOnEverySave,
+            WorkbenchLayout = WorkbenchLayout.Clone(),
             TileSources = [.. TileSources.Select(static source => source.Clone())],
             ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())]
         };
@@ -332,6 +350,15 @@ public static class AppSettingsService {
     }
 
     public static void EnsureDefaults(AppSettings settings) {
+        settings.WorkbenchLayout ??= new WorkbenchLayoutSettings();
+        if (!double.IsFinite(settings.WorkbenchLayout.RightPanelWidth)) {
+            settings.WorkbenchLayout.RightPanelWidth = WorkbenchLayoutSettings.DefaultRightPanelWidth;
+        }
+        settings.WorkbenchLayout.RightPanelWidth = Math.Clamp(
+            settings.WorkbenchLayout.RightPanelWidth,
+            WorkbenchLayoutSettings.MinRightPanelWidth,
+            WorkbenchLayoutSettings.MaxRightPanelWidth);
+
         if (string.IsNullOrWhiteSpace(settings.ThemeId)) {
             settings.ThemeId = ThemeService.SystemThemeId;
         }

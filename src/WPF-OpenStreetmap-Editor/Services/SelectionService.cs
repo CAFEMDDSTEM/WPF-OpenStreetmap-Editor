@@ -5,6 +5,8 @@ namespace WPF_OpenStreetmap_Editor.Services;
 public sealed class SelectionService {
     private readonly HashSet<MapFeature> _features = [];
 
+    public event EventHandler? Changed;
+
     public IReadOnlyCollection<MapFeature> Features => _features;
 
     public int Count => _features.Count;
@@ -23,6 +25,7 @@ public sealed class SelectionService {
             _features.Add(feature);
         }
 
+        if (changed) Changed?.Invoke(this, EventArgs.Empty);
         return changed;
     }
 

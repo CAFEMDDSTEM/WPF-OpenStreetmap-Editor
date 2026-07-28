@@ -27,7 +27,7 @@ using WPF_OpenStreetmap_Editor.Services;
 namespace WPF_OpenStreetmap_Editor;
 
 public partial class MainWindow : Window {
-    private readonly MainWindowViewModel _viewModel = new();
+    private readonly WorkbenchViewModel _viewModel = new();
     private readonly PluginHost? _pluginHost;
     private readonly IReadOnlyList<PluginActionRequest> _startupPluginActions;
     private readonly AppUpdateCheckResult? _startupUpdateCheck;
@@ -141,8 +141,18 @@ public partial class MainWindow : Window {
         _startupPluginActions = startupPluginActions ?? [];
         _startupUpdateCheck = startupUpdateCheck;
         InitializeComponent();
+        DataContext = _viewModel;
         ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
+        _viewModel.RightPanelWidth = _settings.WorkbenchLayout.RightPanelWidth;
+        _viewModel.IsRightPanelVisible = _settings.WorkbenchLayout.IsRightPanelVisible;
+        RightPanelColumn.Width = _settings.WorkbenchLayout.IsRightPanelVisible
+            ? new GridLength(_viewModel.RightPanelWidth)
+            : new GridLength(0);
+        RightPanel.Visibility = _settings.WorkbenchLayout.IsRightPanelVisible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        RightPanelSplitter.Visibility = RightPanel.Visibility;
         ApplyTileCacheSettings(forceDiskMaintenance: false);
         _displayTransform = CreateDisplayTransform(_settings);
         RefreshImageryMenu();
@@ -228,7 +238,14 @@ public partial class MainWindow : Window {
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e) {
         if (!ConfirmDiscardChanges(L.GetString("Main.Discard.Exit"))) {
             e.Cancel = true;
+            return;
         }
+
+        if (RightPanelColumn.ActualWidth > 0) {
+            _settings.WorkbenchLayout.RightPanelWidth = RightPanelColumn.ActualWidth;
+        }
+        _settings.WorkbenchLayout.IsRightPanelVisible = RightPanel.Visibility == Visibility.Visible;
+        AppSettingsService.Save(_settings);
     }
 
     private void Window_StateChanged(object? sender, EventArgs e) {
@@ -880,9 +897,9 @@ public partial class MainWindow : Window {
     private async Task ImportDocumentAsync(string path) {
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = L.Format("Main.Status.Importing", Path.GetFileName(path));
+            _viewModel.DocumentStatus = L.Format("Main.Status.Importing", Path.GetFileName(path));
             var progress = new Progress<SpatialImportProgress>(update =>
-                DocumentStatusTextBlock.Text = L.Format("Main.Status.ImportProgress", update.Stage, update.FeaturesRead));
+                _viewModel.DocumentStatus = L.Format("Main.Status.ImportProgress", update.Stage, update.FeaturesRead));
             var document = await SpatialDataService.ImportAsync(
                 path,
                 new SpatialImportOptions {
@@ -917,7 +934,7 @@ public partial class MainWindow : Window {
 
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = L.Format("Main.Status.Saving", Path.GetFileName(path));
+            _viewModel.DocumentStatus = L.Format("Main.Status.Saving", Path.GetFileName(path));
             if (_settings.KeepBackupFileOnSave) {
                 await DocumentBackupService.SaveKeepBackupAsync(path);
             }
@@ -986,7 +1003,7 @@ public partial class MainWindow : Window {
 
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = L.Format("Main.Status.Saving", Path.GetFileName(path));
+            _viewModel.DocumentStatus = L.Format("Main.Status.Saving", Path.GetFileName(path));
             await SpatialDataService.WriteSnapshotAsync(_document, path);
             RefreshFeatureList();
             UpdateDocumentUi();
@@ -1022,12 +1039,12 @@ public partial class MainWindow : Window {
                 _settings.AutosaveFilesPerLayer,
                 _autosaveCts.Token);
             if (_settings.NotifyOnEverySave && paths.Count > 0) {
-                DocumentStatusTextBlock.Text = L.Format("Main.Status.Autosaved", Path.GetFileName(paths[^1]));
+                _viewModel.DocumentStatus = L.Format("Main.Status.Autosaved", Path.GetFileName(paths[^1]));
             }
         } catch (OperationCanceledException) {
         } catch (Exception ex) {
             Logger.Error("Failed to autosave map data", ex);
-            DocumentStatusTextBlock.Text = L.Format("Main.Status.AutosaveFailed", ex.Message);
+            _viewModel.DocumentStatus = L.Format("Main.Status.AutosaveFailed", ex.Message);
         } finally {
             _isAutosaving = false;
         }
@@ -1043,8 +1060,17 @@ public partial class MainWindow : Window {
     }
 
     private void DataValidator_Click(object sender, RoutedEventArgs e) {
-        var win = new Views.DataValidatorWindow { Owner = this };
+        var win = new Views.DataValidatorWindow(
+            Editor,
+            Selection.Features,
+            feature => {
+                SetSelectedFeatures([feature]);
+                CenterViewportOnDocumentPoint(feature.Bounds.Center);
+            }) { Owner = this };
         win.ShowDialog();
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
     }
 
     private void ImagerySettings_Click(object sender, RoutedEventArgs e) {
@@ -2003,6 +2029,9 @@ public partial class MainWindow : Window {
     }
 
     private void MapCanvas_MouseMove(object sender, MouseEventArgs e) {
+        var pointerPosition = e.GetPosition(MapViewport);
+        var pointerGeo = GetPointerGeo(pointerPosition);
+        _viewModel.PointerStatus = L.Format("Main.Status.Coordinates", pointerGeo.Latitude, pointerGeo.Longitude);
         if (_featureRotation is not null) {
             ClearMapHover();
             UpdateFeatureRotation(e.GetPosition(MapViewport));
@@ -2155,6 +2184,33 @@ public partial class MainWindow : Window {
 
     private void DrawLineTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.DrawLine);
 
+    private void ExtrudeTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.Extrude);
+
+    private void FitDocument_Click(object sender, RoutedEventArgs e) => FitDocumentToViewport();
+
+    private async void OsmDownload_Click(object sender, RoutedEventArgs e) => await DownloadOsmSelectionAsync();
+
+    private async void OsmUpload_Click(object sender, RoutedEventArgs e) => await UploadOsmChangesAsync();
+
+    private void OsmAccounts_Click(object sender, RoutedEventArgs e) {
+        new Views.OsmAccountsWindow(_osmAccountStore) { Owner = this }.ShowDialog();
+    }
+
+    private void ToggleRightPanel_Click(object sender, RoutedEventArgs e) {
+        var show = RightPanel.Visibility != Visibility.Visible;
+        if (!show && RightPanelColumn.ActualWidth > 0) {
+            _viewModel.RightPanelWidth = RightPanelColumn.ActualWidth;
+        }
+
+        RightPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        RightPanelSplitter.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        RightPanelColumn.Width = show ? new GridLength(_viewModel.RightPanelWidth) : new GridLength(0);
+        _viewModel.IsRightPanelVisible = show;
+        _settings.WorkbenchLayout.IsRightPanelVisible = show;
+        _settings.WorkbenchLayout.RightPanelWidth = _viewModel.RightPanelWidth;
+        _settingsWriter.Save(_settings, this);
+    }
+
     private void AddNode_Click(object sender, RoutedEventArgs e) => AddNodeAtCenter();
 
     private void DeleteSelected_Click(object sender, RoutedEventArgs e) => DeleteSelectedFeatures();
@@ -2176,6 +2232,41 @@ public partial class MainWindow : Window {
     private void EditTagsSelected_Click(object sender, RoutedEventArgs e) => EditTagsSelectedFeatures();
 
     private void FindFeatures_Click(object sender, RoutedEventArgs e) => FocusFeatureSearch();
+
+    private void ShowPresets_Click(object sender, RoutedEventArgs e) {
+        if (RightPanel.Visibility != Visibility.Visible) ToggleRightPanel_Click(sender, e);
+        PresetExpander.IsExpanded = true;
+        PresetSearchTextBox.Focus();
+        PresetSearchTextBox.SelectAll();
+    }
+
+    private void PresetSearchTextBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshPresetList();
+
+    private void PresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+        if (PresetComboBox.SelectedItem is not TagPreset preset) {
+            PresetSummaryTextBlock.Text = "";
+            ApplyPresetButton.IsEnabled = false;
+            return;
+        }
+
+        PresetSummaryTextBlock.Text = preset.Tags.Count == 0
+            ? L.GetString("Main.Presets.NoFixedTags")
+            : string.Join("  ", preset.Tags.Select(static tag => $"{tag.Key}={tag.Value}"));
+        ApplyPresetButton.IsEnabled = preset.Tags.Count > 0 &&
+            Selection.Features.Any(feature => TagPresetCatalog.SupportsGeometry(preset, feature.GeometryType));
+    }
+
+    private void ApplyPreset_Click(object sender, RoutedEventArgs e) {
+        if (PresetComboBox.SelectedItem is not TagPreset preset || preset.Tags.Count == 0) return;
+        var targets = Selection.Features
+            .Where(feature => TagPresetCatalog.SupportsGeometry(preset, feature.GeometryType))
+            .ToList();
+        if (targets.Count == 0 || !Editor.Execute(new SetFeaturesAttributesCommand(targets, preset.Tags))) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
 
     private void FeatureSearchTextBox_TextChanged(object sender, TextChangedEventArgs e) {
         RefreshFeatureList();
@@ -2203,6 +2294,62 @@ public partial class MainWindow : Window {
     }
 
     private void OrthogonalizeSelected_Click(object sender, RoutedEventArgs e) => OrthogonalizeSelectedFeatures();
+
+    private void ReverseSelectedLine_Click(object sender, RoutedEventArgs e) {
+        var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        ApplyTopologyResult(feature is null
+            ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectOne"))
+            : TopologyEditService.CreateReverseLineCommand(Editor.Dataset, feature));
+    }
+
+    private void SplitSelectedLine_Click(object sender, RoutedEventArgs e) {
+        var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        ApplyTopologyResult(feature is null || _hoveredVertex is not { } vertex || !ReferenceEquals(feature, vertex.Feature)
+            ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.HoverVertex"))
+            : TopologyEditService.CreateSplitLineCommand(Editor.Dataset, feature, vertex.PointIndex));
+    }
+
+    private void CombineSelectedLines_Click(object sender, RoutedEventArgs e) {
+        var features = GetSelectedFeaturesInDocumentOrder();
+        ApplyTopologyResult(features.Count != 2
+            ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectTwo"))
+            : TopologyEditService.CreateCombineLinesCommand(Editor.Dataset, features[0], features[1]));
+    }
+
+    private void SimplifySelectedGeometry_Click(object sender, RoutedEventArgs e) {
+        var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        ApplyTopologyResult(feature is null
+            ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectOne"))
+            : TopologyEditService.CreateSimplifyCommand(Editor.Dataset, feature, 1.0));
+    }
+
+    private void ApplyTopologyResult(TopologyEditCommandResult result) {
+        if (result.Command is null) {
+            MessageBox.Show(
+                this,
+                result.Error ?? L.GetString("Common.UnknownError"),
+                L.GetString("Main.Menu.Topology"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+        if (!Editor.Execute(result.Command)) return;
+
+        PruneSelectionToDocument();
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void RestoreHistory_Click(object sender, RoutedEventArgs e) {
+        if (HistoryListBox.SelectedItem is not EditHistoryEntry entry) return;
+        if (!Editor.CommandStack.MoveToHistoryPosition(entry.Position)) return;
+
+        PruneSelectionToDocument();
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
 
     private void ShowAllFeatures_Click(object sender, RoutedEventArgs e) {
         if (_document is null) return;
@@ -2236,6 +2383,7 @@ public partial class MainWindow : Window {
         SelectToolButton.ClearValue(Control.BackgroundProperty);
         BoxSelectToolButton.ClearValue(Control.BackgroundProperty);
         DrawLineToolButton.ClearValue(Control.BackgroundProperty);
+        ExtrudeToolButton.ClearValue(Control.BackgroundProperty);
         var activeButton = mode switch {
             EditorMode.Pan => PanToolButton,
             EditorMode.Select => SelectToolButton,
@@ -2244,11 +2392,11 @@ public partial class MainWindow : Window {
             EditorMode.Rotate => SelectToolButton,
             EditorMode.Move => SelectToolButton,
             EditorMode.VertexMove => SelectToolButton,
-            EditorMode.Extrude => SelectToolButton,
+            EditorMode.Extrude => ExtrudeToolButton,
             _ => SelectToolButton
         };
         activeButton.SetResourceReference(Control.BackgroundProperty, "Theme.SelectionBrush");
-        EditorModeTextBlock.Text = mode switch {
+        _viewModel.EditorModeStatus = mode switch {
             EditorMode.Pan => L.GetString("Main.Mode.Pan"),
             EditorMode.Select => L.GetString("Main.Mode.Select"),
             EditorMode.BoxSelect => L.GetString("Main.Mode.BoxSelect"),
@@ -3388,6 +3536,8 @@ public partial class MainWindow : Window {
 
     private void RefreshAiTagAssistant() {
         var feature = GetSingleSelectedFeature();
+        PresetExpander.Visibility = Selection.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        RefreshPresetList();
         AiTagAssistantExpander.Visibility = feature is null ? Visibility.Collapsed : Visibility.Visible;
         AiTagSuggestButton.IsEnabled = feature is not null;
 
@@ -3674,6 +3824,16 @@ public partial class MainWindow : Window {
             _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data);
     }
 
+    private void RefreshPresetList() {
+        if (PresetComboBox is null || PresetSearchTextBox is null) return;
+        var geometry = Selection.Features.Select(static feature => feature.GeometryType).Distinct().ToList();
+        var geometryFilter = geometry.Count == 1 ? geometry[0] : (MapGeometryType?)null;
+        var selectedId = (PresetComboBox.SelectedItem as TagPreset)?.Id;
+        var presets = TagPresetCatalog.Search(PresetSearchTextBox.Text, geometryFilter);
+        PresetComboBox.ItemsSource = presets;
+        PresetComboBox.SelectedItem = presets.FirstOrDefault(preset => preset.Id == selectedId) ?? presets.FirstOrDefault();
+    }
+
     private void SynchronizeActiveDataLayer() {
         if (_document is null) return;
 
@@ -3686,16 +3846,16 @@ public partial class MainWindow : Window {
         var displayed = HasActiveFeatureSearch() ? GetDisplayedFeatures().Count : total;
         var command = _keyboardEditCommand.Length > 0 ? L.Format("Main.Status.Command", _keyboardEditCommand) : "";
         if (HasActiveFeatureSearch()) {
-            FeatureCountTextBlock.Text = hidden > 0
+            _viewModel.FeatureCount = hidden > 0
                 ? L.Format("Main.FeatureSearchCountWithHidden", displayed, total, hidden)
                 : L.Format("Main.FeatureSearchCount", displayed, total);
         } else {
-            FeatureCountTextBlock.Text = hidden > 0
+            _viewModel.FeatureCount = hidden > 0
                 ? L.Format("Main.FeatureCountWithHidden", total, hidden)
                 : total.ToString("N0", CultureInfo.CurrentCulture);
         }
         if (_document is null) {
-            DocumentStatusTextBlock.Text = L.Format("Main.Status.NoMapOpen", command);
+            _viewModel.DocumentStatus = L.Format("Main.Status.NoMapOpen", command);
             return;
         }
 
@@ -3703,7 +3863,7 @@ public partial class MainWindow : Window {
         var selection = Selection.Count > 0 ? L.Format("Main.Status.Selection", Selection.Count) : "";
         var area = _selectionBounds.HasValue ? L.GetString("Main.Status.DownloadAreaSelected") : "";
         var skipped = _document.SkippedFeatureCount > 0 ? L.Format("Main.Status.Skipped", _document.SkippedFeatureCount) : "";
-        DocumentStatusTextBlock.Text = L.Format(
+        _viewModel.DocumentStatus = L.Format(
             "Main.Status.Document",
             _document.Name,
             dirty,
@@ -3895,7 +4055,7 @@ public partial class MainWindow : Window {
         long? changesetId = null;
         try {
             IsEnabled = false;
-            DocumentStatusTextBlock.Text = L.GetString("Main.OsmUpload.CreatingChangeset");
+            _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.CreatingChangeset");
             changesetId = await api.CreateChangesetAsync(
                 account.ApiBaseUrl,
                 credential,
@@ -3904,7 +4064,7 @@ public partial class MainWindow : Window {
                 uploadWindow.ReviewRequested,
                 CancellationToken.None);
             var changes = OsmChangeSerializer.Build(_document, changesetId.Value);
-            DocumentStatusTextBlock.Text = L.Format("Main.OsmUpload.UploadingChanges", changes.TotalCount);
+            _viewModel.DocumentStatus = L.Format("Main.OsmUpload.UploadingChanges", changes.TotalCount);
             var response = await api.UploadChangesAsync(
                 account.ApiBaseUrl,
                 credential,
@@ -3977,6 +4137,7 @@ public partial class MainWindow : Window {
         _isUpdatingLayerDetails = true;
         try {
             var layer = LayerListBox.SelectedItem as MapImageLayer;
+            _viewModel.ActiveLayerStatus = layer?.Name ?? "";
             SelectedLayerOptionsPanel.IsEnabled = layer is not null;
             SelectedLayerVisibilityCheckBox.IsChecked = layer?.IsVisible == true;
             var opacity = Math.Clamp(layer?.Opacity ?? 1.0, 0.0, 1.0);

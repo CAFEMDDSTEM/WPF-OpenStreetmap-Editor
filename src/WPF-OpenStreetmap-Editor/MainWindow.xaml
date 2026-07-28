@@ -19,6 +19,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Menu Grid.Row="0" MinHeight="30" Padding="2,1" VerticalAlignment="Top" VerticalContentAlignment="Center">
@@ -36,6 +37,9 @@
                 <Separator />
                 <MenuItem Header="{services:Loc Common.Save}" InputGestureText="Ctrl+S" Click="Save_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.SaveAs}" InputGestureText="Ctrl+Shift+S" Click="SaveAs_Click" />
+                <Separator />
+                <MenuItem Header="{services:Loc Osm.Download.Title}" InputGestureText="Ctrl+Shift+Down" Click="OsmDownload_Click" />
+                <MenuItem Header="{services:Loc Osm.Upload.Title}" InputGestureText="Ctrl+Shift+Up" Click="OsmUpload_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Edit}">
                 <MenuItem Header="{services:Loc Main.Menu.Undo}" InputGestureText="Ctrl+Z" Click="Undo_Click" />
@@ -56,24 +60,40 @@
                 <MenuItem Header="{services:Loc Main.Menu.ShowAll}" Click="ShowAllFeatures_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.View}">
-                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.FitData}" Click="FitDocument_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.TogglePanels}" Click="ToggleRightPanel_Click" />
+            </MenuItem>
+            <MenuItem Header="{services:Loc Main.Menu.Selection}">
+                <MenuItem Header="{services:Loc Main.Menu.FindFeatures}" InputGestureText="Ctrl+F" Click="FindFeatures_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
+                <Separator />
+                <MenuItem Header="{services:Loc Main.Menu.HideSelected}" InputGestureText="H" Click="HideSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.ShowAll}" Click="ShowAllFeatures_Click" />
+            </MenuItem>
+            <MenuItem Header="{services:Loc Main.Menu.Presets}">
+                <MenuItem Header="{services:Loc Main.Presets.ShowPanel}" Click="ShowPresets_Click" />
             </MenuItem>
             <MenuItem x:Name="ImageryMenuItem" Header="{services:Loc Main.Menu.Imagery}">
                 <MenuItem Header="{services:Loc Main.Menu.ImageryOptions}" Click="ImagerySettings_Click" />
                 <Separator />
             </MenuItem>
-            <MenuItem Header="{services:Loc Main.Menu.Project}">
-                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
-            </MenuItem>
             <MenuItem x:Name="ToolsMenuItem" Header="{services:Loc Main.Menu.Tools}">
-                <MenuItem Header="{services:Loc Main.Menu.Layers}" InputGestureText="Ctrl+N" Click="Layer_Click" />
+                <MenuItem Header="{services:Loc Main.Mode.Extrude}" InputGestureText="E" Click="ExtrudeTool_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Topology}">
+                    <MenuItem Header="{services:Loc Main.Topology.Reverse}" Click="ReverseSelectedLine_Click" />
+                    <MenuItem Header="{services:Loc Main.Topology.Split}" Click="SplitSelectedLine_Click" />
+                    <MenuItem Header="{services:Loc Main.Topology.Combine}" Click="CombineSelectedLines_Click" />
+                    <MenuItem Header="{services:Loc Main.Topology.Simplify}" Click="SimplifySelectedGeometry_Click" />
+                </MenuItem>
+                <MenuItem Header="{services:Loc Main.Menu.Layers}" Click="Layer_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.DataValidator}" Click="DataValidator_Click" />
+                <MenuItem Header="{services:Loc Osm.Accounts.Title}" Click="OsmAccounts_Click" />
                 <MenuItem Header="{services:Loc Common.Settings}" Click="Settings_Click" />
                 <Separator x:Name="PluginContributionsSeparator" Visibility="Collapsed" />
                 <MenuItem Header="{services:Loc Main.Menu.Plugins}" Click="Plugins_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Window}">
-                <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.TogglePanels}" Click="ToggleRightPanel_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Help}">
                 <MenuItem Header="{services:Loc Main.Menu.HelpAbout}" InputGestureText="F1" Click="Help_Click" />
@@ -87,25 +107,51 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Open_Click" ToolTip="{services:Loc Main.Tooltip.Import}">
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Open_Click" ToolTip="{services:Loc Main.Tooltip.Import}" AutomationProperties.Name="{services:Loc Main.Tooltip.Import}">
                     <iconPacks:PackIconLucide Kind="FolderOpen" Width="18" Height="18" />
                 </Button>
-                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Save_Click" ToolTip="{services:Loc Main.Tooltip.SaveMap}">
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Save_Click" ToolTip="{services:Loc Main.Tooltip.SaveMap}" AutomationProperties.Name="{services:Loc Main.Tooltip.SaveMap}">
                     <iconPacks:PackIconLucide Kind="Save" Width="18" Height="18" />
+                </Button>
+                <Separator Width="1" Height="24" Margin="6,0" Background="{DynamicResource Theme.BorderBrush}" />
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Undo_Click" ToolTip="{services:Loc Main.Menu.Undo}" AutomationProperties.Name="{services:Loc Main.Menu.Undo}">
+                    <iconPacks:PackIconLucide Kind="Undo2" Width="18" Height="18" />
+                </Button>
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="Redo_Click" ToolTip="{services:Loc Main.Menu.Redo}" AutomationProperties.Name="{services:Loc Main.Menu.Redo}">
+                    <iconPacks:PackIconLucide Kind="Redo2" Width="18" Height="18" />
+                </Button>
+                <Separator Width="1" Height="24" Margin="6,0" Background="{DynamicResource Theme.BorderBrush}" />
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="FindFeatures_Click" ToolTip="{services:Loc Main.Menu.FindFeatures}" AutomationProperties.Name="{services:Loc Main.Menu.FindFeatures}">
+                    <iconPacks:PackIconLucide Kind="Search" Width="18" Height="18" />
+                </Button>
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="EditTagsSelected_Click" ToolTip="{services:Loc Main.Menu.EditTags}" AutomationProperties.Name="{services:Loc Main.Menu.EditTags}">
+                    <iconPacks:PackIconLucide Kind="Tags" Width="18" Height="18" />
+                </Button>
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="DeleteSelected_Click" ToolTip="{services:Loc Main.Menu.DeleteSelected}" AutomationProperties.Name="{services:Loc Main.Menu.DeleteSelected}">
+                    <iconPacks:PackIconLucide Kind="Trash2" Width="18" Height="18" />
+                </Button>
+                <Separator Width="1" Height="24" Margin="6,0" Background="{DynamicResource Theme.BorderBrush}" />
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="OsmDownload_Click" ToolTip="{services:Loc Osm.Download.Title}" AutomationProperties.Name="{services:Loc Osm.Download.Title}">
+                    <iconPacks:PackIconLucide Kind="Download" Width="18" Height="18" />
+                </Button>
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="OsmUpload_Click" ToolTip="{services:Loc Osm.Upload.Title}" AutomationProperties.Name="{services:Loc Osm.Upload.Title}">
+                    <iconPacks:PackIconLucide Kind="Upload" Width="18" Height="18" />
                 </Button>
                 <StackPanel x:Name="PluginToolbarPanel"
                             Orientation="Horizontal"
                             VerticalAlignment="Center" />
             </StackPanel>
-            <TextBlock x:Name="DocumentStatusTextBlock"
+            <TextBlock
                        Grid.Column="1"
                        Margin="10,0"
                        VerticalAlignment="Center"
+                       Text="{Binding ActiveLayerStatus}"
                        TextTrimming="CharacterEllipsis"
                        Foreground="{DynamicResource Theme.MutedTextBrush}" />
             <TextBlock x:Name="EditorModeTextBlock"
                        Grid.Column="2"
                        VerticalAlignment="Center"
+                       Text="{Binding EditorModeStatus}"
                        Foreground="{DynamicResource Theme.MutedTextBrush}" />
         </Grid>
 
@@ -114,7 +160,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="60" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="360" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition x:Name="RightPanelColumn" Width="380" MinWidth="0" />
             </Grid.ColumnDefinitions>
 
             <!-- 编辑工具使用固定尺寸，避免模式切换时改变地图布局。 -->
@@ -136,6 +183,9 @@
                 </Button>
                 <Button Width="44" Height="44" Margin="2" Padding="0" Click="HideSelected_Click" ToolTip="{services:Loc Main.Tooltip.HideSelected}">
                     <iconPacks:PackIconLucide Kind="EyeOff" Width="21" Height="21" />
+                </Button>
+                <Button x:Name="ExtrudeToolButton" Width="44" Height="44" Margin="2" Padding="0" Click="ExtrudeTool_Click" ToolTip="{services:Loc Main.Mode.Extrude}" AutomationProperties.Name="{services:Loc Main.Mode.Extrude}">
+                    <iconPacks:PackIconLucide Kind="Spline" Width="21" Height="21" />
                 </Button>
             </StackPanel>
 
@@ -159,6 +209,8 @@
                           Background="{DynamicResource Theme.MapBackgroundBrush}"
                           ClipToBounds="True"
                           Focusable="True"
+                          AutomationProperties.Name="{services:Loc Main.MapAutomationName}"
+                          AutomationProperties.HelpText="{services:Loc Main.MapAutomationHelp}"
                           UseLayoutRounding="True"
                           SnapsToDevicePixels="True"
                           RenderOptions.BitmapScalingMode="NearestNeighbor"
@@ -203,7 +255,15 @@
             </Grid>
 
             <!-- 右侧输出区：上表格（DataGrid），下编辑视图（TextBox 模拟文件编辑） -->
-            <Grid Grid.Column="2" Margin="6">
+            <GridSplitter x:Name="RightPanelSplitter"
+                          Grid.Column="2"
+                          Width="6"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="{DynamicResource Theme.BorderBrush}" />
+
+            <Grid x:Name="RightPanel" Grid.Column="3" Margin="6">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*" />
                     <RowDefinition Height="Auto" />
@@ -356,7 +416,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="{services:Loc Main.Features.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock x:Name="FeatureCountTextBlock" Grid.Column="1" Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                            <TextBlock x:Name="FeatureCountTextBlock" Grid.Column="1" Text="{Binding FeatureCount}" Foreground="{DynamicResource Theme.MutedTextBrush}" />
                         </Grid>
                         <Grid x:Name="FeatureSearchPanel"
                               DockPanel.Dock="Top"
@@ -394,6 +454,36 @@
                                 <iconPacks:PackIconLucide Kind="X" Width="14" Height="14" />
                             </Button>
                         </Grid>
+                        <Expander x:Name="PresetExpander"
+                                  DockPanel.Dock="Top"
+                                  Header="{services:Loc Main.Presets.Title}"
+                                  Margin="8,0,8,6"
+                                  Visibility="Collapsed"
+                                  IsExpanded="False">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBox x:Name="PresetSearchTextBox"
+                                         Height="26"
+                                         VerticalContentAlignment="Center"
+                                         ToolTip="{services:Loc Main.Presets.Search}"
+                                         TextChanged="PresetSearchTextBox_TextChanged" />
+                                <ComboBox x:Name="PresetComboBox"
+                                          Margin="0,6,0,0"
+                                          DisplayMemberPath="Name"
+                                          SelectionChanged="PresetComboBox_SelectionChanged" />
+                                <TextBlock x:Name="PresetSummaryTextBlock"
+                                           Margin="0,6,0,0"
+                                           TextWrapping="Wrap"
+                                           FontFamily="Consolas"
+                                           Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                                <Button x:Name="ApplyPresetButton"
+                                        Margin="0,6,0,0"
+                                        Padding="10,2"
+                                        HorizontalAlignment="Right"
+                                        Content="{services:Loc Main.Presets.Apply}"
+                                        IsEnabled="False"
+                                        Click="ApplyPreset_Click" />
+                            </StackPanel>
+                        </Expander>
                         <Expander x:Name="AiTagAssistantExpander"
                                   DockPanel.Dock="Top"
                                   Header="{services:Loc Main.AiTags.Header}"
@@ -457,6 +547,46 @@
                                 </ScrollViewer>
                             </StackPanel>
                         </Expander>
+                        <Expander DockPanel.Dock="Top"
+                                  Header="{services:Loc Main.History.Title}"
+                                  Margin="8,0,8,6"
+                                  IsExpanded="False">
+                            <Grid Margin="0,6,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ListBox x:Name="HistoryListBox"
+                                         MaxHeight="130"
+                                         ItemsSource="{Binding History}"
+                                         HorizontalContentAlignment="Stretch">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox IsChecked="{Binding IsApplied}"
+                                                          IsHitTestVisible="False"
+                                                          Focusable="False"
+                                                          VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1"
+                                                           Margin="6,0,0,0"
+                                                           Text="{Binding Description}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Grid.Row="1"
+                                        Margin="0,6,0,0"
+                                        HorizontalAlignment="Right"
+                                        Padding="10,2"
+                                        Content="{services:Loc Main.History.Restore}"
+                                        Click="RestoreHistory_Click" />
+                            </Grid>
+                        </Expander>
                         <DataGrid x:Name="FeatureDataGrid"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -477,5 +607,46 @@
                 </Border>
             </Grid>
         </Grid>
+
+        <Border Grid.Row="3"
+                MinHeight="28"
+                Padding="8,3"
+                Background="{DynamicResource Theme.SurfaceBrush}"
+                BorderBrush="{DynamicResource Theme.BorderBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="DocumentStatusTextBlock"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           Text="{Binding DocumentStatus}"
+                           TextTrimming="CharacterEllipsis"
+                           AutomationProperties.LiveSetting="Polite" />
+                <TextBlock Grid.Column="1"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding PointerStatus}"
+                           Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                <TextBlock Grid.Column="2"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding SelectedCount, StringFormat={}#{0:N0}}"
+                           Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                <Button Grid.Column="3"
+                        Width="26"
+                        Height="22"
+                        Padding="0"
+                        Click="ToggleRightPanel_Click"
+                        ToolTip="{services:Loc Main.Menu.TogglePanels}"
+                        AutomationProperties.Name="{services:Loc Main.Menu.TogglePanels}">
+                    <iconPacks:PackIconLucide Kind="PanelRight" Width="15" Height="15" />
+                </Button>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
