@@ -53,6 +53,39 @@ public class VectorRenderPlannerTests {
     }
 
     [Fact]
+    public void Create_FromDocumentRendersFeaturesFromSeparateVisibleDataLayers() {
+        var document = new MapDocument();
+        var baseFeature = PointFeature("base", 1, 1);
+        var overlayFeature = PointFeature("overlay", 1.5, 1.5);
+        document.Features.Add(baseFeature);
+        var overlay = new MapDataLayer { Name = "overlay.geojson" };
+        overlay.Features.Add(overlayFeature);
+        document.AddDataLayer(overlay);
+
+        var plan = VectorRenderPlanner.Create(document, new GeoBounds(0, 0, 2, 2));
+
+        Assert.Equal([baseFeature, overlayFeature], plan.Features);
+    }
+
+    [Fact]
+    public void Create_FromDocumentSkipsHiddenDataLayers() {
+        var document = new MapDocument();
+        var baseFeature = PointFeature("base", 1, 1);
+        var hiddenFeature = PointFeature("hidden-layer", 1.5, 1.5);
+        document.Features.Add(baseFeature);
+        var hiddenLayer = new MapDataLayer {
+            Name = "hidden.geojson",
+            IsVisible = false
+        };
+        hiddenLayer.Features.Add(hiddenFeature);
+        document.AddDataLayer(hiddenLayer);
+
+        var plan = VectorRenderPlanner.Create(document, new GeoBounds(0, 0, 2, 2));
+
+        Assert.Same(baseFeature, Assert.Single(plan.Features));
+    }
+
+    [Fact]
     public void SpatialIndex_UsesFinerCellsForDenseLocalData() {
         var features = new List<MapFeature>();
         for (var y = 0; y < 64; y++) {
