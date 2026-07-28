@@ -2,7 +2,7 @@ using WPF_OpenStreetmap_Editor.Models;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
-public readonly record struct FeaturePlacement(MapFeature Feature, int Index);
+public readonly record struct FeaturePlacement(MapFeature Feature, int Index, MapDataLayer? Layer = null);
 
 public readonly record struct FeatureHiddenState(MapFeature Feature, bool IsHidden);
 
@@ -23,31 +23,39 @@ public sealed class MapEditDataset {
     }
 
     public bool Contains(MapFeature feature) {
-        return IndexOf(feature) >= 0;
+        return GetLayer(feature) is not null;
     }
 
     public int IndexOf(MapFeature feature) {
-        return Document?.Features.IndexOf(feature) ?? -1;
+        return GetLayer(feature)?.Features.IndexOf(feature) ?? -1;
+    }
+
+    public MapDataLayer? GetLayer(MapFeature feature) {
+        return Document?.FindDataLayer(feature);
     }
 
     public bool AddFeature(MapFeature feature, int? index = null, bool markDirty = true) {
         var document = EnsureDocument();
-        if (document.Features.Contains(feature)) return false;
+        var layer = document.ActiveDataLayer;
+        if (document.FindDataLayer(feature) is not null) return false;
 
         var insertIndex = index.HasValue
-            ? Math.Clamp(index.Value, 0, document.Features.Count)
-            : document.Features.Count;
-        document.Features.Insert(insertIndex, feature);
-        MarkFeatureSetChanged(document, markDirty);
+            ? Math.Clamp(index.Value, 0, layer.Features.Count)
+            : layer.Features.Count;
+        layer.Features.Insert(insertIndex, feature);
+        MarkFeatureSetChanged(document, layer, markDirty);
         return true;
     }
 
     public bool RemoveFeature(MapFeature feature, bool markDirty = true) {
         if (Document is null) return false;
-        var removed = Document.Features.Remove(feature);
+        var layer = Document.FindDataLayer(feature);
+        if (layer is null) return false;
+
+        var removed = layer.Features.Remove(feature);
         if (!removed) return false;
 
-        MarkFeatureSetChanged(Document, markDirty);
+        MarkFeatureSetChanged(Document, layer, markDirty);
         return true;
     }
 
@@ -56,16 +64,25 @@ public sealed class MapEditDataset {
 
         var placements = features
             .Distinct()
-            .Select(feature => new FeaturePlacement(feature, Document.Features.IndexOf(feature)))
+            .Select(feature => {
+                var layer = Document.FindDataLayer(feature);
+                return new FeaturePlacement(feature, layer?.Features.IndexOf(feature) ?? -1, layer);
+            })
             .Where(static placement => placement.Index >= 0)
-            .OrderBy(static placement => placement.Index)
+            .OrderBy(static placement => placement.Layer?.Id)
+            .ThenBy(static placement => placement.Index)
             .ToList();
         if (placements.Count == 0) return [];
 
-        foreach (var placement in placements.OrderByDescending(static placement => placement.Index)) {
-            Document.Features.RemoveAt(placement.Index);
+        foreach (var group in placements.GroupBy(static placement => placement.Layer)) {
+            if (group.Key is null) continue;
+
+            foreach (var placement in group.OrderByDescending(static placement => placement.Index)) {
+                group.Key.Features.RemoveAt(placement.Index);
+            }
+            group.Key.InvalidateSpatialIndex();
         }
-        MarkFeatureSetChanged(Document, markDirty);
+        MarkContentChanged(markDirty);
         return placements;
     }
 
@@ -73,13 +90,15 @@ public sealed class MapEditDataset {
         var document = EnsureDocument();
         var restored = false;
         foreach (var placement in placements.OrderBy(static placement => placement.Index)) {
-            if (document.Features.Contains(placement.Feature)) continue;
+            if (document.FindDataLayer(placement.Feature) is not null) continue;
 
-            var index = Math.Clamp(placement.Index, 0, document.Features.Count);
-            document.Features.Insert(index, placement.Feature);
+            var layer = placement.Layer ?? document.ActiveDataLayer;
+            var index = Math.Clamp(placement.Index, 0, layer.Features.Count);
+            layer.Features.Insert(index, placement.Feature);
+            layer.InvalidateSpatialIndex();
             restored = true;
         }
-        if (restored) MarkFeatureSetChanged(document, markDirty);
+        if (restored) MarkContentChanged(markDirty);
     }
 
     public bool SetFeatureHidden(MapFeature feature, bool isHidden, bool markDirty = false) {
@@ -142,12 +161,14 @@ public sealed class MapEditDataset {
         feature.InvalidateGeometry();
         if (Document is null) return;
 
+        Document.FindDataLayer(feature)?.InvalidateSpatialIndex();
         Document.InvalidateSpatialIndex();
         Document.MarkContentChanged();
         if (markDirty) Document.IsDirty = true;
     }
 
-    private static void MarkFeatureSetChanged(MapDocument document, bool markDirty) {
+    private static void MarkFeatureSetChanged(MapDocument document, MapDataLayer layer, bool markDirty) {
+        layer.InvalidateSpatialIndex();
         document.InvalidateSpatialIndex();
         document.MarkContentChanged();
         if (markDirty) document.IsDirty = true;

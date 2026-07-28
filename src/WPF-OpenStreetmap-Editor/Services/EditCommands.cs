@@ -50,7 +50,10 @@ public sealed class AddFeaturesCommand : IEditCommand {
         var added = new List<FeaturePlacement>();
         foreach (var placement in placements.OrderBy(static placement => placement.Index)) {
             if (!dataset.AddFeature(placement.Feature, placement.Index)) continue;
-            added.Add(new FeaturePlacement(placement.Feature, dataset.IndexOf(placement.Feature)));
+            added.Add(new FeaturePlacement(
+                placement.Feature,
+                dataset.IndexOf(placement.Feature),
+                dataset.GetLayer(placement.Feature)));
         }
 
         _placements = added;
