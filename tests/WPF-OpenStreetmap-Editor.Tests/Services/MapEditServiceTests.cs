@@ -262,6 +262,44 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void ExtrudeSegmentByMeters_OffsetsSegmentEastByRealDistance() {
+        var parts = new List<List<GeoPoint>> {
+            new() {
+                new GeoPoint(0, 0),
+                new GeoPoint(0.001, 0),
+                new GeoPoint(0.001, 0.001),
+                new GeoPoint(0, 0)
+            }
+        };
+
+        var extruded = MapEditService.ExtrudeSegmentByMeters(parts, 0, 0, 1, 1, 0, 0);
+
+        Assert.True(extruded[0][1].Longitude > parts[0][0].Longitude);
+        Assert.Equal(0, extruded[0][1].Latitude);
+        Assert.True(extruded[0][2].Longitude > parts[0][1].Longitude);
+        Assert.Equal(0, extruded[0][2].Latitude);
+    }
+
+    [Fact]
+    public void AddInnerSquareRingByMeters_AddsClosedInnerPart() {
+        var parts = new List<List<GeoPoint>> {
+            new() {
+                new GeoPoint(0, 0),
+                new GeoPoint(0.001, 0),
+                new GeoPoint(0.001, 0.001),
+                new GeoPoint(0, 0.001),
+                new GeoPoint(0, 0)
+            }
+        };
+
+        var extruded = MapEditService.AddInnerSquareRingByMeters(parts, 1);
+
+        Assert.Equal(2, extruded.Count);
+        Assert.Equal(5, extruded[1].Count);
+        Assert.Equal(extruded[1][0], extruded[1][^1]);
+    }
+
+    [Fact]
     public void OrthogonalizeParts_MakesSkewedPolygonCornersRightAngles() {
         var feature = new MapFeature {
             GeometryType = MapGeometryType.Polygon,

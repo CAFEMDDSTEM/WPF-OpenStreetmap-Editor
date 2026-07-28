@@ -30,9 +30,30 @@ public class EditKeyboardCommandParserTests {
     }
 
     [Theory]
+    [InlineData("ex", "X", 0, false)]
+    [InlineData("ey", "Y", 0, false)]
+    [InlineData("es", "Segment", 0, false)]
+    [InlineData("ess", "InnerSquare", 0, false)]
+    [InlineData("ex10", "X", 10, true)]
+    [InlineData("ey-5", "Y", -5, true)]
+    public void TryParse_ExtrudeCommand_ReturnsModeAndDistance(
+        string text,
+        string expectedMode,
+        double expectedDistanceDecimeters,
+        bool expectedHasDistance) {
+        Assert.True(EditKeyboardCommandParser.TryParse(text, out var command));
+
+        Assert.Equal(EditKeyboardCommandKind.Extrude, command.Kind);
+        Assert.Equal(expectedMode, command.ExtrudeMode.ToString());
+        Assert.Equal(expectedDistanceDecimeters, command.ExtrudeDistanceDecimeters);
+        Assert.Equal(expectedHasDistance, command.HasExtrudeDistance);
+    }
+
+    [Theory]
     [InlineData("a", "DrawLine")]
     [InlineData("r", "Rotate")]
     [InlineData("m", "Move")]
+    [InlineData("e", "Extrude")]
     public void TryParse_ModeCommand_ReturnsCommandWithoutNumericValue(
         string text,
         string expectedKind) {

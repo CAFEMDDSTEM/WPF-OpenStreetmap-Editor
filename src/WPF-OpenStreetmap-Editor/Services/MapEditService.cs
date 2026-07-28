@@ -151,6 +151,78 @@ public static class MapEditService {
         return result;
     }
 
+    public static List<List<GeoPoint>> ExtrudeSegmentByMeters(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        int partIndex,
+        int startPointIndex,
+        int endPointIndex,
+        double eastMeters,
+        double northMeters,
+        double referenceLatitude) {
+        var (longitudeOffset, latitudeOffset) = GetMeterOffsets(eastMeters, northMeters, referenceLatitude);
+        return ExtrudeSegment(parts, partIndex, startPointIndex, endPointIndex, longitudeOffset, latitudeOffset);
+    }
+
+    public static List<List<GeoPoint>> ExtrudeSegmentNormalByMeters(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        int partIndex,
+        int startPointIndex,
+        int endPointIndex,
+        double distanceMeters) {
+        ArgumentNullException.ThrowIfNull(parts);
+
+        var result = parts.Select(static part => part.ToList()).ToList();
+        if (partIndex < 0 ||
+            partIndex >= result.Count ||
+            startPointIndex < 0 ||
+            endPointIndex < 0 ||
+            endPointIndex >= result[partIndex].Count ||
+            startPointIndex >= endPointIndex) {
+            return result;
+        }
+
+        var part = result[partIndex];
+        var referenceLatitude = (part[startPointIndex].Latitude + part[endPointIndex].Latitude) / 2.0;
+        var normal = GetSegmentNormalMeters(part[startPointIndex], part[endPointIndex], referenceLatitude);
+        if (normal is null) return result;
+
+        return ExtrudeSegmentByMeters(
+            result,
+            partIndex,
+            startPointIndex,
+            endPointIndex,
+            normal.Value.East * distanceMeters,
+            normal.Value.North * distanceMeters,
+            referenceLatitude);
+    }
+
+    public static List<List<GeoPoint>> AddInnerSquareRingByMeters(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        double sideMeters) {
+        ArgumentNullException.ThrowIfNull(parts);
+
+        var result = parts.Select(static part => part.ToList()).ToList();
+        if (sideMeters <= 0) return result;
+
+        var bounds = GeoBounds.FromPoints(result.SelectMany(static part => part));
+        if (!bounds.IsValid) return result;
+
+        var center = bounds.Center;
+        var (longitudeHalfSide, latitudeHalfSide) = GetMeterOffsets(sideMeters / 2.0, sideMeters / 2.0, center.Latitude);
+        longitudeHalfSide = Math.Abs(longitudeHalfSide);
+        latitudeHalfSide = Math.Abs(latitudeHalfSide);
+        if (longitudeHalfSide <= 0 || latitudeHalfSide <= 0) return result;
+
+        result.Add([
+            OffsetPoint(center, -longitudeHalfSide, -latitudeHalfSide),
+            OffsetPoint(center, longitudeHalfSide, -latitudeHalfSide),
+            OffsetPoint(center, longitudeHalfSide, latitudeHalfSide),
+            OffsetPoint(center, -longitudeHalfSide, latitudeHalfSide),
+            OffsetPoint(center, -longitudeHalfSide, -latitudeHalfSide)
+        ]);
+        return result;
+    }
+
     public static List<List<GeoPoint>> OrthogonalizeParts(IEnumerable<IEnumerable<GeoPoint>> parts) {
         ArgumentNullException.ThrowIfNull(parts);
 
@@ -209,6 +281,19 @@ public static class MapEditService {
             : eastMeters / longitudeScale * 180.0 / Math.PI;
 
         return (longitudeOffset, latitudeOffset);
+    }
+
+    private static (double East, double North)? GetSegmentNormalMeters(
+        GeoPoint start,
+        GeoPoint end,
+        double referenceLatitude) {
+        var latitudeRadians = GeoConverter.ClampLatitude(referenceLatitude) * Math.PI / 180.0;
+        var eastMeters = (end.Longitude - start.Longitude) * Math.PI / 180.0 * EarthRadiusMeters * Math.Cos(latitudeRadians);
+        var northMeters = (end.Latitude - start.Latitude) * Math.PI / 180.0 * EarthRadiusMeters;
+        var length = Math.Sqrt(eastMeters * eastMeters + northMeters * northMeters);
+        if (length <= double.Epsilon) return null;
+
+        return (-northMeters / length, eastMeters / length);
     }
 
     private static GeoPoint RotatePoint(GeoPoint point, GeoPoint center, double sin, double cos) {

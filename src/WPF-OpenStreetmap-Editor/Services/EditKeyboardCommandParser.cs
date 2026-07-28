@@ -5,7 +5,16 @@ namespace WPF_OpenStreetmap_Editor.Services;
 internal enum EditKeyboardCommandKind {
     DrawLine,
     Rotate,
-    Move
+    Move,
+    Extrude
+}
+
+internal enum EditKeyboardExtrudeMode {
+    Free,
+    X,
+    Y,
+    Segment,
+    InnerSquare
 }
 
 internal readonly record struct EditKeyboardCommand(
@@ -13,7 +22,10 @@ internal readonly record struct EditKeyboardCommand(
     double? RotationDegrees,
     double MoveEastDecimeters,
     double MoveNorthDecimeters,
-    bool HasMoveDistance);
+    bool HasMoveDistance,
+    EditKeyboardExtrudeMode ExtrudeMode = EditKeyboardExtrudeMode.Free,
+    double ExtrudeDistanceDecimeters = 0,
+    bool HasExtrudeDistance = false);
 
 internal static class EditKeyboardCommandParser {
     public static bool TryParse(string commandText, out EditKeyboardCommand command) {
@@ -28,6 +40,7 @@ internal static class EditKeyboardCommandParser {
             'a' => TryParseDrawLine(text, out command),
             'r' => TryParseRotate(text, out command),
             'm' => TryParseMove(text, out command),
+            'e' => TryParseExtrude(text, out command),
             _ => false
         };
     }
@@ -80,6 +93,54 @@ internal static class EditKeyboardCommandParser {
             eastDecimeters,
             northDecimeters,
             hasDistance);
+        return true;
+    }
+
+    private static bool TryParseExtrude(string text, out EditKeyboardCommand command) {
+        command = default;
+        if (text.Length == 1) {
+            command = new EditKeyboardCommand(EditKeyboardCommandKind.Extrude, null, 0, 0, false);
+            return true;
+        }
+
+        var mode = text[1] switch {
+            'x' => EditKeyboardExtrudeMode.X,
+            'y' => EditKeyboardExtrudeMode.Y,
+            's' => EditKeyboardExtrudeMode.Segment,
+            _ => (EditKeyboardExtrudeMode?)null
+        };
+        if (mode is null) return false;
+
+        var index = 2;
+        if (mode.Value == EditKeyboardExtrudeMode.Segment &&
+            index < text.Length &&
+            text[index] == 's') {
+            mode = EditKeyboardExtrudeMode.InnerSquare;
+            index++;
+        }
+
+        if (index == text.Length) {
+            command = new EditKeyboardCommand(
+                EditKeyboardCommandKind.Extrude,
+                null,
+                0,
+                0,
+                false,
+                mode.Value);
+            return true;
+        }
+
+        if (!TryReadNumber(text, ref index, out var distanceDecimeters) || index != text.Length) return false;
+
+        command = new EditKeyboardCommand(
+            EditKeyboardCommandKind.Extrude,
+            null,
+            0,
+            0,
+            false,
+            mode.Value,
+            distanceDecimeters,
+            HasExtrudeDistance: true);
         return true;
     }
 
