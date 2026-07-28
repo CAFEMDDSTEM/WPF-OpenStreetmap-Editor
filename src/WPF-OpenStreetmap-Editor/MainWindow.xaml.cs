@@ -111,6 +111,7 @@ public partial class MainWindow : Window {
     private const int ResizeRenderDelayMilliseconds = 120;
     private const int LayerStackRefreshDelayMilliseconds = 160;
     private const int PanPrefetchIntervalMilliseconds = 140;
+    private const double MinimumPromotableTileCoverage = 0.98;
     private const double FeaturePasteOffsetPixels = 24.0;
     private const double MinimumCommittedRotationDegrees = 0.01;
     private const double MinimumCommittedMovePixels = 0.5;
@@ -439,13 +440,7 @@ public partial class MainWindow : Window {
         }
 
         if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
-        if (_activeLayer is not null &&
-            loadedLayers.Sum(static result => result.TileCount) == 0) {
-            return;
-        }
-        if (_activeLayer is not null &&
-            loadedLayers.Sum(static result => result.ExactTileCount) == 0 &&
-            loadedLayers.Sum(static result => result.TileCount) > 0) {
+        if (!HasUsableTileCoverage(loadedLayers, viewportW, viewportH)) {
             return;
         }
 
@@ -483,7 +478,7 @@ public partial class MainWindow : Window {
         CancellationToken ct) {
         var imageZoom = Math.Min(renderZoom, context.Service.ImageMaxZoom);
         if (imageZoom < context.Service.ImageMinZoom) {
-            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0, 0);
+            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0, 0, 0);
         }
 
         var scale = Math.Pow(2, renderZoom - imageZoom);
@@ -499,6 +494,7 @@ public partial class MainWindow : Window {
         var pendingRequests = new Queue<(int X, int Y)>(
             EnumerateTileRequests(tileRange, sourceCenterPixelX, sourceCenterPixelY)
                 .Select(static request => (request.X, request.Y)));
+        var requestedTileCount = pendingRequests.Count;
         var tileItems = new List<TileRenderItem>();
         var addedTileKeys = new HashSet<string>();
         var tileItemsLock = new object();
@@ -516,7 +512,8 @@ public partial class MainWindow : Window {
             return new TileLayerLoadResult(
                 new TileRenderGroup([.. tileItems], context.Opacity),
                 loadedTileCount,
-                exactTileCount);
+                exactTileCount,
+                requestedTileCount);
         }
 
         async Task LoadPendingTilesAsync() {
@@ -584,8 +581,8 @@ public partial class MainWindow : Window {
         int tileX,
         int tileY,
         CancellationToken ct) {
-        var allowNoTileFallback = context.Source.NoTileEtags.Count > 0 || context.Source.NoTileMd5s.Count > 0;
-        var minZoom = allowNoTileFallback ? context.Service.ImageMinZoom : requestedZoom;
+        var allowLowerZoomFallback = context.Source.NoTileEtags.Count > 0 || context.Source.NoTileMd5s.Count > 0;
+        var minZoom = allowLowerZoomFallback ? context.Service.ImageMinZoom : requestedZoom;
         for (var zoom = requestedZoom; zoom >= minZoom; zoom--) {
             var shift = requestedZoom - zoom;
             var candidateX = shift == 0 ? tileX : tileX >> shift;
@@ -604,8 +601,7 @@ public partial class MainWindow : Window {
                 return new LoadedTile(source, zoom, candidateX, candidateY, zoom < requestedZoom);
             }
 
-            if (zoom == requestedZoom &&
-                (!allowNoTileFallback || context.Service.FindNoTileMarker(zoom, candidateX, candidateY) is null)) {
+            if (zoom == requestedZoom && !allowLowerZoomFallback) {
                 return null;
             }
         }
@@ -817,6 +813,25 @@ public partial class MainWindow : Window {
         if (_fallbackLayer is not null) yield return _fallbackLayer;
         if (_activeLayer is not null && !ReferenceEquals(_activeLayer, _fallbackLayer)) yield return _activeLayer;
         if (_stagingLayer is not null && !ReferenceEquals(_stagingLayer, _activeLayer)) yield return _stagingLayer;
+    }
+
+    private static bool HasUsableTileCoverage(
+        IReadOnlyList<TileLayerLoadResult> loadedLayers,
+        double viewportWidth,
+        double viewportHeight) {
+        var visibleLayers = loadedLayers
+            .Where(static result => result.Group.Opacity > 0)
+            .ToList();
+        var loadedTileCount = visibleLayers.Sum(static result => result.TileCount);
+        var requestedTileCount = visibleLayers.Sum(static result => result.RequestedTileCount);
+        if (loadedTileCount == 0 || requestedTileCount == 0) return false;
+        if (loadedTileCount >= requestedTileCount) return true;
+
+        var coverage = TileRenderLayout.GetViewportCoverage(
+            visibleLayers.SelectMany(static result => result.Group.Tiles.Select(static tile => tile.Placement)),
+            viewportWidth,
+            viewportHeight);
+        return coverage >= MinimumPromotableTileCoverage;
     }
 
     private void New_Click(object sender, RoutedEventArgs e) {
@@ -3866,7 +3881,7 @@ public partial class MainWindow : Window {
 
     private sealed record LoadedTile(BitmapSource Source, int Zoom, int X, int Y, bool IsFallback);
 
-    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount, int ExactTileCount);
+    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount, int ExactTileCount, int RequestedTileCount);
 
     private sealed record TileLayerContext(
         string LayerId,
