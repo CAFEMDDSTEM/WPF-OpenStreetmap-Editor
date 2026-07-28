@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace WPF_OpenStreetmap_Editor.Services;
@@ -76,8 +78,88 @@ public static class TileRenderLayout {
         return Math.Round(value * dpiScale, MidpointRounding.AwayFromZero) / dpiScale;
     }
 
+    public static double GetViewportCoverage(
+        IEnumerable<TilePlacement> placements,
+        double viewportWidth,
+        double viewportHeight) {
+        if (viewportWidth <= 0 || viewportHeight <= 0) return 0;
+        if (!double.IsFinite(viewportWidth) || !double.IsFinite(viewportHeight)) return 0;
+
+        var viewport = new RectRange(0, 0, viewportWidth, viewportHeight);
+        var clipped = placements
+            .Select(placement => ClipToViewport(placement, viewport))
+            .Where(static rect => rect.HasArea)
+            .ToList();
+        if (clipped.Count == 0) return 0;
+
+        var xEdges = clipped
+            .SelectMany(static rect => new[] { rect.Left, rect.Right })
+            .Distinct()
+            .Order()
+            .ToArray();
+        var coveredArea = 0.0;
+
+        for (var i = 0; i < xEdges.Length - 1; i++) {
+            var left = xEdges[i];
+            var right = xEdges[i + 1];
+            var width = right - left;
+            if (width <= 0) continue;
+
+            var yIntervals = clipped
+                .Where(rect => rect.Left < right && rect.Right > left)
+                .Select(static rect => (rect.Top, rect.Bottom))
+                .OrderBy(static interval => interval.Top)
+                .ToList();
+            coveredArea += width * GetCoveredLength(yIntervals);
+        }
+
+        return Math.Clamp(coveredArea / (viewportWidth * viewportHeight), 0.0, 1.0);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double NormalizeDpiScale(double dpiScale) {
         return double.IsFinite(dpiScale) && dpiScale > 0 ? dpiScale : 1.0;
+    }
+
+    private static RectRange ClipToViewport(TilePlacement placement, RectRange viewport) {
+        if (placement.Width <= 0 || placement.Height <= 0) return default;
+        if (!double.IsFinite(placement.Left) ||
+            !double.IsFinite(placement.Top) ||
+            !double.IsFinite(placement.Width) ||
+            !double.IsFinite(placement.Height)) {
+            return default;
+        }
+
+        return new RectRange(
+            Math.Max(placement.Left, viewport.Left),
+            Math.Max(placement.Top, viewport.Top),
+            Math.Min(placement.Left + placement.Width, viewport.Right),
+            Math.Min(placement.Top + placement.Height, viewport.Bottom));
+    }
+
+    private static double GetCoveredLength(IReadOnlyList<(double Top, double Bottom)> intervals) {
+        if (intervals.Count == 0) return 0;
+
+        var covered = 0.0;
+        var currentTop = intervals[0].Top;
+        var currentBottom = intervals[0].Bottom;
+
+        for (var i = 1; i < intervals.Count; i++) {
+            var (top, bottom) = intervals[i];
+            if (top <= currentBottom) {
+                currentBottom = Math.Max(currentBottom, bottom);
+                continue;
+            }
+
+            covered += currentBottom - currentTop;
+            currentTop = top;
+            currentBottom = bottom;
+        }
+
+        return covered + currentBottom - currentTop;
+    }
+
+    private readonly record struct RectRange(double Left, double Top, double Right, double Bottom) {
+        public bool HasArea => Right > Left && Bottom > Top;
     }
 }

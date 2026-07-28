@@ -102,6 +102,28 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void RemoveFeaturesCommand_UndoRestoresFeaturesToOriginalDataLayer() {
+        var baseFeature = CreatePoint("base", 1);
+        var overlayFeature = CreatePoint("overlay", 2);
+        var document = new MapDocument();
+        document.Features.Add(baseFeature);
+        var overlay = new MapDataLayer { Name = "overlay.geojson" };
+        overlay.Features.Add(overlayFeature);
+        document.AddDataLayer(overlay);
+        document.MarkClean();
+        var editor = new EditorSession();
+        editor.ReplaceDocument(document);
+
+        Assert.True(editor.Execute(new RemoveFeaturesCommand([overlayFeature])));
+        Assert.Empty(overlay.Features);
+
+        Assert.True(editor.Undo());
+        Assert.Equal(["base"], document.Features.Select(static feature => feature.Id));
+        Assert.Equal(["overlay"], overlay.Features.Select(static feature => feature.Id));
+        Assert.False(document.IsDirty);
+    }
+
+    [Fact]
     public void SetFeatureHiddenCommand_UndoRestoresVisibilityWithoutDirtyingDocument() {
         var feature = CreatePoint("feature", 1);
         var document = new MapDocument();
