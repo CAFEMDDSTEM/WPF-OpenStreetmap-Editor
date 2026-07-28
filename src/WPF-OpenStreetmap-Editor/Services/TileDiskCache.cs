@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
+/// <summary>磁盘瓦片缓存维护：按文件过期时间和总字节数进行 LRU 清理</summary>
 public static class TileDiskCache {
-    public const long DefaultMaxBytes = 1024L * 1024 * 1024;
-    public static readonly TimeSpan DefaultMaxAge = TimeSpan.FromDays(30);
-    private static readonly TimeSpan MaintenanceInterval = TimeSpan.FromMinutes(10);
-    private static long _nextMaintenanceUtcTicks;
+    public const long DefaultMaxBytes = 1024L * 1024 * 1024;    // 默认 1GB
+    public static readonly TimeSpan DefaultMaxAge = TimeSpan.FromDays(30); // 默认 30 天过期
+    private static readonly TimeSpan MaintenanceInterval = TimeSpan.FromMinutes(10); // 两次维护最小间隔
+    private static long _nextMaintenanceUtcTicks; // 下次维护时间（用于限频）
 
+    /// <summary>计划维护：至少间隔 10 分钟才执行一次，后台异步执行 Trim</summary>
     public static void ScheduleMaintenance(string cacheRoot) {
         var now = DateTime.UtcNow;
         var nextTicks = Volatile.Read(ref _nextMaintenanceUtcTicks);
@@ -24,6 +26,10 @@ public static class TileDiskCache {
         _ = Task.Run(() => Trim(cacheRoot, DefaultMaxBytes, DefaultMaxAge, now));
     }
 
+    /// <summary>
+    /// 清理缓存：1) 删除超过 maxAge 的文件；2) 按最后写入时间从旧到新删除，
+    /// 直到总字节小于 maxBytes；3) 清理空目录。
+    /// </summary>
     public static void Trim(string cacheRoot, long maxBytes, TimeSpan maxAge, DateTime? nowUtc = null) {
         if (maxBytes < 0) throw new ArgumentOutOfRangeException(nameof(maxBytes));
         if (maxAge < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(maxAge));
