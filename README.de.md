@@ -6,18 +6,18 @@ WOSM steht für WPF OpenStreetMap Editor und ist ein in C# / WPF geschriebener O
 
 Die aktuelle Anwendung kann OpenStreetMap-kompatible Kachel-Layer laden, gängige Vektorkartenformate importieren, Kartenobjekte anzeigen und bearbeiten sowie wiederverwendbare Bildquellen, Designs und Plugins verwalten.
 
-> Projektstatus: frühe Alpha. WOSM v0.2.0-alpha.1 ergänzt eine Benutzeroberfläche in fünf Sprachen, projektionsbewusste Importe, BetterID AI-Unterstützung für OSM-Änderungssatzkommentare und Verbesserungen am OSM-Bearbeitungsworkflow. Rechne mit rauen Kanten und prüfe alle OpenStreetMap-Uploads vor dem Senden.
+> Projektstatus: Beta-Test. WOSM v0.2.0-beta.1 ergänzt eine Benutzeroberfläche in fünf Sprachen, projektionsbewusste Importe, BetterID AI-Unterstützung für OSM-Änderungssatzkommentare und Verbesserungen am OSM-Bearbeitungsworkflow. Rechne mit rauen Kanten und prüfe alle OpenStreetMap-Uploads vor dem Senden.
 
 ## Release
 
-Die aktuelle Alpha-Version ist als selbstständiges Windows-x64-Paket verfügbar:
+Die aktuelle Beta-Testversion ist als selbstständiges Windows-x64-Paket verfügbar:
 
-[WOSM v0.2.0-alpha.1 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/WOSM-v0.2.0-alpha.1-win-x64.zip)
+[WOSM v0.2.0-beta.1 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/WOSM-v0.2.0-beta.1-win-x64.zip)
 
-Prüfe die ZIP-Datei gegen [`SHA256SUMS-v0.2.0-alpha.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/SHA256SUMS-v0.2.0-alpha.1.txt), bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
+Prüfe die ZIP-Datei gegen [`SHA256SUMS-v0.2.0-beta.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/SHA256SUMS-v0.2.0-beta.1.txt), bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.0-alpha.1-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.0-beta.1-win-x64.zip -Algorithm SHA256
 ```
 
 Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`. Dieselbe ausführbare Datei unterstützt auch Befehle für Datenworkflows wie `help`, `import`, `convert`, `download`, `changeset` und `upload`. Dieser Build ist nicht signiert, daher kann Windows eine SmartScreen-Warnung anzeigen. Reproduzierbare Probleme bitte über [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) melden.

@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.2.0-beta.1"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore WPF-OpenStreetmap-Editor.slnx
+
+      - name: Test
+        run: dotnet test WPF-OpenStreetmap-Editor.slnx --configuration Release --no-restore
+
+      - name: Publish Windows x64 package
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
+          if ([string]::IsNullOrWhiteSpace($tag) -or $tag -notlike "v*") {
+            throw "Release workflow must run from a v* tag."
+          }
+
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
+          $publishDir = Join-Path $releaseRoot "WOSM-$tag-win-x64"
+          $zipPath = Join-Path $releaseRoot "WOSM-$tag-win-x64.zip"
+          $sumPath = Join-Path $releaseRoot "SHA256SUMS-$tag.txt"
+          New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
+
+          dotnet publish ./src/WPF-OpenStreetmap-Editor/WPF-OpenStreetmap-Editor.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -o $publishDir
+
+          Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipName = Split-Path -Leaf $zipPath
+          Set-Content -LiteralPath $sumPath -Value "$hash  $zipName" -Encoding ascii
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
+          $zipPath = Join-Path $releaseRoot "WOSM-$tag-win-x64.zip"
+          $sumPath = Join-Path $releaseRoot "SHA256SUMS-$tag.txt"
+          $prerelease = @()
+          if ($tag -match "-") {
+            $prerelease = @("--prerelease")
+          }
+
+          gh release create $tag `
+            $zipPath `
+            $sumPath `
+            --repo "${{ github.repository }}" `
+            --title "WOSM $tag" `
+            --generate-notes `
+            @prerelease

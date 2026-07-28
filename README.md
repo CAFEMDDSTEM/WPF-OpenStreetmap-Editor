@@ -21,18 +21,18 @@ WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. It
 
 The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
 
-> Project status: early alpha. WOSM v0.2.0-alpha.1 adds five-language UI localization, projection-aware imports, BetterID AI-assisted OSM comments, and OSM editing workflow refinements. Expect rough edges and review all OpenStreetMap uploads before sending them.
+> Project status: beta. WOSM v0.2.0-beta.1 adds five-language UI localization, projection-aware imports, BetterID AI-assisted OSM comments, and OSM editing workflow refinements. Expect rough edges and review all OpenStreetMap uploads before sending them.
 
 ## Release
 
-The latest alpha WOSM release is available as a Windows x64 self-contained package:
+The latest beta WOSM release is available as a Windows x64 self-contained package:
 
-[Download WOSM v0.2.0-alpha.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/WOSM-v0.2.0-alpha.1-win-x64.zip)
+[Download WOSM v0.2.0-beta.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/WOSM-v0.2.0-beta.1-win-x64.zip)
 
-Verify the ZIP against [`SHA256SUMS-v0.2.0-alpha.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-alpha.1/SHA256SUMS-v0.2.0-alpha.1.txt) before signing in to OpenStreetMap or uploading changes:
+Verify the ZIP against [`SHA256SUMS-v0.2.0-beta.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/SHA256SUMS-v0.2.0-beta.1.txt) before signing in to OpenStreetMap or uploading changes:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.0-alpha.1-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.0-beta.1-win-x64.zip -Algorithm SHA256
 ```
 
 Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`. The same executable also accepts command-line data workflow commands such as `help`, `import`, `convert`, `download`, `changeset`, and `upload`. This build is unsigned, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
