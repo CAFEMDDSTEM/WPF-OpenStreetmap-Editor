@@ -129,6 +129,37 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task WriteSnapshotAsync_GeoJsonDoesNotMarkDocumentClean() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "autosave.geojson");
+        try {
+            var document = new MapDocument { IsDirty = true };
+            document.Features.Add(new MapFeature {
+                Id = "point-1",
+                GeometryType = MapGeometryType.Point,
+                Parts = [[new GeoPoint(10, 20)]]
+            });
+
+            await SpatialDataService.WriteSnapshotAsync(document, path);
+
+            Assert.True(document.IsDirty);
+            Assert.Null(document.SourcePath);
+            Assert.True(File.Exists(path));
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public void DocumentBackupService_CreatesKeepBackupPathWithTrailingTilde() {
+        var path = Path.Combine("C:\\maps", "survey.osm");
+
+        var backupPath = DocumentBackupService.CreateKeepBackupPath(path);
+
+        Assert.EndsWith("survey.osm~", backupPath, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SaveAsync_OsmXmlReusesOriginalWayNodesAfterInsertedPoint() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "saved.osm");

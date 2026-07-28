@@ -10,6 +10,7 @@ namespace WPF_OpenStreetmap_Editor.Views;
 public enum SettingsSection {
     Appearance,
     Data,
+    GpsPoints,
     Sources
 }
 
@@ -36,6 +37,8 @@ public partial class SettingsWindow : Window {
         ThemeService.ApplyWindowTheme(this);
         SettingsTabControl.SelectedItem = initialSection == SettingsSection.Sources
             ? SourcesTabItem
+            : initialSection == SettingsSection.GpsPoints
+                ? GpsTabItem
             : initialSection == SettingsSection.Data
                 ? DataTabItem
                 : AppearanceTabItem;
@@ -54,7 +57,9 @@ public partial class SettingsWindow : Window {
         ThemeComboBox.ItemsSource = _themes;
         ExperimentalSmoothZoomCheckBox.IsChecked = _workingSettings.ExperimentalSmoothZoom;
         LoadTileCacheFields();
+        LoadBackupFields();
         LoadProjectionFields();
+        LoadGpsFields();
         LoadThemes(_workingSettings.ThemeId);
         LoadLanguages(_workingSettings.LanguageId);
 
@@ -191,6 +196,8 @@ public partial class SettingsWindow : Window {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
         if (!SaveProjectionFields()) return;
         if (!SaveTileCacheFields()) return;
+        if (!SaveBackupFields()) return;
+        if (!SaveGpsFields()) return;
 
         _workingSettings.ThemeId = (ThemeComboBox.SelectedItem as ThemeDefinition)?.Id ?? ThemeService.SystemThemeId;
         _workingSettings.LanguageId = (LanguageComboBox.SelectedItem as LanguageOption)?.Id ?? LocalizationService.SystemLanguageId;
@@ -352,6 +359,145 @@ public partial class SettingsWindow : Window {
         return true;
     }
 
+    private void LoadBackupFields() {
+        AutosaveEnabledCheckBox.IsChecked = _workingSettings.AutosaveEnabled;
+        AutosaveIntervalSecondsTextBox.Text = _workingSettings.AutosaveIntervalSeconds.ToString(CultureInfo.InvariantCulture);
+        AutosaveFilesPerLayerTextBox.Text = _workingSettings.AutosaveFilesPerLayer.ToString(CultureInfo.InvariantCulture);
+        KeepBackupFileOnSaveCheckBox.IsChecked = _workingSettings.KeepBackupFileOnSave;
+        NotifyOnEverySaveCheckBox.IsChecked = _workingSettings.NotifyOnEverySave;
+    }
+
+    private bool SaveBackupFields() {
+        if (!TryReadIntInRange(
+                AutosaveIntervalSecondsTextBox.Text,
+                AppSettings.MinAutosaveIntervalSeconds,
+                AppSettings.MaxAutosaveIntervalSeconds,
+                out var intervalSeconds)) {
+            MessageBox.Show(
+                L.Format(
+                    "Settings.AutosaveIntervalRange",
+                    AppSettings.MinAutosaveIntervalSeconds,
+                    AppSettings.MaxAutosaveIntervalSeconds),
+                L.GetString("Settings.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!TryReadIntInRange(
+                AutosaveFilesPerLayerTextBox.Text,
+                AppSettings.MinAutosaveFilesPerLayer,
+                AppSettings.MaxAutosaveFilesPerLayer,
+                out var filesPerLayer)) {
+            MessageBox.Show(
+                L.Format(
+                    "Settings.AutosaveFilesPerLayerRange",
+                    AppSettings.MinAutosaveFilesPerLayer,
+                    AppSettings.MaxAutosaveFilesPerLayer),
+                L.GetString("Settings.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        _workingSettings.AutosaveEnabled = AutosaveEnabledCheckBox.IsChecked == true;
+        _workingSettings.AutosaveIntervalSeconds = intervalSeconds;
+        _workingSettings.AutosaveFilesPerLayer = filesPerLayer;
+        _workingSettings.KeepBackupFileOnSave = KeepBackupFileOnSaveCheckBox.IsChecked == true;
+        _workingSettings.NotifyOnEverySave = NotifyOnEverySaveCheckBox.IsChecked == true;
+        return true;
+    }
+
+    private void LoadGpsFields() {
+        GpsDrawLinesBetweenPointsCheckBox.IsChecked = _workingSettings.GpsDrawLinesBetweenPoints;
+        GpsLineMinimumDistanceTextBox.Text = _workingSettings.GpsLineMinimumDistancePixels.ToString(CultureInfo.InvariantCulture);
+        GpsDrawLargePointsCheckBox.IsChecked = _workingSettings.GpsDrawLargeGpsPoints;
+        GpsTrackDrawingWidthTextBox.Text = _workingSettings.GpsTrackDrawingWidth.ToString("R", CultureInfo.InvariantCulture);
+
+        GpsSingleColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.SingleColor;
+        GpsSpeedColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.Speed;
+        GpsFixedValueColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.FixedValue;
+        GpsReferenceIdColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.ReferenceId;
+        GpsTimestampColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.Timestamp;
+        GpsHeatmapColorRadioButton.IsChecked = _workingSettings.GpsTrackColorMode == GpsTrackColorMode.Heatmap;
+
+        SelectComboBoxItemByTag(GpsSpeedProfileComboBox, _workingSettings.GpsSpeedProfile);
+        SelectComboBoxItemByTag(GpsHeatmapBlendModeComboBox, _workingSettings.GpsHeatmapBlendMode.ToString());
+        GpsHeatmapOverlayAdjustmentSlider.Value = _workingSettings.GpsHeatmapOverlayAdjustment;
+        GpsHeatmapUseTargetColorCheckBox.IsChecked = _workingSettings.GpsHeatmapUseTargetColor;
+        UpdateGpsOptionAvailability();
+    }
+
+    private bool SaveGpsFields() {
+        if (!int.TryParse(GpsLineMinimumDistanceTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var minimumDistance) &&
+            !int.TryParse(GpsLineMinimumDistanceTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out minimumDistance)) {
+            MessageBox.Show(L.GetString("Settings.GpsLineMinimumDistanceRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!TryReadDouble(GpsTrackDrawingWidthTextBox.Text, out var drawingWidth)) {
+            MessageBox.Show(L.GetString("Settings.GpsTrackDrawingWidthRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (minimumDistance < 0 || drawingWidth < 0) {
+            MessageBox.Show(L.GetString("Settings.GpsNonNegativeRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        _workingSettings.GpsDrawLinesBetweenPoints = GpsDrawLinesBetweenPointsCheckBox.IsChecked == true;
+        _workingSettings.GpsLineMinimumDistancePixels = minimumDistance;
+        _workingSettings.GpsDrawLargeGpsPoints = GpsDrawLargePointsCheckBox.IsChecked == true;
+        _workingSettings.GpsTrackDrawingWidth = drawingWidth;
+        _workingSettings.GpsTrackColorMode = GetSelectedGpsTrackColorMode();
+        _workingSettings.GpsSpeedProfile = GetSelectedComboBoxTag(GpsSpeedProfileComboBox) ?? "Car";
+        _workingSettings.GpsHeatmapBlendMode = Enum.TryParse<GpsHeatmapBlendMode>(GetSelectedComboBoxTag(GpsHeatmapBlendModeComboBox), out var blendMode)
+            ? blendMode
+            : GpsHeatmapBlendMode.Normal;
+        _workingSettings.GpsHeatmapOverlayAdjustment = GpsHeatmapOverlayAdjustmentSlider.Value;
+        _workingSettings.GpsHeatmapUseTargetColor = GpsHeatmapUseTargetColorCheckBox.IsChecked == true;
+        return true;
+    }
+
+    private void GpsTrackColorModeRadioButton_Checked(object sender, RoutedEventArgs e) {
+        UpdateGpsOptionAvailability();
+    }
+
+    private void UpdateGpsOptionAvailability() {
+        var isSpeed = GpsSpeedColorRadioButton.IsChecked == true;
+        var isHeatmap = GpsHeatmapColorRadioButton.IsChecked == true;
+        GpsSpeedProfileComboBox.IsEnabled = isSpeed;
+        GpsHeatmapBlendModeComboBox.IsEnabled = isHeatmap;
+        GpsHeatmapOverlayAdjustmentSlider.IsEnabled = isHeatmap;
+        GpsHeatmapUseTargetColorCheckBox.IsEnabled = isHeatmap;
+    }
+
+    private GpsTrackColorMode GetSelectedGpsTrackColorMode() {
+        if (GpsSpeedColorRadioButton.IsChecked == true) return GpsTrackColorMode.Speed;
+        if (GpsFixedValueColorRadioButton.IsChecked == true) return GpsTrackColorMode.FixedValue;
+        if (GpsReferenceIdColorRadioButton.IsChecked == true) return GpsTrackColorMode.ReferenceId;
+        if (GpsTimestampColorRadioButton.IsChecked == true) return GpsTrackColorMode.Timestamp;
+        if (GpsHeatmapColorRadioButton.IsChecked == true) return GpsTrackColorMode.Heatmap;
+        return GpsTrackColorMode.SingleColor;
+    }
+
+    private static void SelectComboBoxItemByTag(System.Windows.Controls.ComboBox comboBox, string tag) {
+        foreach (System.Windows.Controls.ComboBoxItem item in comboBox.Items) {
+            if (string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase)) {
+                comboBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        if (comboBox.Items.Count > 0) {
+            comboBox.SelectedItem = comboBox.Items[0];
+        }
+    }
+
+    private static string? GetSelectedComboBoxTag(System.Windows.Controls.ComboBox comboBox) {
+        return (comboBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag?.ToString();
+    }
+
     private void LoadSourceFields(TileSourcePreset? source) {
         _loadingFields = true;
         try {
@@ -461,6 +607,18 @@ public partial class SettingsWindow : Window {
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
                 out value);
+    }
+
+    private static bool TryReadIntInRange(string text, int min, int max, out int value) {
+        if ((!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out value) &&
+                !int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value)) ||
+            value < min ||
+            value > max) {
+            value = min;
+            return false;
+        }
+
+        return true;
     }
 
     private static List<string> SplitSignatures(string text) {

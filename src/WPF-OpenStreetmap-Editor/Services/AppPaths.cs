@@ -30,6 +30,8 @@ public static class AppPaths {
 
     public static string OsmAccountsFile => Combine(DataDirectory, "osm.accounts.json");
 
+    public static string DocumentBackupsDirectory => Combine(DataDirectory, "Backups");
+
     public static string LegacyLayersFile => Combine(BaseDirectory, "layers.json");
 
     public static string LegacySettingsFile => Combine(BaseDirectory, "settings.json");

@@ -56,6 +56,15 @@ public static class SpatialDataService {
     public static Task SaveAsync(MapDocument document, string path, CancellationToken ct = default) {
         var fullPath = Path.GetFullPath(path);
         var format = DetectFormat(fullPath);
+        return WriteAsync(document, fullPath, format, markSaved: true, ct);
+    }
+
+    private static Task WriteAsync(
+        MapDocument document,
+        string fullPath,
+        SpatialFileFormat format,
+        bool markSaved,
+        CancellationToken ct) {
         return Task.Run(() => {
             ct.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -79,11 +88,20 @@ public static class SpatialDataService {
                     throw new NotSupportedException("PBF、Shapefile 和 KMZ 当前只支持导入；请另存为 GeoJSON、OSM、GPX、KML 或 GML。");
             }
 
-            document.SourcePath = fullPath;
-            document.SourceFormat = format;
-            document.Name = Path.GetFileName(fullPath);
-            document.MarkSaved();
+            if (markSaved) {
+                document.SourcePath = fullPath;
+                document.SourceFormat = format;
+                document.Name = Path.GetFileName(fullPath);
+                document.MarkSaved();
+            }
         }, ct);
+    }
+
+    public static Task WriteSnapshotAsync(MapDocument document, string path, CancellationToken ct = default) {
+        var fullPath = Path.GetFullPath(path);
+        var format = DetectFormat(fullPath);
+        var snapshot = format == SpatialFileFormat.OsmXml ? document.CreateOsmProjection() : document;
+        return WriteAsync(snapshot, fullPath, format, markSaved: false, ct);
     }
 
     public static SpatialFileFormat DetectFormat(string path) {

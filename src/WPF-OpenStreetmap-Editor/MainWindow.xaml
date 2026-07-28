@@ -67,6 +67,7 @@
             </MenuItem>
             <MenuItem x:Name="ToolsMenuItem" Header="{services:Loc Main.Menu.Tools}">
                 <MenuItem Header="{services:Loc Main.Menu.Layers}" Click="Layer_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.DataValidator}" Click="DataValidator_Click" />
                 <MenuItem Header="{services:Loc Common.Settings}" Click="Settings_Click" />
                 <Separator x:Name="PluginContributionsSeparator" Visibility="Collapsed" />
                 <MenuItem Header="{services:Loc Main.Menu.Plugins}" Click="Plugins_Click" />

@@ -47,6 +47,7 @@
     <sys:String x:Key="Main.Menu.Project">專案</sys:String>
     <sys:String x:Key="Main.Menu.Tools">工具</sys:String>
     <sys:String x:Key="Main.Menu.Layers">圖層</sys:String>
+    <sys:String x:Key="Main.Menu.DataValidator">&#36039;&#26009;&#27298;&#39511;&#22120;...</sys:String>
     <sys:String x:Key="Main.Menu.Plugins">外掛程式...</sys:String>
     <sys:String x:Key="Main.Menu.Window">視窗</sys:String>
     <sys:String x:Key="Main.Menu.Help">說明(_H)</sys:String>
@@ -142,6 +143,30 @@
 
     <sys:String x:Key="Settings.Title">設定</sys:String>
     <sys:String x:Key="Settings.Appearance">外觀</sys:String>
+    <sys:String x:Key="Settings.GpsPoints">GPS points</sys:String>
+    <sys:String x:Key="Settings.GpsPointsDescription">Settings that control GPS track drawing.</sys:String>
+    <sys:String x:Key="Settings.GpsDrawLinesBetweenPoints">Draw lines between raw GPS points</sys:String>
+    <sys:String x:Key="Settings.GpsLineMinimumDistancePixels">Minimum distance (pixels)</sys:String>
+    <sys:String x:Key="Settings.GpsDrawLargePoints">Draw large GPS points</sys:String>
+    <sys:String x:Key="Settings.GpxTrackDrawingWidth">GPX track drawing width</sys:String>
+    <sys:String x:Key="Settings.GpsTrackPointColors">Track and point colors</sys:String>
+    <sys:String x:Key="Settings.GpsColorSingle">Single color (can be customized in the layer manager)</sys:String>
+    <sys:String x:Key="Settings.GpsColorSpeed">Speed (red = slow, green = fast)</sys:String>
+    <sys:String x:Key="Settings.GpsSpeedProfileCar">Car</sys:String>
+    <sys:String x:Key="Settings.GpsSpeedProfileBicycle">Bicycle</sys:String>
+    <sys:String x:Key="Settings.GpsSpeedProfileWalk">Walk</sys:String>
+    <sys:String x:Key="Settings.GpsColorFixedValue">GPS fixed value</sys:String>
+    <sys:String x:Key="Settings.GpsColorReferenceId">GPS reference ID</sys:String>
+    <sys:String x:Key="Settings.GpsColorTimestamp">Track timestamp</sys:String>
+    <sys:String x:Key="Settings.GpsColorHeatmap">Heatmap (dark = few, bright = many)</sys:String>
+    <sys:String x:Key="Settings.GpsHeatmapBlendNormal">Normal</sys:String>
+    <sys:String x:Key="Settings.GpsHeatmapBlendAdditive">Additive</sys:String>
+    <sys:String x:Key="Settings.GpsHeatmapBlendMultiply">Multiply</sys:String>
+    <sys:String x:Key="Settings.GpsHeatmapOverlayAdjustment">Overlay adjustment</sys:String>
+    <sys:String x:Key="Settings.GpsHeatmapUseTargetColor">Use target color in heatmap</sys:String>
+    <sys:String x:Key="Settings.GpsLineMinimumDistanceRequired">Enter an integer minimum distance for GPS lines.</sys:String>
+    <sys:String x:Key="Settings.GpsTrackDrawingWidthRequired">Enter a numeric GPX track drawing width.</sys:String>
+    <sys:String x:Key="Settings.GpsNonNegativeRequired">GPS distances and widths cannot be negative.</sys:String>
     <sys:String x:Key="Settings.Theme">佈景主題</sys:String>
     <sys:String x:Key="Settings.InterfaceTheme">應用程式佈景主題</sys:String>
     <sys:String x:Key="Settings.InterfaceLanguage">應用程式語言</sys:String>
@@ -173,6 +198,46 @@
     <sys:String x:Key="Settings.SourceSafetyBaidu">百度影像使用百度座標系（通常為 BD-09），WOSM 不支援這種座標系。</sys:String>
     <sys:String x:Key="Settings.SourceSafetyGcj02">此影像源通常使用火星座標系（GCJ-02），WOSM 不支援這種座標系。</sys:String>
     <sys:String x:Key="Settings.SourceSafetyProprietary">這是常見受限的專有地圖來源。除非已取得明確授權並保持署名正確，否則不要用於 OSM 編輯。</sys:String>
+
+    <sys:String x:Key="DataValidator.Title">&#36039;&#26009;&#27298;&#39511;&#22120;</sys:String>
+    <sys:String x:Key="DataValidator.Description">OSM &#36039;&#26009;&#27298;&#39511;&#22120;&#65292;&#33021;&#22816;&#27298;&#26597;&#20351;&#29992;&#32773;&#33287;&#32232;&#36655;&#22120;&#31243;&#24335;&#36896;&#25104;&#30340;&#19968;&#33324;&#24615;&#37679;&#35492;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.TestTab">&#28204;&#35430;</sys:String>
+    <sys:String x:Key="DataValidator.TagCheckerRulesTab">&#27161;&#31844;&#27298;&#26597;&#22120;&#35215;&#21063;</sys:String>
+    <sys:String x:Key="DataValidator.UseIgnoreList">&#20351;&#29992;&#24573;&#30053;&#28165;&#21934;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.UseErrorLayer">&#20351;&#29992;&#37679;&#35492;&#22294;&#23652;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.ShowInformationLevel">&#39023;&#31034;&#36039;&#35338;&#23652;&#32026;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.ShowInformationLevelOnUpload">&#19978;&#20659;&#26178;&#39023;&#31034;&#36039;&#35338;&#23652;&#32026;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.RunWhenEditing">&#22519;&#34892;&#21629;&#20196;&#26178;</sys:String>
+    <sys:String x:Key="DataValidator.RunWhenUploading">&#19978;&#20659;&#26178;</sys:String>
+    <sys:String x:Key="DataValidator.UploadOptionFormat">&#19978;&#20659;&#26178;&#22519;&#34892;&#12300;{0}&#12301;</sys:String>
+    <sys:String x:Key="DataValidator.TagCheckerRulesPlaceholder"># &#21487;&#22312;&#36889;&#35041;&#32173;&#35703;&#27161;&#31844;&#27298;&#26597;&#22120;&#35215;&#21063;&#12290;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.Addresses">&#22320;&#22336;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.IncludePoiInDuplicateAddressChecks">&#22312;&#37325;&#35079;&#22320;&#22336;&#27298;&#26597;&#20013;&#21253;&#25324;&#35373;&#26045;&#12289;&#36774;&#20844;&#23460;&#21644;&#24314;&#31689;&#29289;&#31561; POI</sys:String>
+    <sys:String x:Key="DataValidator.Rule.ApiCapabilities">API &#21151;&#33021;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.BarriersAndEntrances">&#38556;&#31001;&#21644;&#20837;&#21475;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.Coastlines">&#28023;&#23736;&#32218;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.ConditionalKeys">&#26781;&#20214;&#37749;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.ConnectivityRelations">&#36899;&#25509;&#24615;&#38364;&#20418;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.CrossingBoundaries">&#37002;&#30028;&#20132;&#21449;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.CrossingSelf">&#33258;&#20132;&#36335;&#24465;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.CrossingWays">&#36335;&#24465;&#20132;&#21449;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.CycleDetector">&#24490;&#29872;&#27298;&#28204;&#22120;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.DirectionNodes">&#26041;&#21521;&#31680;&#40670;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.DuplicateNodes">&#37325;&#35079;&#30340;&#31680;&#40670;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.DuplicateRelations">&#37325;&#35079;&#30340;&#38364;&#20418;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.DuplicateWays">&#37325;&#35079;&#30340;&#36335;&#24465;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.DuplicateWayNodes">&#37325;&#35079;&#30340;&#36335;&#24465;&#31680;&#40670;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.Highways">&#20844;&#36335;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.InnerMultipolygons">&#20839;&#37096;&#22810;&#37002;&#24418;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.LaneAttributes">&#36554;&#36947;&#23660;&#24615;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.TagChecker">&#27161;&#31844;&#27298;&#26597;&#22120;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.MissingName">&#32570;&#23569;&#21517;&#31281;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.Multipolygon">&#22810;&#37002;&#24418;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.PublicTransportRoute">&#20844;&#20849;&#20132;&#36890;&#36335;&#32218;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.RelationChecker">&#38364;&#20418;&#27298;&#26597;&#22120;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.RoadIntersections">&#36947;&#36335;&#20132;&#21449;&#21475;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.UnconnectedWays">&#26410;&#36899;&#25509;&#36335;&#24465;</sys:String>
+    <sys:String x:Key="DataValidator.Rule.Waterways">&#27700;&#36335;</sys:String>
 
     <sys:String x:Key="Plugins.Title">外掛程式</sys:String>
     <sys:String x:Key="Plugins.Install">安裝...</sys:String>
@@ -430,4 +495,16 @@
     <sys:String x:Key="Settings.TileCacheDays">快取天數</sys:String>
     <sys:String x:Key="Settings.TileStorageHelp">更順手模式會保留更多已解碼圖磚，並預先載入附近的非志願圖源。更省記憶體模式使用較小的記憶體快取並關閉預取。磁碟快取會依設定天數清理。</sys:String>
     <sys:String x:Key="Settings.TileCacheDaysRange">快取天數必須是 {0} 到 {1} 之間的整數。</sys:String>
+    <sys:String x:Key="Settings.FileBackup">檔案備份</sys:String>
+    <sys:String x:Key="Settings.EnableAutosave">啟用自動儲存</sys:String>
+    <sys:String x:Key="Settings.AutosaveIntervalSeconds">自動儲存時間間隔（秒）</sys:String>
+    <sys:String x:Key="Settings.AutosaveFilesPerLayer">每個圖層的自動儲存檔案數</sys:String>
+    <sys:String x:Key="Settings.AutosaveHelp">自動儲存會定期將未儲存的地圖變更寫入 WOSM 的本機備份資料夾。</sys:String>
+    <sys:String x:Key="Settings.KeepBackupFileOnSave">儲存資料時保留備份檔案</sys:String>
+    <sys:String x:Key="Settings.KeepBackupHelp">儲存資料時，WOSM 會在同一資料夾保留原檔案副本，並在檔名末尾加上「~」。</sys:String>
+    <sys:String x:Key="Settings.NotifyOnEverySave">每次儲存時通知</sys:String>
+    <sys:String x:Key="Settings.AutosaveIntervalRange">自動儲存時間間隔必須是 {0} 到 {1} 秒之間的整數。</sys:String>
+    <sys:String x:Key="Settings.AutosaveFilesPerLayerRange">每個圖層的自動儲存檔案數必須是 {0} 到 {1} 之間的整數。</sys:String>
+    <sys:String x:Key="Main.Status.Autosaved">已自動儲存 {0}。</sys:String>
+    <sys:String x:Key="Main.Status.AutosaveFailed">自動儲存失敗：{0}</sys:String>
 </ResourceDictionary>

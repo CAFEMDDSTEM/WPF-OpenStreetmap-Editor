@@ -13,10 +13,31 @@ public enum TilePerformanceMode {
     Responsive
 }
 
+public enum GpsTrackColorMode {
+    SingleColor,
+    Speed,
+    FixedValue,
+    ReferenceId,
+    Timestamp,
+    Heatmap
+}
+
+public enum GpsHeatmapBlendMode {
+    Normal,
+    Additive,
+    Multiply
+}
+
 public sealed class AppSettings {
     public const int DefaultTileCacheMaxAgeDays = 30;
     public const int MinTileCacheMaxAgeDays = 1;
     public const int MaxTileCacheMaxAgeDays = 3650;
+    public const int DefaultAutosaveIntervalSeconds = 300;
+    public const int MinAutosaveIntervalSeconds = 10;
+    public const int MaxAutosaveIntervalSeconds = 86400;
+    public const int DefaultAutosaveFilesPerLayer = 1;
+    public const int MinAutosaveFilesPerLayer = 1;
+    public const int MaxAutosaveFilesPerLayer = 100;
 
     public string ThemeId { get; set; } = ThemeService.SystemThemeId;
     public string LanguageId { get; set; } = LocalizationService.SystemLanguageId;
@@ -32,7 +53,21 @@ public sealed class AppSettings {
     public string CustomDisplayAlignmentProjectionWkt { get; set; } = "";
     public double DisplayAlignmentOffsetX { get; set; }
     public double DisplayAlignmentOffsetY { get; set; }
+    public bool GpsDrawLinesBetweenPoints { get; set; }
+    public int GpsLineMinimumDistancePixels { get; set; } = 40;
+    public bool GpsDrawLargeGpsPoints { get; set; }
+    public double GpsTrackDrawingWidth { get; set; }
+    public GpsTrackColorMode GpsTrackColorMode { get; set; } = GpsTrackColorMode.SingleColor;
+    public string GpsSpeedProfile { get; set; } = "Car";
+    public GpsHeatmapBlendMode GpsHeatmapBlendMode { get; set; } = GpsHeatmapBlendMode.Normal;
+    public double GpsHeatmapOverlayAdjustment { get; set; }
+    public bool GpsHeatmapUseTargetColor { get; set; }
     public bool ShowThirdPartyIcons { get; set; } = true;
+    public bool AutosaveEnabled { get; set; } = true;
+    public int AutosaveIntervalSeconds { get; set; } = DefaultAutosaveIntervalSeconds;
+    public int AutosaveFilesPerLayer { get; set; } = DefaultAutosaveFilesPerLayer;
+    public bool KeepBackupFileOnSave { get; set; }
+    public bool NotifyOnEverySave { get; set; }
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
 
@@ -72,7 +107,21 @@ public sealed class AppSettings {
             CustomDisplayAlignmentProjectionWkt = CustomDisplayAlignmentProjectionWkt,
             DisplayAlignmentOffsetX = DisplayAlignmentOffsetX,
             DisplayAlignmentOffsetY = DisplayAlignmentOffsetY,
+            GpsDrawLinesBetweenPoints = GpsDrawLinesBetweenPoints,
+            GpsLineMinimumDistancePixels = GpsLineMinimumDistancePixels,
+            GpsDrawLargeGpsPoints = GpsDrawLargeGpsPoints,
+            GpsTrackDrawingWidth = GpsTrackDrawingWidth,
+            GpsTrackColorMode = GpsTrackColorMode,
+            GpsSpeedProfile = GpsSpeedProfile,
+            GpsHeatmapBlendMode = GpsHeatmapBlendMode,
+            GpsHeatmapOverlayAdjustment = GpsHeatmapOverlayAdjustment,
+            GpsHeatmapUseTargetColor = GpsHeatmapUseTargetColor,
             ShowThirdPartyIcons = ShowThirdPartyIcons,
+            AutosaveEnabled = AutosaveEnabled,
+            AutosaveIntervalSeconds = AutosaveIntervalSeconds,
+            AutosaveFilesPerLayer = AutosaveFilesPerLayer,
+            KeepBackupFileOnSave = KeepBackupFileOnSave,
+            NotifyOnEverySave = NotifyOnEverySave,
             TileSources = [.. TileSources.Select(static source => source.Clone())],
             ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())]
         };
@@ -287,6 +336,20 @@ public static class AppSettingsService {
         settings.CustomDisplayAlignmentProjectionWkt = settings.CustomDisplayAlignmentProjectionWkt?.Trim() ?? "";
         if (!double.IsFinite(settings.DisplayAlignmentOffsetX)) settings.DisplayAlignmentOffsetX = 0;
         if (!double.IsFinite(settings.DisplayAlignmentOffsetY)) settings.DisplayAlignmentOffsetY = 0;
+        settings.GpsLineMinimumDistancePixels = Math.Clamp(settings.GpsLineMinimumDistancePixels, 0, 10000);
+        if (!double.IsFinite(settings.GpsTrackDrawingWidth)) settings.GpsTrackDrawingWidth = 0;
+        settings.GpsTrackDrawingWidth = Math.Clamp(settings.GpsTrackDrawingWidth, 0.0, 100.0);
+        if (!Enum.IsDefined(settings.GpsTrackColorMode)) {
+            settings.GpsTrackColorMode = GpsTrackColorMode.SingleColor;
+        }
+        if (string.IsNullOrWhiteSpace(settings.GpsSpeedProfile)) {
+            settings.GpsSpeedProfile = "Car";
+        }
+        if (!Enum.IsDefined(settings.GpsHeatmapBlendMode)) {
+            settings.GpsHeatmapBlendMode = GpsHeatmapBlendMode.Normal;
+        }
+        if (!double.IsFinite(settings.GpsHeatmapOverlayAdjustment)) settings.GpsHeatmapOverlayAdjustment = 0;
+        settings.GpsHeatmapOverlayAdjustment = Math.Clamp(settings.GpsHeatmapOverlayAdjustment, -10.0, 10.0);
 
         var defaults = TileSourcePreset.CreateDefaults();
 
@@ -342,6 +405,14 @@ public static class AppSettingsService {
             settings.TileCacheMaxAgeDays,
             AppSettings.MinTileCacheMaxAgeDays,
             AppSettings.MaxTileCacheMaxAgeDays);
+        settings.AutosaveIntervalSeconds = Math.Clamp(
+            settings.AutosaveIntervalSeconds,
+            AppSettings.MinAutosaveIntervalSeconds,
+            AppSettings.MaxAutosaveIntervalSeconds);
+        settings.AutosaveFilesPerLayer = Math.Clamp(
+            settings.AutosaveFilesPerLayer,
+            AppSettings.MinAutosaveFilesPerLayer,
+            AppSettings.MaxAutosaveFilesPerLayer);
         foreach (var source in settings.TileSources) {
             source.MapMaxZoom = Math.Clamp(source.MapMaxZoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);
             source.ImageMaxZoom = Math.Clamp(source.ImageMaxZoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);

@@ -87,6 +87,8 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _renderDebounceCts;
     private CancellationTokenSource? _layerStackRefreshCts;
     private CancellationTokenSource? _tileSourceCts;
+    private CancellationTokenSource? _autosaveCts;
+    private readonly DispatcherTimer _autosaveTimer = new();
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
     private MapLayer? _stagingLayer;
@@ -94,6 +96,7 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _aiTagCts;
     private IReadOnlyList<AiTagSuggestionItem> _aiTagSuggestions = [];
     private AppSettings _settings = AppSettingsService.Load();
+    private bool _isAutosaving;
     private MapDisplayTransform _displayTransform = MapDisplayTransform.Identity;
     private MapImageLayer? _activeImageLayer;
     private TileSourcePreset _activeSource = TileSourcePreset.CreateDefaults()[0];
@@ -150,6 +153,8 @@ public partial class MainWindow : Window {
         Closed += (_, _) => {
             _nonTextInputImeGuard?.Dispose();
             _nonTextInputImeGuard = null;
+            _autosaveTimer.Stop();
+            _autosaveCts?.Cancel();
             _tileSourceCts?.Cancel();
             _aiTagCts?.Cancel();
             _layerStackRefreshCts?.Cancel();
@@ -161,6 +166,8 @@ public partial class MainWindow : Window {
         };
 
         Loaded += MainWindow_Loaded;
+        _autosaveTimer.Tick += AutosaveTimer_Tick;
+        ConfigureAutosaveTimer();
         SetEditorMode(EditorMode.Select);
         UpdateDocumentUi();
     }
@@ -440,7 +447,7 @@ public partial class MainWindow : Window {
         }
 
         if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
-        if (!HasUsableTileCoverage(loadedLayers, viewportW, viewportH)) {
+        if (!HasUsableTileCoverage(loadedLayers, viewportW, viewportH, z)) {
             return;
         }
 
@@ -478,7 +485,7 @@ public partial class MainWindow : Window {
         CancellationToken ct) {
         var imageZoom = Math.Min(renderZoom, context.Service.ImageMaxZoom);
         if (imageZoom < context.Service.ImageMinZoom) {
-            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0, 0, 0);
+            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0, 0);
         }
 
         var scale = Math.Pow(2, renderZoom - imageZoom);
@@ -499,7 +506,6 @@ public partial class MainWindow : Window {
         var addedTileKeys = new HashSet<string>();
         var tileItemsLock = new object();
         var loadedTileCount = 0;
-        var exactTileCount = 0;
 
         List<Task> workers = [];
         var workerCount = Math.Min(GetTileWorkerCount(context.Source), pendingRequests.Count);
@@ -512,7 +518,6 @@ public partial class MainWindow : Window {
             return new TileLayerLoadResult(
                 new TileRenderGroup([.. tileItems], context.Opacity),
                 loadedTileCount,
-                exactTileCount,
                 requestedTileCount);
         }
 
@@ -557,9 +562,6 @@ public partial class MainWindow : Window {
                 tileItems.Add(new TileRenderItem(tile.Source, placement, tile.IsFallback));
             }
             Interlocked.Increment(ref loadedTileCount);
-            if (!tile.IsFallback) {
-                Interlocked.Increment(ref exactTileCount);
-            }
         }
     }
 
@@ -818,20 +820,24 @@ public partial class MainWindow : Window {
     private static bool HasUsableTileCoverage(
         IReadOnlyList<TileLayerLoadResult> loadedLayers,
         double viewportWidth,
-        double viewportHeight) {
+        double viewportHeight,
+        int renderZoom) {
         var visibleLayers = loadedLayers
             .Where(static result => result.Group.Opacity > 0)
             .ToList();
         var loadedTileCount = visibleLayers.Sum(static result => result.TileCount);
         var requestedTileCount = visibleLayers.Sum(static result => result.RequestedTileCount);
         if (loadedTileCount == 0 || requestedTileCount == 0) return false;
-        if (loadedTileCount >= requestedTileCount) return true;
 
         var coverage = TileRenderLayout.GetViewportCoverage(
             visibleLayers.SelectMany(static result => result.Group.Tiles.Select(static tile => tile.Placement)),
             viewportWidth,
             viewportHeight);
-        return coverage >= MinimumPromotableTileCoverage;
+        if (coverage >= MinimumPromotableTileCoverage) return true;
+
+        var worldSize = GeoConverter.TileSize * (double)GeoConverter.GetTileCount(renderZoom);
+        return loadedTileCount >= requestedTileCount &&
+            (worldSize <= viewportWidth || worldSize <= viewportHeight);
     }
 
     private void New_Click(object sender, RoutedEventArgs e) {
@@ -868,6 +874,29 @@ public partial class MainWindow : Window {
         await SaveDocumentAsync(forceSaveAs: true);
     }
 
+    private async Task ExportGpxAsync() {
+        if (!PrepareDocumentForWrite()) return;
+        if (_document is null) return;
+
+        var path = CreateSiblingExportPath(_document, ".gpx") ?? ChooseExportPath(_document, "GPX|*.gpx", ".gpx");
+        if (string.IsNullOrWhiteSpace(path) || !ConfirmOverwriteExport(path)) return;
+
+        await WriteDocumentSnapshotAsync(path);
+    }
+
+    private async Task ExportToParentPathAsync() {
+        if (!PrepareDocumentForWrite()) return;
+        if (_document is null) return;
+
+        var path = CreateParentExportPath(_document);
+        if (string.IsNullOrWhiteSpace(path)) {
+            path = ChooseSavePath(_document);
+        }
+        if (string.IsNullOrWhiteSpace(path) || !ConfirmOverwriteExport(path)) return;
+
+        await WriteDocumentSnapshotAsync(path);
+    }
+
     private async Task ImportDocumentAsync(string path) {
         try {
             IsEnabled = false;
@@ -897,16 +926,8 @@ public partial class MainWindow : Window {
     }
 
     private async Task SaveDocumentAsync(bool forceSaveAs) {
-        if (_featureRotation is not null) CommitFeatureRotation();
-        if (_featureMove is not null) CommitFeatureMove();
-        if (_vertexMove is not null) CommitVertexMove();
-        if (_segmentExtrude is not null) CommitSegmentExtrude();
-        if (Editor.HasDraftLine) FinishDraftLine();
-
-        if (_document is null) {
-            MessageBox.Show(L.GetString("Main.NoMapToSave"), L.GetString("Main.SaveDialogTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
+        if (!PrepareDocumentForWrite()) return;
+        if (_document is null) return;
 
         var path = forceSaveAs || string.IsNullOrWhiteSpace(_document.SourcePath) ||
             _document.SourceFormat is SpatialFileFormat.OsmPbf or SpatialFileFormat.Shapefile or SpatialFileFormat.Kmz
@@ -917,6 +938,9 @@ public partial class MainWindow : Window {
         try {
             IsEnabled = false;
             DocumentStatusTextBlock.Text = L.Format("Main.Status.Saving", Path.GetFileName(path));
+            if (_settings.KeepBackupFileOnSave) {
+                await DocumentBackupService.SaveKeepBackupAsync(path);
+            }
             await SpatialDataService.SaveAsync(_document, path);
             Editor.CommandStack.Clear();
             RefreshFeatureList();
@@ -942,6 +966,118 @@ public partial class MainWindow : Window {
         return dialog.ShowDialog(this) == true ? dialog.FileName : null;
     }
 
+    private static string? CreateSiblingExportPath(MapDocument document, string extension) {
+        if (string.IsNullOrWhiteSpace(document.SourcePath)) return null;
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(document.SourcePath));
+        if (string.IsNullOrWhiteSpace(directory)) return null;
+
+        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath);
+        if (string.IsNullOrWhiteSpace(baseName)) baseName = Path.GetFileNameWithoutExtension(document.Name);
+        if (string.IsNullOrWhiteSpace(baseName)) baseName = "map";
+        return Path.Combine(directory, $"{baseName}{extension}");
+    }
+
+    private static string? CreateParentExportPath(MapDocument document) {
+        if (string.IsNullOrWhiteSpace(document.SourcePath)) return null;
+
+        var sourcePath = Path.GetFullPath(document.SourcePath);
+        var directory = Path.GetDirectoryName(sourcePath);
+        if (string.IsNullOrWhiteSpace(directory)) return null;
+
+        var parent = Directory.GetParent(directory);
+        return parent is null ? null : Path.Combine(parent.FullName, Path.GetFileName(sourcePath));
+    }
+
+    private string? ChooseExportPath(MapDocument document, string filter, string defaultExtension) {
+        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath ?? document.Name);
+        var dialog = new SaveFileDialog {
+            Title = L.GetString("Main.SaveDialogTitle"),
+            Filter = filter,
+            FileName = string.IsNullOrWhiteSpace(baseName) ? $"map{defaultExtension}" : $"{baseName}{defaultExtension}",
+            AddExtension = true,
+            DefaultExt = defaultExtension,
+            OverwritePrompt = true
+        };
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private bool PrepareDocumentForWrite() {
+        if (_featureRotation is not null) CommitFeatureRotation();
+        if (_featureMove is not null) CommitFeatureMove();
+        if (_vertexMove is not null) CommitVertexMove();
+        if (_segmentExtrude is not null) CommitSegmentExtrude();
+        if (Editor.HasDraftLine) FinishDraftLine();
+
+        if (_document is not null) return true;
+
+        MessageBox.Show(L.GetString("Main.NoMapToSave"), L.GetString("Main.SaveDialogTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+        return false;
+    }
+
+    private bool ConfirmOverwriteExport(string path) {
+        if (!File.Exists(path)) return true;
+
+        return MessageBox.Show(
+            $"Overwrite {Path.GetFileName(path)}?",
+            L.GetString("Main.SaveDialogTitle"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+    }
+
+    private async Task WriteDocumentSnapshotAsync(string path) {
+        if (_document is null) return;
+
+        try {
+            IsEnabled = false;
+            DocumentStatusTextBlock.Text = L.Format("Main.Status.Saving", Path.GetFileName(path));
+            await SpatialDataService.WriteSnapshotAsync(_document, path);
+            RefreshFeatureList();
+            UpdateDocumentUi();
+        } catch (Exception ex) {
+            Logger.Error($"Failed to export spatial data '{path}'", ex);
+            MessageBox.Show(ex.Message, L.GetString("Main.SaveErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+        } finally {
+            IsEnabled = true;
+        }
+    }
+
+    private void ConfigureAutosaveTimer() {
+        _autosaveTimer.Stop();
+        var intervalSeconds = Math.Clamp(
+            _settings.AutosaveIntervalSeconds,
+            AppSettings.MinAutosaveIntervalSeconds,
+            AppSettings.MaxAutosaveIntervalSeconds);
+        _autosaveTimer.Interval = TimeSpan.FromSeconds(intervalSeconds);
+        if (_settings.AutosaveEnabled) {
+            _autosaveTimer.Start();
+        }
+    }
+
+    private async void AutosaveTimer_Tick(object? sender, EventArgs e) {
+        if (_isAutosaving || _document?.IsDirty != true || Editor.HasDraftLine) return;
+
+        _isAutosaving = true;
+        _autosaveCts?.Cancel();
+        _autosaveCts = new CancellationTokenSource();
+        try {
+            var path = await DocumentBackupService.SaveAutosaveAsync(
+                _document,
+                _settings.AutosaveFilesPerLayer,
+                _autosaveCts.Token);
+            if (_settings.NotifyOnEverySave) {
+                DocumentStatusTextBlock.Text = L.Format("Main.Status.Autosaved", Path.GetFileName(path));
+            }
+        } catch (OperationCanceledException) {
+        } catch (Exception ex) {
+            Logger.Error("Failed to autosave map data", ex);
+            DocumentStatusTextBlock.Text = L.Format("Main.Status.AutosaveFailed", ex.Message);
+        } finally {
+            _isAutosaving = false;
+        }
+    }
+
     private void Layer_Click(object sender, RoutedEventArgs e) {
         var win = new Views.LayersWindow { Owner = this };
         win.ShowDialog();
@@ -949,6 +1085,11 @@ public partial class MainWindow : Window {
 
     private void Settings_Click(object sender, RoutedEventArgs e) {
         ShowSettings(Views.SettingsSection.Appearance);
+    }
+
+    private void DataValidator_Click(object sender, RoutedEventArgs e) {
+        var win = new Views.DataValidatorWindow { Owner = this };
+        win.ShowDialog();
     }
 
     private void ImagerySettings_Click(object sender, RoutedEventArgs e) {
@@ -966,6 +1107,7 @@ public partial class MainWindow : Window {
         ThemeService.ApplyTheme(_settings.ThemeId);
         LocalizationService.Instance.ApplyLanguage(_settings.LanguageId);
         ApplyTileCacheSettings(forceDiskMaintenance: true);
+        ConfigureAutosaveTimer();
         RefreshImageryMenu();
         var activeLayer = _settings.GetActiveLayer();
         RefreshLocalizedText();
@@ -3881,7 +4023,7 @@ public partial class MainWindow : Window {
 
     private sealed record LoadedTile(BitmapSource Source, int Zoom, int X, int Y, bool IsFallback);
 
-    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount, int ExactTileCount, int RequestedTileCount);
+    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount, int RequestedTileCount);
 
     private sealed record TileLayerContext(
         string LayerId,
@@ -3941,6 +4083,13 @@ public partial class MainWindow : Window {
         Move,
         VertexMove,
         Extrude
+    }
+
+    private enum SegmentExtrudeConstraint {
+        Free,
+        Horizontal,
+        Vertical,
+        SegmentNormal
     }
 
     private sealed class FeatureRotation {

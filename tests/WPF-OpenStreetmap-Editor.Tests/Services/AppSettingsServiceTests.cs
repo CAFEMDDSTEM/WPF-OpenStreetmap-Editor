@@ -27,6 +27,25 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
+    public void Clone_PreservesBackupSettings() {
+        var settings = new AppSettings {
+            AutosaveEnabled = false,
+            AutosaveIntervalSeconds = 42,
+            AutosaveFilesPerLayer = 3,
+            KeepBackupFileOnSave = true,
+            NotifyOnEverySave = true
+        };
+
+        var clone = settings.Clone();
+
+        Assert.False(clone.AutosaveEnabled);
+        Assert.Equal(42, clone.AutosaveIntervalSeconds);
+        Assert.Equal(3, clone.AutosaveFilesPerLayer);
+        Assert.True(clone.KeepBackupFileOnSave);
+        Assert.True(clone.NotifyOnEverySave);
+    }
+
+    [Fact]
     public void Clone_PreservesImportProjectionSettings() {
         var settings = new AppSettings {
             DefaultImportProjectionId = ProjectionService.CustomWktId,
@@ -45,6 +64,33 @@ public class AppSettingsServiceTests {
         Assert.Equal(120, clone.DisplayAlignmentOffsetX);
         Assert.Equal(-80, clone.DisplayAlignmentOffsetY);
         Assert.False(clone.ShowThirdPartyIcons);
+    }
+
+    [Fact]
+    public void Clone_PreservesGpsPointSettings() {
+        var settings = new AppSettings {
+            GpsDrawLinesBetweenPoints = true,
+            GpsLineMinimumDistancePixels = 64,
+            GpsDrawLargeGpsPoints = true,
+            GpsTrackDrawingWidth = 2.5,
+            GpsTrackColorMode = GpsTrackColorMode.Heatmap,
+            GpsSpeedProfile = "Bicycle",
+            GpsHeatmapBlendMode = GpsHeatmapBlendMode.Additive,
+            GpsHeatmapOverlayAdjustment = -3,
+            GpsHeatmapUseTargetColor = true
+        };
+
+        var clone = settings.Clone();
+
+        Assert.True(clone.GpsDrawLinesBetweenPoints);
+        Assert.Equal(64, clone.GpsLineMinimumDistancePixels);
+        Assert.True(clone.GpsDrawLargeGpsPoints);
+        Assert.Equal(2.5, clone.GpsTrackDrawingWidth);
+        Assert.Equal(GpsTrackColorMode.Heatmap, clone.GpsTrackColorMode);
+        Assert.Equal("Bicycle", clone.GpsSpeedProfile);
+        Assert.Equal(GpsHeatmapBlendMode.Additive, clone.GpsHeatmapBlendMode);
+        Assert.Equal(-3, clone.GpsHeatmapOverlayAdjustment);
+        Assert.True(clone.GpsHeatmapUseTargetColor);
     }
 
     [Fact]
@@ -77,6 +123,27 @@ public class AppSettingsServiceTests {
         Assert.Equal(ThemeService.SystemThemeId, settings.ThemeId);
     }
 
+    [Fact]
+    public void EnsureDefaults_NormalizesGpsPointSettings() {
+        var settings = new AppSettings {
+            GpsLineMinimumDistancePixels = -20,
+            GpsTrackDrawingWidth = double.NaN,
+            GpsTrackColorMode = (GpsTrackColorMode)999,
+            GpsSpeedProfile = " ",
+            GpsHeatmapBlendMode = (GpsHeatmapBlendMode)999,
+            GpsHeatmapOverlayAdjustment = double.PositiveInfinity
+        };
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(0, settings.GpsLineMinimumDistancePixels);
+        Assert.Equal(0, settings.GpsTrackDrawingWidth);
+        Assert.Equal(GpsTrackColorMode.SingleColor, settings.GpsTrackColorMode);
+        Assert.Equal("Car", settings.GpsSpeedProfile);
+        Assert.Equal(GpsHeatmapBlendMode.Normal, settings.GpsHeatmapBlendMode);
+        Assert.Equal(0, settings.GpsHeatmapOverlayAdjustment);
+    }
+
     [Theory]
     [InlineData(-10, AppSettings.MinTileCacheMaxAgeDays)]
     [InlineData(99999, AppSettings.MaxTileCacheMaxAgeDays)]
@@ -86,6 +153,25 @@ public class AppSettingsServiceTests {
         AppSettingsService.EnsureDefaults(settings);
 
         Assert.Equal(expected, settings.TileCacheMaxAgeDays);
+    }
+
+    [Theory]
+    [InlineData(-10, AppSettings.MinAutosaveIntervalSeconds, -5, AppSettings.MinAutosaveFilesPerLayer)]
+    [InlineData(999999, AppSettings.MaxAutosaveIntervalSeconds, 999, AppSettings.MaxAutosaveFilesPerLayer)]
+    public void EnsureDefaults_ClampsBackupSettings(
+        int intervalSeconds,
+        int expectedIntervalSeconds,
+        int filesPerLayer,
+        int expectedFilesPerLayer) {
+        var settings = new AppSettings {
+            AutosaveIntervalSeconds = intervalSeconds,
+            AutosaveFilesPerLayer = filesPerLayer
+        };
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(expectedIntervalSeconds, settings.AutosaveIntervalSeconds);
+        Assert.Equal(expectedFilesPerLayer, settings.AutosaveFilesPerLayer);
     }
 
     [Fact]
