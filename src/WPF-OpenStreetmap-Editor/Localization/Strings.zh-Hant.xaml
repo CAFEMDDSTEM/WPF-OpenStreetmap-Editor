@@ -117,7 +117,7 @@
     <sys:String x:Key="Main.Mode.DrawLine">繪製線段模式 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">旋轉模式 (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移動模式 (M)</sys:String>
-    <sys:String x:Key="Main.Mode.Extrude">擠出模式 (X)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">擠出模式 (E)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">刪除要素</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">是否刪除 {0:N0} 個選取的要素?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">請選取一個要素以編輯標籤。</sys:String>
@@ -395,7 +395,7 @@
     <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C 複製選取要素，Ctrl+Shift+V 僅貼上複製的標籤，Shift+R 從上一個選取要素複製標籤。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S 選取要素，V 框選，A 繪製線段。</sys:String>
     <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F 進入快速繪製線段；Ctrl+Shift+F 切換繪製線段時的視口跟隨。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R 旋轉、M 移動，X 擠出線段，Q 將選取要素直角化。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R 旋轉、M 移動，E 擠出線段，Q 將選取要素直角化。</sys:String>
     <sys:String x:Key="Help.Keyboard.ImageryOrder">` 輪換影像圖層順序，方便快速比較。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">鍵盤命令輸入啟用時，可輸入支援的編輯命令。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移動模式啟用時，可在地圖上拖曳選取的要素。</sys:String>

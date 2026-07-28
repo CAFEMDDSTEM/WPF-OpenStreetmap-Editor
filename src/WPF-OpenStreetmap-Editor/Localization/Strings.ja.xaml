@@ -128,7 +128,7 @@
     <sys:String x:Key="Main.Mode.DrawLine">線の描画 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">回転モード (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移動モード (M)</sys:String>
-    <sys:String x:Key="Main.Mode.Extrude">押し出しモード (X)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">押し出しモード (E)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">フィーチャの削除</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">選択した {0:N0} 件のフィーチャを削除しますか?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">タグを編集するフィーチャを 1 つ選択してください。</sys:String>
@@ -355,7 +355,7 @@
     <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C で選択したフィーチャをコピーし、Ctrl+Shift+V でコピーしたタグだけを貼り付け、Shift+R で直前に選択していたフィーチャからタグをコピーします。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S でフィーチャ選択、V でボックス選択、A で線の描画を行います。</sys:String>
     <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F で高速な線描画に入り、Ctrl+Shift+F で線描画中のビューポート追従を切り替えます。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R で回転、M で移動、X でセグメントを押し出し、Q で選択したフィーチャを直交化します。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R で回転、M で移動、E でセグメントを押し出し、Q で選択したフィーチャを直交化します。</sys:String>
     <sys:String x:Key="Help.Keyboard.ImageryOrder">` で画像レイヤーの順序を循環させ、すばやく比較できます。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">キーボード コマンド入力が有効な場合は、サポートされている編集コマンドを入力します。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移動モードが有効な場合は、選択したフィーチャを地図上でドラッグします。</sys:String>

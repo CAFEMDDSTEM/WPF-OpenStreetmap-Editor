@@ -32,10 +32,10 @@
             </Menu.ItemContainerStyle>
             <MenuItem Header="{services:Loc Main.Menu.File}">
                 <MenuItem Header="{services:Loc Main.Menu.New}" Click="New_Click" />
-                <MenuItem Header="{services:Loc Main.Menu.Open}" Click="Open_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Open}" InputGestureText="Ctrl+O" Click="Open_Click" />
                 <Separator />
                 <MenuItem Header="{services:Loc Common.Save}" InputGestureText="Ctrl+S" Click="Save_Click" />
-                <MenuItem Header="{services:Loc Main.Menu.SaveAs}" Click="SaveAs_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.SaveAs}" InputGestureText="Ctrl+Shift+S" Click="SaveAs_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Edit}">
                 <MenuItem Header="{services:Loc Main.Menu.Undo}" InputGestureText="Ctrl+Z" Click="Undo_Click" />
@@ -44,7 +44,7 @@
                 <MenuItem Header="{services:Loc Main.Menu.CopySelected}" InputGestureText="Ctrl+C" Click="CopySelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.PasteFeatures}" InputGestureText="Ctrl+V" Click="PasteFeatures_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.PasteTags}" InputGestureText="Ctrl+Shift+V" Click="PasteTags_Click" />
-                <MenuItem Header="{services:Loc Main.Menu.DuplicateSelected}" InputGestureText="Ctrl+Shift+D" Click="DuplicateSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.DuplicateSelected}" InputGestureText="Ctrl+D" Click="DuplicateSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.FindFeatures}" InputGestureText="Ctrl+F" Click="FindFeatures_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.RotateSelected}" InputGestureText="R" Click="RotateSelected_Click" />
@@ -66,7 +66,7 @@
                 <MenuItem Header="{services:Loc Main.Menu.Show}" Click="Show_Click" />
             </MenuItem>
             <MenuItem x:Name="ToolsMenuItem" Header="{services:Loc Main.Menu.Tools}">
-                <MenuItem Header="{services:Loc Main.Menu.Layers}" Click="Layer_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.Layers}" InputGestureText="Ctrl+N" Click="Layer_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.DataValidator}" Click="DataValidator_Click" />
                 <MenuItem Header="{services:Loc Common.Settings}" Click="Settings_Click" />
                 <Separator x:Name="PluginContributionsSeparator" Visibility="Collapsed" />

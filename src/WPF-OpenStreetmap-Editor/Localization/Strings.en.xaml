@@ -128,7 +128,7 @@ Open the download page?</sys:String>
     <sys:String x:Key="Main.Mode.DrawLine">Draw line (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">Rotate mode (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">Move mode (M)</sys:String>
-    <sys:String x:Key="Main.Mode.Extrude">Extrude mode (X)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">Extrude mode (E)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">Delete features</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">Delete the {0:N0} selected features?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">Select one feature to edit tags.</sys:String>
@@ -367,7 +367,7 @@ Open the download page?</sys:String>
     <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C copies selected features, Ctrl+Shift+V pastes only copied tags, and Shift+R copies tags from the previously selected feature.</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S selects features, V box-selects, and A draws lines.</sys:String>
     <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F enters fast line drawing; Ctrl+Shift+F toggles viewport following while drawing lines.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R rotates, M moves, X extrudes segments, and Q orthogonalizes selected features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R rotates, M moves, E extrudes segments, and Q orthogonalizes selected features.</sys:String>
     <sys:String x:Key="Help.Keyboard.ImageryOrder">` rotates imagery layer order for quick comparison.</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">Type supported edit commands when keyboard command input is active.</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">Drag selected features on the map when move mode is active.</sys:String>

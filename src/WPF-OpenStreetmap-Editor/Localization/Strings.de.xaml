@@ -128,7 +128,7 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Main.Mode.DrawLine">Linie zeichnen (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">Drehmodus (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">Verschiebemodus (M)</sys:String>
-    <sys:String x:Key="Main.Mode.Extrude">Extrusionsmodus (X)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">Extrusionsmodus (E)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">Features löschen</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">Die {0:N0} ausgewählten Features löschen?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">Wählen Sie ein Feature aus, um Tags zu bearbeiten.</sys:String>
@@ -355,7 +355,7 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Help.Keyboard.Tags">STRG+C kopiert ausgewählte Features, STRG+UMSCHALT+V fügt nur kopierte Tags ein, und UMSCHALT+R kopiert Tags vom zuvor ausgewählten Feature.</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S wählt Features aus, V aktiviert Rahmenauswahl und A zeichnet Linien.</sys:String>
     <sys:String x:Key="Help.Keyboard.JosmDrawing">UMSCHALT+F startet schnelles Linienzeichnen; STRG+UMSCHALT+F schaltet die Ansichtsverfolgung beim Linienzeichnen um.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R dreht, M verschiebt, X extrudiert Segmente und Q orthogonalisiert ausgewählte Features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R dreht, M verschiebt, E extrudiert Segmente und Q orthogonalisiert ausgewählte Features.</sys:String>
     <sys:String x:Key="Help.Keyboard.ImageryOrder">` rotiert die Reihenfolge der Bildebenen für schnellen Vergleich.</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">Geben Sie unterstützte Bearbeitungsbefehle ein, wenn die Tastaturbefehlseingabe aktiv ist.</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">Ziehen Sie ausgewählte Features auf der Karte, wenn der Verschiebemodus aktiv ist.</sys:String>

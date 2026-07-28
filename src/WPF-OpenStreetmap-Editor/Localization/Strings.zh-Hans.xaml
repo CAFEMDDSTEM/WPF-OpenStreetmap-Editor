@@ -124,7 +124,7 @@
     <sys:String x:Key="Main.Mode.DrawLine">画线模式 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">旋转模式 (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移动模式 (M)</sys:String>
-    <sys:String x:Key="Main.Mode.Extrude">挤出模式 (X)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">挤出模式 (E)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">删除对象</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">确定删除选定的 {0:N0} 个对象吗?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">请选择一个对象编辑标签。</sys:String>
@@ -496,7 +496,7 @@
     <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C 复制选定要素，Ctrl+Shift+V 仅粘贴复制的标签，Shift+R 从上一个选定要素复制标签。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S 选择要素，V 框选，A 绘制线段。</sys:String>
     <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F 进入快速绘制线段；Ctrl+Shift+F 切换绘制线段时的视口跟随。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R 旋转，M 移动，X 挤出线段，Q 直角化选定要素。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R 旋转，M 移动，E 挤出线段，Q 直角化选定要素。</sys:String>
     <sys:String x:Key="Help.Keyboard.ImageryOrder">` 轮换影像图层顺序，便于快速比较。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">启用键盘命令输入时，可输入支持的编辑命令。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移动模式下可在地图上拖动选定要素。</sys:String>

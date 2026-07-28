@@ -71,6 +71,7 @@ public partial class MainWindow : Window {
     private FeatureMove? _featureMove;
     private VertexMove? _vertexMove;
     private SegmentExtrude? _segmentExtrude;
+    private SegmentExtrudeConstraint _pendingSegmentExtrudeConstraint = SegmentExtrudeConstraint.Free;
     private MapFeature? _hoveredFeature;
     private VertexHit? _hoveredVertex;
     private long _selectionRevision;
@@ -118,6 +119,7 @@ public partial class MainWindow : Window {
     private const double FeaturePasteOffsetPixels = 24.0;
     private const double MinimumCommittedRotationDegrees = 0.01;
     private const double MinimumCommittedMovePixels = 0.5;
+    private const double DefaultKeyboardExtrudeDistanceDecimeters = 10.0;
     private const string OsmTransferPluginId = "org.openstreetmap.transfer";
     private const string OsmTransferPluginName = "OpenStreetMap transfer";
     private const double PanPrefetchDistance = GeoConverter.TileSize * 0.75;
@@ -1612,8 +1614,33 @@ public partial class MainWindow : Window {
 
     private async void Window_KeyDown(object sender, KeyEventArgs e) {
         var modifiers = Keyboard.Modifiers;
+        if (modifiers == ModifierKeys.Control && e.Key == Key.O) {
+            Open_Click(this, new());
+            e.Handled = true;
+            return;
+        }
+        if (modifiers == ModifierKeys.Control && e.Key == Key.N) {
+            Layer_Click(this, new());
+            e.Handled = true;
+            return;
+        }
         if (modifiers == ModifierKeys.Control && e.Key == Key.S) {
             await SaveDocumentAsync(forceSaveAs: false);
+            e.Handled = true;
+            return;
+        }
+        if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.S) {
+            await SaveDocumentAsync(forceSaveAs: true);
+            e.Handled = true;
+            return;
+        }
+        if (modifiers == ModifierKeys.Control && e.Key == Key.E) {
+            await ExportGpxAsync();
+            e.Handled = true;
+            return;
+        }
+        if (modifiers == (ModifierKeys.Control | ModifierKeys.Alt) && e.Key == Key.D) {
+            await ExportToParentPathAsync();
             e.Handled = true;
             return;
         }
@@ -1644,7 +1671,9 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.Control && e.Key == Key.Z) {
             UndoLastEdit();
             e.Handled = true;
-        } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.D) {
+        } else if ((modifiers == ModifierKeys.Control ||
+                modifiers == (ModifierKeys.Control | ModifierKeys.Shift)) &&
+            e.Key == Key.D) {
             DuplicateSelectedFeatures();
             e.Handled = true;
         } else if ((modifiers == ModifierKeys.Control && e.Key == Key.Y) ||
@@ -1680,10 +1709,6 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.None && e.Key == Key.V) {
             ClearKeyboardEditCommand(updateUi: false);
             SetEditorMode(EditorMode.BoxSelect);
-            e.Handled = true;
-        } else if (modifiers == ModifierKeys.None && e.Key == Key.X) {
-            ClearKeyboardEditCommand(updateUi: false);
-            SetEditorMode(_editorMode == EditorMode.Extrude ? EditorMode.Select : EditorMode.Extrude);
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Insert) {
             ClearKeyboardEditCommand(updateUi: false);
@@ -1725,7 +1750,8 @@ public partial class MainWindow : Window {
 
         if (_keyboardEditCommand.Length > 0 && TryGetKeyboardCommandText(e.Key, out var text)) {
             if ((_keyboardEditCommand == "r" && text == "r") ||
-                (_keyboardEditCommand == "m" && text == "m")) {
+                (_keyboardEditCommand == "m" && text == "m") ||
+                (_keyboardEditCommand == "e" && text == "e")) {
                 return ApplyKeyboardEditCommandOrActiveInteraction();
             }
 
@@ -1753,6 +1779,13 @@ public partial class MainWindow : Window {
 
             BeginFeatureMove();
             if (_featureMove is not null) SetKeyboardEditCommand("m");
+            return true;
+        }
+        if (e.Key == Key.E) {
+            if (_segmentExtrude is not null) return ApplyKeyboardEditCommandOrActiveInteraction();
+
+            SetKeyboardEditCommand("e");
+            SetEditorMode(EditorMode.Extrude);
             return true;
         }
         if (e.Key == Key.Q) {
@@ -1818,13 +1851,46 @@ public partial class MainWindow : Window {
             case EditKeyboardCommandKind.Move:
                 CommitFeatureMove();
                 break;
+            case EditKeyboardCommandKind.Extrude:
+                ApplyKeyboardExtrudeCommand(command);
+                break;
         }
+    }
+
+    private void ApplyKeyboardExtrudeCommand(EditKeyboardCommand command) {
+        if (command.ExtrudeMode == EditKeyboardExtrudeMode.Free) {
+            SetEditorMode(EditorMode.Extrude);
+            return;
+        }
+
+        if (command.ExtrudeMode == EditKeyboardExtrudeMode.InnerSquare) {
+            var sideDecimeters = command.HasExtrudeDistance
+                ? Math.Abs(command.ExtrudeDistanceDecimeters)
+                : DefaultKeyboardExtrudeDistanceDecimeters;
+            AddInnerSquareToSelectedPolygons(sideDecimeters);
+            return;
+        }
+
+        if (command.HasExtrudeDistance) {
+            ExtrudeKeyboardSegmentByDecimeters(command.ExtrudeMode, command.ExtrudeDistanceDecimeters);
+            return;
+        }
+
+        _pendingSegmentExtrudeConstraint = command.ExtrudeMode switch {
+            EditKeyboardExtrudeMode.X => SegmentExtrudeConstraint.Horizontal,
+            EditKeyboardExtrudeMode.Y => SegmentExtrudeConstraint.Vertical,
+            EditKeyboardExtrudeMode.Segment => SegmentExtrudeConstraint.SegmentNormal,
+            _ => SegmentExtrudeConstraint.Free
+        };
+        SetEditorMode(EditorMode.Extrude);
     }
 
     private static bool TryGetKeyboardCommandText(Key key, out string text) {
         text = key switch {
+            Key.E => "e",
             Key.X => "x",
             Key.Y => "y",
+            Key.S => "s",
             Key.D => "d",
             Key.M => "m",
             >= Key.D0 and <= Key.D9 => ((char)('0' + (int)key - (int)Key.D0)).ToString(),
@@ -2849,12 +2915,15 @@ public partial class MainWindow : Window {
         }
 
         MapViewport.Focus();
+        var constraint = _pendingSegmentExtrudeConstraint;
+        _pendingSegmentExtrudeConstraint = SegmentExtrudeConstraint.Free;
         _segmentExtrude = new SegmentExtrude(
             _editorMode,
             CaptureFeatureParts(hit.Feature),
             hit,
             pointer,
-            GetPointerGeo(pointer));
+            GetPointerGeo(pointer),
+            constraint);
         SetEditorMode(EditorMode.Extrude);
         MapViewport.CaptureMouse();
         UpdateDocumentUi();
@@ -2868,6 +2937,7 @@ public partial class MainWindow : Window {
         var pointerGeo = GetPointerGeo(pointerPosition);
         var longitudeOffset = pointerGeo.Longitude - extrude.StartPointerGeo.Longitude;
         var latitudeOffset = pointerGeo.Latitude - extrude.StartPointerGeo.Latitude;
+        ApplySegmentExtrudeConstraint(extrude, pointerPosition, ref longitudeOffset, ref latitudeOffset);
         Editor.Dataset.ReplaceParts(
             extrude.OriginalState.Feature,
             MapEditService.ExtrudeSegment(
@@ -2880,6 +2950,157 @@ public partial class MainWindow : Window {
             markDirty: false);
         UpdateVectorLayer();
         UpdateDocumentUi();
+    }
+
+    private void ApplySegmentExtrudeConstraint(
+        SegmentExtrude extrude,
+        Point pointerPosition,
+        ref double longitudeOffset,
+        ref double latitudeOffset) {
+        switch (extrude.Constraint) {
+            case SegmentExtrudeConstraint.Horizontal:
+                latitudeOffset = 0;
+                break;
+            case SegmentExtrudeConstraint.Vertical:
+                longitudeOffset = 0;
+                break;
+            case SegmentExtrudeConstraint.SegmentNormal:
+                var segment = extrude.Hit.EndScreenPoint - extrude.Hit.StartScreenPoint;
+                if (segment.Length <= double.Epsilon) return;
+
+                var normal = new Vector(-segment.Y / segment.Length, segment.X / segment.Length);
+                var pointerDelta = pointerPosition - extrude.StartPointer;
+                var constrainedPointer = extrude.StartPointer + normal * (pointerDelta * normal);
+                var constrainedGeo = GetPointerGeo(constrainedPointer);
+                longitudeOffset = constrainedGeo.Longitude - extrude.StartPointerGeo.Longitude;
+                latitudeOffset = constrainedGeo.Latitude - extrude.StartPointerGeo.Latitude;
+                break;
+        }
+    }
+
+    private bool ExtrudeKeyboardSegmentByDecimeters(EditKeyboardExtrudeMode mode, double distanceDecimeters) {
+        if (!TryGetKeyboardExtrudeSegment(out var hit)) return false;
+
+        if (!Selection.Features.Contains(hit.Feature)) {
+            SetSelectedFeatures([hit.Feature]);
+        }
+
+        var beforeState = CaptureFeatureParts(hit.Feature);
+        var bounds = GeoBounds.FromPoints(beforeState.Parts.SelectMany(static part => part));
+        if (!bounds.IsValid) return false;
+
+        var distanceMeters = distanceDecimeters / 10.0;
+        var parts = mode switch {
+            EditKeyboardExtrudeMode.X => MapEditService.ExtrudeSegmentByMeters(
+                beforeState.Parts,
+                hit.PartIndex,
+                hit.StartPointIndex,
+                hit.EndPointIndex,
+                distanceMeters,
+                0,
+                bounds.Center.Latitude),
+            EditKeyboardExtrudeMode.Y => MapEditService.ExtrudeSegmentByMeters(
+                beforeState.Parts,
+                hit.PartIndex,
+                hit.StartPointIndex,
+                hit.EndPointIndex,
+                0,
+                distanceMeters,
+                bounds.Center.Latitude),
+            EditKeyboardExtrudeMode.Segment => MapEditService.ExtrudeSegmentNormalByMeters(
+                beforeState.Parts,
+                hit.PartIndex,
+                hit.StartPointIndex,
+                hit.EndPointIndex,
+                distanceMeters),
+            _ => beforeState.Parts.Select(static part => part.ToList()).ToList()
+        };
+
+        var changed = Editor.Execute(new SetFeaturePartsCommand([beforeState], [new FeaturePartsSnapshot(hit.Feature, parts)]));
+        if (!changed) return false;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+        return true;
+    }
+
+    private bool AddInnerSquareToSelectedPolygons(double sideDecimeters) {
+        var selectedPolygons = GetSelectedFeaturesInDocumentOrder()
+            .Where(static feature => feature.GeometryType == MapGeometryType.Polygon)
+            .ToList();
+        if (selectedPolygons.Count == 0) return false;
+
+        var sideMeters = sideDecimeters / 10.0;
+        var beforeStates = selectedPolygons.Select(CaptureFeatureParts).ToList();
+        var afterStates = beforeStates
+            .Select(state => new FeaturePartsSnapshot(
+                state.Feature,
+                MapEditService.AddInnerSquareRingByMeters(state.Parts, sideMeters)))
+            .ToList();
+        var changed = Editor.Execute(new SetFeaturePartsCommand(beforeStates, afterStates));
+        if (!changed) return false;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+        return true;
+    }
+
+    private bool TryGetKeyboardExtrudeSegment(out SegmentHit hit) {
+        hit = default!;
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return false;
+
+        var pointer = Mouse.GetPosition(MapViewport);
+        var hovered = VectorMapInteraction.HitTestSegment(
+            GetInteractionCandidates(),
+            pointer,
+            _centerLat,
+            _centerLon,
+            zoom,
+            GetMapViewportSize(),
+            tolerance: 14,
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
+        if (hovered is not null) {
+            hit = hovered;
+            return true;
+        }
+
+        foreach (var feature in GetSelectedFeaturesInDocumentOrder()) {
+            if (TryCreateFirstSegmentHit(feature, zoom, out hit)) return true;
+        }
+
+        return false;
+    }
+
+    private bool TryCreateFirstSegmentHit(MapFeature feature, int zoom, out SegmentHit hit) {
+        hit = default!;
+        for (var partIndex = 0; partIndex < feature.Parts.Count; partIndex++) {
+            var part = feature.Parts[partIndex];
+            if (part.Count < 2) continue;
+
+            var viewport = GetMapViewportSize();
+            var start = VectorMapInteraction.GeoToScreen(
+                part[0],
+                _centerLat,
+                _centerLon,
+                zoom,
+                viewport,
+                displayTransform: _displayTransform);
+            var end = VectorMapInteraction.GeoToScreen(
+                part[1],
+                _centerLat,
+                _centerLon,
+                zoom,
+                viewport,
+                displayTransform: _displayTransform);
+            hit = new SegmentHit(feature, partIndex, 0, 1, start, end);
+            return true;
+        }
+
+        return false;
     }
 
     private void CommitSegmentExtrude(bool forceCommit = false) {
@@ -4169,13 +4390,15 @@ public partial class MainWindow : Window {
             FeaturePartsSnapshot originalState,
             SegmentHit hit,
             Point startPointer,
-            GeoPoint startPointerGeo) {
+            GeoPoint startPointerGeo,
+            SegmentExtrudeConstraint constraint) {
             PreviousMode = previousMode;
             OriginalState = originalState;
             Hit = hit;
             StartPointer = startPointer;
             CurrentPointer = startPointer;
             StartPointerGeo = startPointerGeo;
+            Constraint = constraint;
         }
 
         public EditorMode PreviousMode { get; }
@@ -4189,6 +4412,8 @@ public partial class MainWindow : Window {
         public Point CurrentPointer { get; set; }
 
         public GeoPoint StartPointerGeo { get; }
+
+        public SegmentExtrudeConstraint Constraint { get; }
     }
 
     private readonly record struct VertexEditTarget(MapFeature Feature, int PartIndex, int PointIndex);
