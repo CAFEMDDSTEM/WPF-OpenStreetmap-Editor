@@ -398,19 +398,18 @@ public static class AppSettingsService {
     }
 
     public static bool RotateRasterLayerOrder(AppSettings settings) {
-        var rasterLayers = settings.ImageLayers
-            .Where(static layer => layer.Kind == MapLayerKind.Raster)
+        var rasterIndexes = settings.ImageLayers
+            .Select(static (layer, index) => (layer, index))
+            .Where(static item => item.layer.Kind == MapLayerKind.Raster)
+            .Select(static item => item.index)
             .ToList();
-        if (rasterLayers.Count < 2) return false;
+        if (rasterIndexes.Count < 2) return false;
 
-        var firstRasterLayer = rasterLayers[0];
-        var oldIndex = settings.ImageLayers.FindIndex(candidate =>
-            ReferenceEquals(candidate, firstRasterLayer) || candidate.Id == firstRasterLayer.Id);
-        if (oldIndex < 0) return false;
-
-        settings.ImageLayers.RemoveAt(oldIndex);
-        var lastRasterIndex = settings.ImageLayers.FindLastIndex(static layer => layer.Kind == MapLayerKind.Raster);
-        settings.ImageLayers.Insert(lastRasterIndex + 1, firstRasterLayer);
+        var firstRasterLayer = settings.ImageLayers[rasterIndexes[0]];
+        for (var i = 0; i < rasterIndexes.Count - 1; i++) {
+            settings.ImageLayers[rasterIndexes[i]] = settings.ImageLayers[rasterIndexes[i + 1]];
+        }
+        settings.ImageLayers[rasterIndexes[^1]] = firstRasterLayer;
         return true;
     }
 

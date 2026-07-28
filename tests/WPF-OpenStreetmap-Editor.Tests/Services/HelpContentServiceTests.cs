@@ -9,6 +9,16 @@ public sealed class HelpContentServiceTests {
 
         Assert.Equal("WPF OpenStreetmap Editor", content.ProgramName);
         Assert.Contains(content.Sections, section => section.Title == "Keyboard shortcuts");
+        Assert.Contains(content.Sections, section =>
+            section.Title == "Keyboard shortcuts" &&
+            section.Items.Any(item => item.Contains("Ctrl+Shift+F", StringComparison.Ordinal) &&
+                item.Contains("viewport following", StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(content.Sections, section =>
+            section.Title == "Keyboard shortcuts" &&
+            section.Items.Any(item => item.Contains("Shift+R", StringComparison.Ordinal)));
+        Assert.Contains(content.Sections, section =>
+            section.Title == "Keyboard shortcuts" &&
+            section.Items.Any(item => item.StartsWith("` rotates", StringComparison.Ordinal)));
         Assert.Contains(content.ProgramInfo, item =>
             item.Name == "License" &&
             item.Value.Contains("GPL v3", StringComparison.OrdinalIgnoreCase));
