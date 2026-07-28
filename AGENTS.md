@@ -5,8 +5,9 @@ These instructions apply to the whole repository. Follow them before changing co
 ## Core Standards
 
 - Inspect the relevant project context before changing code. Treat issue reports as claims to verify, not facts to accept blindly.
-- At the start of each task, ask the maintainer whether to enable multi-agent parallel work.
-- If multi-agent work is enabled, start an audit agent alongside implementation to review the code with the strictest, longest-term maintainability perspective.
+- At the start of the first task in a new conversation, ask the maintainer once whether to enable multi-agent parallel work for that conversation. Do not ask again in the same conversation unless the maintainer changes the preference.
+- If multi-agent work is enabled, split suitable work across multiple focused agents instead of only starting an audit agent. Always include an audit agent alongside implementation to review the code with the strictest, longest-term maintainability perspective.
+- Keep maintainer-facing messages short and direct.
 - Prefer the simplest practical solution that fits the surrounding design. Use existing patterns before adding new abstractions.
 - Do not create or expand god files, god classes, or catch-all managers. Keep files focused on one clear responsibility; split unrelated UI, state, serialization, I/O, and business logic into focused existing or new types.
 - Keep changes focused. Avoid unrelated formatting, cleanup, generated files, or metadata churn unless required for the task.
