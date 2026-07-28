@@ -54,14 +54,20 @@ Common editing shortcuts:
 | Shortcut | Action |
 | --- | --- |
 | `Ctrl+C` | Copy selected features. |
+| `Ctrl+F` | Search objects in the current data layer. |
 | `Ctrl+V` | Paste copied features with a small offset. |
+| `Ctrl+Shift+V` | Paste only copied tags onto the selected features. |
 | `Ctrl+Z` | Undo the last committed edit. |
 | `Ctrl+Y` or `Ctrl+Shift+Z` | Redo the last undone edit. |
 | `Ctrl+Shift+D` | Duplicate selected features. |
 | `A` | Enter line drawing mode. Press `Enter` to finish the current line. |
+| `Shift+F` | Enter fast line drawing mode. |
+| `Ctrl+Shift+F` | Toggle viewport following while drawing lines. |
 | `R` | Rotate selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
+| `Shift+R` | Copy tags from the previously selected feature to the current selection. |
 | `M` | Move selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
 | `Q` | Orthogonalize selected line or polygon features. |
+| `` ` `` | Rotate imagery layer order for quick comparison. |
 
 In select mode, press and hold the left mouse button on an already-selected
 feature to drag the whole selection. Releasing the button commits the move as a
