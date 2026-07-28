@@ -22,6 +22,7 @@ public class PluginSystemTests {
         var toolbarItem = Assert.Single(manifest.Contributions.Toolbar);
         Assert.Equal("main", toolbarItem.Location);
         Assert.Equal("Download", toolbarItem.Icon);
+        Assert.Equal("Download now", toolbarItem.Label);
         Assert.Equal("Download data", toolbarItem.ToolTip);
         Assert.Equal("hello", toolbarItem.Command);
         Assert.Equal(20, toolbarItem.Order);
@@ -127,6 +128,76 @@ public class PluginSystemTests {
         Assert.True(File.Exists(Path.Combine(result.InstallDirectory, PluginManifestReader.ManifestFileName)));
         Assert.True(File.Exists(Path.Combine(result.InstallDirectory, "icon.png")));
         Assert.True(File.Exists(Path.Combine(result.InstallDirectory, "description.md")));
+    }
+
+    [Fact]
+    public void Installer_InstallsJarPackageArchive() {
+        using var source = new TestDirectory();
+        using var destination = new TestDirectory();
+        var packageDirectory = Path.Combine(source.Path, "package");
+        Directory.CreateDirectory(packageDirectory);
+        source.WriteRequiredAssets(packageDirectory);
+        File.WriteAllText(Path.Combine(packageDirectory, PluginManifestReader.ManifestFileName), AddonManifest);
+        var archivePath = Path.Combine(source.Path, "java-support.jar");
+        ZipFile.CreateFromDirectory(packageDirectory, archivePath);
+        var installer = CreateInstaller(destination.Path);
+
+        var result = installer.Install(archivePath, allowCodeExecution: false);
+
+        Assert.Equal("org.example.addon", result.Manifest.Id);
+        Assert.True(File.Exists(Path.Combine(result.InstallDirectory, PluginManifestReader.ManifestFileName)));
+    }
+
+    [Fact]
+    public void Installer_WrapsJosmPluginJarWithJavaBridgePackage() {
+        using var source = new TestDirectory();
+        using var destination = new TestDirectory();
+        using var bridge = new TestDirectory();
+        bridge.WriteFile(JavaSupportRuntimeLocator.BridgeExecutableFileName, "fake executable");
+        bridge.WriteFile(Path.Combine("runtime", "release"), "JAVA_VERSION=25");
+        var previousBridgeDirectory = Environment.GetEnvironmentVariable("WOSM_JAVA_BRIDGE_DIR");
+        Environment.SetEnvironmentVariable("WOSM_JAVA_BRIDGE_DIR", bridge.Path);
+        try {
+            var jarPath = Path.Combine(source.Path, "BetterIME.jar");
+            CreateJosmPluginJar(jarPath, string.Join("\r\n", [
+                "Manifest-Version: 1.0",
+                "Plugin-Class: org.openstreetmap.josm.plugins.betterime.BetterIMEPlugin",
+                "Plugin-Description: Auto-disable Chinese IME for non-text components to prevent shortcut conflicts.",
+                "Plugin-Mainversion: 19555",
+                "Plugin-Version: 1.2.0",
+                "Plugin-Icon: images/BetterIME.png",
+                "Plugin-Canloadatruntime: true",
+                "Plugin-Link: https://github.com/nj-yzf/josm-BetterIME",
+                "Author: nj-yzf",
+                ""
+            ]));
+            var installer = CreateInstaller(destination.Path);
+
+            var result = installer.Install(jarPath, allowCodeExecution: false);
+
+            Assert.Equal("org.wosm.josm.org.openstreetmap.josm.plugins.betterime.betterimeplugin", result.Manifest.Id);
+            Assert.Equal("process", result.Manifest.Kind);
+            Assert.Equal(JavaSupportRuntimeLocator.BridgeExecutableRelativePath, result.Manifest.Runtime?.Entry);
+            Assert.NotNull(result.Manifest.Runtime);
+            Assert.Contains("--plugins", result.Manifest.Runtime.Arguments);
+            Assert.Contains("showMessage", result.Manifest.Runtime.HostActions);
+            Assert.True(File.Exists(Path.Combine(
+                result.InstallDirectory,
+                JavaSupportRuntimeLocator.BridgeRuntimeDirectoryName,
+                JavaSupportRuntimeLocator.BridgeExecutableFileName)));
+            Assert.True(File.Exists(Path.Combine(
+                result.InstallDirectory,
+                JavaSupportRuntimeLocator.BridgeRuntimeDirectoryName,
+                "runtime",
+                "release")));
+            Assert.True(File.Exists(Path.Combine(result.InstallDirectory, "josm-plugins", "BetterIME.jar")));
+            Assert.True(File.Exists(Path.Combine(result.InstallDirectory, "icon.png")));
+            Assert.Contains(
+                "org.openstreetmap.josm.plugins.betterime.BetterIMEPlugin",
+                File.ReadAllText(Path.Combine(result.InstallDirectory, "description.md")));
+        } finally {
+            Environment.SetEnvironmentVariable("WOSM_JAVA_BRIDGE_DIR", previousBridgeDirectory);
+        }
     }
 
     [Fact]
@@ -457,6 +528,23 @@ public class PluginSystemTests {
         }
     }
 
+    private static void CreateJosmPluginJar(string jarPath, string manifest) {
+        using var archive = ZipFile.Open(jarPath, ZipArchiveMode.Create);
+        var manifestEntry = archive.CreateEntry("META-INF/MANIFEST.MF");
+        using (var writer = new StreamWriter(manifestEntry.Open())) {
+            writer.Write(manifest.Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Replace("\n", "\r\n", StringComparison.Ordinal));
+        }
+
+        var iconEntry = archive.CreateEntry("images/BetterIME.png");
+        using (var stream = iconEntry.Open()) {
+            stream.Write(TestDirectory.IconBytes);
+        }
+
+        archive.CreateEntry("org/openstreetmap/josm/plugins/betterime/BetterIMEPlugin.class");
+    }
+
     private static string ProcessManifest(string entry) => $$"""
         {
           schemaVersion: 1,
@@ -501,6 +589,7 @@ public class PluginSystemTests {
               {
                 location: 'main',
                 icon: 'Download',
+                label: 'Download now',
                 tooltip: 'Download data',
                 command: 'hello', order: 20,
               },
@@ -538,7 +627,7 @@ public class PluginSystemTests {
         """;
 
     private sealed class TestDirectory : IDisposable {
-        private static readonly byte[] IconBytes = Convert.FromBase64String(
+        public static readonly byte[] IconBytes = Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
         public TestDirectory() {

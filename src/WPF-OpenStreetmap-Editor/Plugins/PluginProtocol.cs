@@ -14,4 +14,5 @@ public static class PluginActionTypes {
     public const string ManageOsmAccounts = "manageOsmAccounts";
     public const string DownloadOsm = "downloadOsm";
     public const string UploadOsm = "uploadOsm";
+    public const string OpenPythonTerminal = "openPythonTerminal";
 }

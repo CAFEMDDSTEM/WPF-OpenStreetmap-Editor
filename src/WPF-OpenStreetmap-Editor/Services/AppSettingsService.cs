@@ -8,15 +8,31 @@ using System.Text.Json.Serialization;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
+public enum TilePerformanceMode {
+    MemorySaver,
+    Responsive
+}
+
 public sealed class AppSettings {
+    public const int DefaultTileCacheMaxAgeDays = 30;
+    public const int MinTileCacheMaxAgeDays = 1;
+    public const int MaxTileCacheMaxAgeDays = 3650;
+
     public string ThemeId { get; set; } = ThemeService.SystemThemeId;
     public string LanguageId { get; set; } = LocalizationService.SystemLanguageId;
     public string ActiveSourceName { get; set; } = "Esri 世界影像";
     public string ActiveLayerId { get; set; } = "";
     public int MapMaxZoom { get; set; } = GeoConverter.MaxZoom;
     public bool ExperimentalSmoothZoom { get; set; }
+    public TilePerformanceMode TilePerformanceMode { get; set; } = TilePerformanceMode.Responsive;
+    public int TileCacheMaxAgeDays { get; set; } = DefaultTileCacheMaxAgeDays;
     public string DefaultImportProjectionId { get; set; } = ProjectionService.Wgs84Id;
     public string CustomImportProjectionWkt { get; set; } = "";
+    public string DisplayAlignmentProjectionId { get; set; } = ProjectionService.Wgs84Id;
+    public string CustomDisplayAlignmentProjectionWkt { get; set; } = "";
+    public double DisplayAlignmentOffsetX { get; set; }
+    public double DisplayAlignmentOffsetY { get; set; }
+    public bool ShowThirdPartyIcons { get; set; } = true;
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
 
@@ -48,8 +64,15 @@ public sealed class AppSettings {
             ActiveLayerId = ActiveLayerId,
             MapMaxZoom = MapMaxZoom,
             ExperimentalSmoothZoom = ExperimentalSmoothZoom,
+            TilePerformanceMode = TilePerformanceMode,
+            TileCacheMaxAgeDays = TileCacheMaxAgeDays,
             DefaultImportProjectionId = DefaultImportProjectionId,
             CustomImportProjectionWkt = CustomImportProjectionWkt,
+            DisplayAlignmentProjectionId = DisplayAlignmentProjectionId,
+            CustomDisplayAlignmentProjectionWkt = CustomDisplayAlignmentProjectionWkt,
+            DisplayAlignmentOffsetX = DisplayAlignmentOffsetX,
+            DisplayAlignmentOffsetY = DisplayAlignmentOffsetY,
+            ShowThirdPartyIcons = ShowThirdPartyIcons,
             TileSources = [.. TileSources.Select(static source => source.Clone())],
             ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())]
         };
@@ -260,6 +283,10 @@ public static class AppSettingsService {
         settings.LanguageId = LocalizationService.NormalizeLanguageId(settings.LanguageId);
         settings.DefaultImportProjectionId = ProjectionService.NormalizeProjectionId(settings.DefaultImportProjectionId);
         settings.CustomImportProjectionWkt = settings.CustomImportProjectionWkt?.Trim() ?? "";
+        settings.DisplayAlignmentProjectionId = ProjectionService.NormalizeProjectionId(settings.DisplayAlignmentProjectionId);
+        settings.CustomDisplayAlignmentProjectionWkt = settings.CustomDisplayAlignmentProjectionWkt?.Trim() ?? "";
+        if (!double.IsFinite(settings.DisplayAlignmentOffsetX)) settings.DisplayAlignmentOffsetX = 0;
+        if (!double.IsFinite(settings.DisplayAlignmentOffsetY)) settings.DisplayAlignmentOffsetY = 0;
 
         var defaults = TileSourcePreset.CreateDefaults();
 
@@ -308,6 +335,13 @@ public static class AppSettingsService {
         }
 
         settings.MapMaxZoom = Math.Clamp(settings.MapMaxZoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);
+        if (!Enum.IsDefined(settings.TilePerformanceMode)) {
+            settings.TilePerformanceMode = TilePerformanceMode.Responsive;
+        }
+        settings.TileCacheMaxAgeDays = Math.Clamp(
+            settings.TileCacheMaxAgeDays,
+            AppSettings.MinTileCacheMaxAgeDays,
+            AppSettings.MaxTileCacheMaxAgeDays);
         foreach (var source in settings.TileSources) {
             source.MapMaxZoom = Math.Clamp(source.MapMaxZoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);
             source.ImageMaxZoom = Math.Clamp(source.ImageMaxZoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);
@@ -360,6 +394,23 @@ public static class AppSettingsService {
         var settingsLayer = settings.ImageLayers[oldIndex];
         settings.ImageLayers.RemoveAt(oldIndex);
         settings.ImageLayers.Insert(Math.Clamp(insertIndex, 0, settings.ImageLayers.Count), settingsLayer);
+        return true;
+    }
+
+    public static bool RotateRasterLayerOrder(AppSettings settings) {
+        var rasterLayers = settings.ImageLayers
+            .Where(static layer => layer.Kind == MapLayerKind.Raster)
+            .ToList();
+        if (rasterLayers.Count < 2) return false;
+
+        var firstRasterLayer = rasterLayers[0];
+        var oldIndex = settings.ImageLayers.FindIndex(candidate =>
+            ReferenceEquals(candidate, firstRasterLayer) || candidate.Id == firstRasterLayer.Id);
+        if (oldIndex < 0) return false;
+
+        settings.ImageLayers.RemoveAt(oldIndex);
+        var lastRasterIndex = settings.ImageLayers.FindLastIndex(static layer => layer.Kind == MapLayerKind.Raster);
+        settings.ImageLayers.Insert(lastRasterIndex + 1, firstRasterLayer);
         return true;
     }
 

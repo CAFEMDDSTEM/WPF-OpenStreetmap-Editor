@@ -4,35 +4,37 @@ using System.Windows.Media.Imaging;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
-/// <summary>
-/// 瓦片图片异步加载器：集成内存缓存 + 去重（相同 key 的并发请求只执行一次下载解码）。
-/// 优先走 TileMemoryCache LRU 缓存，未命中时通过 TileService 下载字节并解码为 BitmapSource。
-/// </summary>
 public sealed class TileImageLoader {
-    private const int SharedMaxEntries = 768;
-    private const long SharedMaxBytes = 192L * 1024 * 1024;   // 192 MB
+    private const int MemorySaverMaxEntries = 384;
+    private const long MemorySaverMaxBytes = 96L * 1024 * 1024;
+    private const int ResponsiveMaxEntries = 2048;
+    private const long ResponsiveMaxBytes = 512L * 1024 * 1024;
+    private static readonly object SharedGate = new();
+    private static TileMemoryCacheOptions SharedOptions = GetCacheOptions(TilePerformanceMode.Responsive);
     private readonly TileMemoryCache _memoryCache;
-    private readonly ConcurrentDictionary<string, Lazy<Task<BitmapSource?>>> _inFlight = new(); // 去重字典
+    private readonly ConcurrentDictionary<string, Lazy<Task<BitmapSource?>>> _inFlight = new();
 
-    /// <summary>全局共享实例（768 条目 / 192 MB）</summary>
-    public static TileImageLoader Shared { get; } = new(
-        new TileMemoryCache(SharedMaxEntries, SharedMaxBytes));
+    public static TileImageLoader Shared { get; private set; } = CreateShared(SharedOptions);
 
     public TileImageLoader(TileMemoryCache memoryCache) {
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
     }
 
-    /// <summary>清空内存缓存</summary>
     public void Clear() {
         _memoryCache.Clear();
     }
 
-    /// <summary>
-    /// 异步加载瓦片 BitmapSource：
-    /// 1) 查内存缓存 → 命中直接返回
-    /// 2) 通过 _inFlight 去重（相同 key 的并发请求共享同一个 Task）
-    /// 3) 未命中时调用 LoadAndCacheAsync 下载并解码
-    /// </summary>
+    public static bool ConfigureShared(TilePerformanceMode mode) {
+        var options = GetCacheOptions(mode);
+        lock (SharedGate) {
+            if (SharedOptions == options) return false;
+
+            SharedOptions = options;
+            Shared = CreateShared(options);
+            return true;
+        }
+    }
+
     public async Task<BitmapSource?> LoadAsync(
         TileService tileService,
         int zoom,
@@ -48,14 +50,12 @@ public sealed class TileImageLoader {
             return cached;
         }
 
-        // 去重：相同 cacheKey 的并发请求共享同一个下载+解码任务
         var candidate = new Lazy<Task<BitmapSource?>>(
             () => LoadAndCacheAsync(tileService, cacheKey, zoom, tileX, tileY, accessToken),
             LazyThreadSafetyMode.ExecutionAndPublication);
         var request = _inFlight.GetOrAdd(cacheKey, candidate);
         var sharedTask = request.Value;
 
-        // 只有成功插入的调用方负责在完成后清理 _inFlight 条目
         if (ReferenceEquals(request, candidate)) {
             _ = sharedTask.ContinueWith(
                 _ => _inFlight.TryRemove(
@@ -68,7 +68,6 @@ public sealed class TileImageLoader {
         return await sharedTask.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>从 TileService 获取字节 → 后台解码 → 加入内存缓存</summary>
     private async Task<BitmapSource?> LoadAndCacheAsync(
         TileService tileService,
         string cacheKey,
@@ -85,19 +84,29 @@ public sealed class TileImageLoader {
         if (source is not null) {
             _memoryCache.Add(cacheKey, source);
         }
+
         return source;
     }
 
-    /// <summary>构建缓存键：图源标识 + zoom/tileX/tileY，X 做环绕归一化</summary>
     private static string CreateCacheKey(string sourceIdentity, int zoom, int tileX, int tileY) {
         if (zoom >= GeoConverter.MinZoom && zoom <= GeoConverter.MaxZoom) {
             var tileCount = GeoConverter.GetTileCount(zoom);
             tileX = ((tileX % tileCount) + tileCount) % tileCount;
         }
+
         return $"{sourceIdentity}|{zoom}/{tileX}/{tileY}";
     }
 
-    /// <summary>将字节数组解码为 WPF BitmapImage（使用 MemoryStream + BitmapCacheOption.OnLoad）</summary>
+    private static TileImageLoader CreateShared(TileMemoryCacheOptions options) {
+        return new TileImageLoader(new TileMemoryCache(options.MaxEntries, options.MaxBytes));
+    }
+
+    private static TileMemoryCacheOptions GetCacheOptions(TilePerformanceMode mode) {
+        return mode == TilePerformanceMode.MemorySaver
+            ? new TileMemoryCacheOptions(MemorySaverMaxEntries, MemorySaverMaxBytes)
+            : new TileMemoryCacheOptions(ResponsiveMaxEntries, ResponsiveMaxBytes);
+    }
+
     private static BitmapSource? DecodeTile(byte[] data) {
         try {
             using var stream = new MemoryStream(data, writable: false);
@@ -113,4 +122,6 @@ public sealed class TileImageLoader {
             return null;
         }
     }
+
+    private readonly record struct TileMemoryCacheOptions(int MaxEntries, long MaxBytes);
 }

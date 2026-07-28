@@ -19,6 +19,7 @@
     <sys:String x:Key="Common.Status">狀態</sys:String>
     <sys:String x:Key="Common.Type">類型</sys:String>
     <sys:String x:Key="Common.Version">版本</sys:String>
+    <sys:String x:Key="Common.Warning">警告</sys:String>
 
     <sys:String x:Key="Main.Menu.File">檔案</sys:String>
     <sys:String x:Key="Main.Menu.New">新增</sys:String>
@@ -29,8 +30,10 @@
     <sys:String x:Key="Main.Menu.Redo">重做</sys:String>
     <sys:String x:Key="Main.Menu.CopySelected">複製選取的物件</sys:String>
     <sys:String x:Key="Main.Menu.PasteFeatures">貼上物件</sys:String>
+    <sys:String x:Key="Main.Menu.PasteTags">貼上標籤</sys:String>
     <sys:String x:Key="Main.Menu.DuplicateSelected">建立選取物件的副本</sys:String>
     <sys:String x:Key="Main.Menu.EditTags">編輯標籤</sys:String>
+    <sys:String x:Key="Main.Menu.FindFeatures">搜尋要素</sys:String>
     <sys:String x:Key="Main.Menu.RotateSelected">旋轉選取的物件</sys:String>
     <sys:String x:Key="Main.Menu.MoveSelected">移動選取的物件</sys:String>
     <sys:String x:Key="Main.Menu.OrthogonalizeSelected">將選取物件直角化</sys:String>
@@ -65,6 +68,8 @@
     <sys:String x:Key="Main.Features.Title">地圖要素</sys:String>
     <sys:String x:Key="Main.Features.Hidden">隱藏</sys:String>
     <sys:String x:Key="Main.Features.GeometryType">類型</sys:String>
+    <sys:String x:Key="Main.Features.SearchTooltip">依 ID、類型、OSM ID 或標籤搜尋要素</sys:String>
+    <sys:String x:Key="Main.Features.ClearSearch">清除要素搜尋</sys:String>
     <sys:String x:Key="Main.AiTags.Header">AI 標籤助理</sys:String>
     <sys:String x:Key="Main.AiTags.Description">描述選取的物件。BetterID AI 會識別物件並建議 OSM 標籤。</sys:String>
     <sys:String x:Key="Main.AiTags.Suggest">識別標籤</sys:String>
@@ -111,10 +116,13 @@
     <sys:String x:Key="Main.Mode.DrawLine">繪製線段模式 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">旋轉模式 (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移動模式 (M)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">擠出模式 (X)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">刪除要素</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">是否刪除 {0:N0} 個選取的要素?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">請選取一個要素以編輯標籤。</sys:String>
     <sys:String x:Key="Main.FeatureCountWithHidden">{0:N0} / 隱藏 {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCount">{0:N0} / {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCountWithHidden">{0:N0} / {1:N0} / 隱藏 {2:N0}</sys:String>
     <sys:String x:Key="Main.Status.Command">，命令 {0}</sys:String>
     <sys:String x:Key="Main.Status.NoMapOpen">未開啟地圖資料{0}</sys:String>
     <sys:String x:Key="Main.Status.Selection">，已選取 {0:N0}</sys:String>
@@ -160,6 +168,11 @@
     <sys:String x:Key="Settings.SourceNameDuplicate">圖源名稱不能重複。</sys:String>
     <sys:String x:Key="Settings.SourceUrlRequired">請輸入圖源 URL。</sys:String>
     <sys:String x:Key="Settings.ZoomRangeRequired">層級必須是 {0} 到 {1} 之間的整數。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGoogle">Google 地圖影像不符合 OSM 規範。請確認你有使用權限，並保持署名正確。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyAmap">高德影像使用火星座標系（GCJ-02），WOSM 不支援這種座標系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyBaidu">百度影像使用百度座標系（通常為 BD-09），WOSM 不支援這種座標系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGcj02">此影像源通常使用火星座標系（GCJ-02），WOSM 不支援這種座標系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyProprietary">這是常見受限的專有地圖來源。除非已取得明確授權並保持署名正確，否則不要用於 OSM 編輯。</sys:String>
 
     <sys:String x:Key="Plugins.Title">外掛程式</sys:String>
     <sys:String x:Key="Plugins.Install">安裝...</sys:String>
@@ -173,6 +186,13 @@
     <sys:String x:Key="Startup.Preparing">正在準備應用程式...</sys:String>
     <sys:String x:Key="Startup.Progress">啟動進度</sys:String>
     <sys:String x:Key="Startup.Version">版本 {0}</sys:String>
+    <sys:String x:Key="Welcome.Title">歡迎使用 WPF OpenStreetmap Editor</sys:String>
+    <sys:String x:Key="Welcome.Warning">這是一個獨立部署的 OpenStreetMap 編輯器。上傳前請仔細檢查每一項修改。</sys:String>
+    <sys:String x:Key="Welcome.Description">你可以先看教學熟悉介面，也可以直接開始編輯。</sys:String>
+    <sys:String x:Key="Welcome.PrivacyTitle">你的隱私設定</sys:String>
+    <sys:String x:Key="Welcome.ShowThirdPartyIcons">顯示第三方圖示</sys:String>
+    <sys:String x:Key="Welcome.StartTutorial">開始教學</sys:String>
+    <sys:String x:Key="Welcome.EditNow">立即編輯</sys:String>
 
     <sys:String x:Key="Help.Title">說明與關於</sys:String>
     <sys:String x:Key="Help.Usage">說明</sys:String>
@@ -268,7 +288,7 @@
     <sys:String x:Key="Plugins.Column.Type">類型</sys:String>
     <sys:String x:Key="Plugins.Column.Status">狀態</sys:String>
     <sys:String x:Key="Plugins.SelectPackageTitle">選取外掛程式套件</sys:String>
-    <sys:String x:Key="Plugins.PackageFilter">WOSM 外掛程式|plugin.json5;*.wosm-plugin;*.zip|外掛程式資訊清單|plugin.json5|外掛程式套件|*.wosm-plugin;*.zip|所有檔案|*.*</sys:String>
+    <sys:String x:Key="Plugins.PackageFilter">WOSM 外掛程式|plugin.json5;*.wosm-plugin;*.zip;*.jar|外掛程式資訊清單|plugin.json5|外掛程式套件|*.wosm-plugin;*.zip;*.jar|所有檔案|*.*</sys:String>
     <sys:String x:Key="Plugins.NativeRiskTitle">原生 DLL 外掛程式風險</sys:String>
     <sys:String x:Key="Plugins.NativeRiskMessage">「{0}」包含會在主處理序中執行的原生 DLL。它可以讀取或變更目前使用者可存取的檔案、存取網路、控制主應用程式並啟動其他程式。只有在你信任來源時才繼續。是否安裝並允許執行?</sys:String>
     <sys:String x:Key="Plugins.NativeTrustTitle">確認原生 DLL 外掛程式</sys:String>
@@ -305,9 +325,13 @@
     <sys:String x:Key="Help.Section.Keyboard">鍵盤快速鍵</sys:String>
     <sys:String x:Key="Help.Keyboard.F1">F1 會開啟說明與關於。</sys:String>
     <sys:String x:Key="Help.Keyboard.Save">Ctrl+S 會儲存目前地圖。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z 和 Ctrl+Y 可復原與重做編輯。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z 和 Ctrl+Y 可復原與重做編輯；Ctrl+Shift+V 會將複製的標籤貼到選取物件。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Search">Ctrl+F 搜尋目前資料圖層中的物件。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C 複製選取要素，Ctrl+Shift+V 僅貼上複製的標籤，Shift+R 從上一個選取要素複製標籤。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S 選取要素，V 框選，A 繪製線段。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R 旋轉、M 移動，Q 將選取要素直角化。</sys:String>
+    <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F 進入快速繪製線段；Ctrl+Shift+F 切換繪製線段時的視口跟隨。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R 旋轉、M 移動，X 擠出線段，Q 將選取要素直角化。</sys:String>
+    <sys:String x:Key="Help.Keyboard.ImageryOrder">` 輪換影像圖層順序，方便快速比較。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">鍵盤命令輸入啟用時，可輸入支援的編輯命令。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移動模式啟用時，可在地圖上拖曳選取的要素。</sys:String>
     <sys:String x:Key="Help.Keyboard.Nodes">Insert 會在地圖中心新增節點。</sys:String>
@@ -333,6 +357,13 @@
     <sys:String x:Key="Osm.Auth.UnsupportedMethod">不支援的 OSM 驗證方法。</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 標準</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM 下載區域地圖</sys:String>
+    <sys:String x:Key="Osm.Download.SearchTooltip">搜尋地點或地址以將地圖置中</sys:String>
+    <sys:String x:Key="Osm.Download.SearchButton">搜尋</sys:String>
+    <sys:String x:Key="Osm.Download.ClearSearch">清除搜尋</sys:String>
+    <sys:String x:Key="Osm.Download.Searching">正在搜尋 {0}...</sys:String>
+    <sys:String x:Key="Osm.Download.SearchResult">正在顯示 {0}</sys:String>
+    <sys:String x:Key="Osm.Download.SearchNoResults">找不到「{0}」對應的地點。</sys:String>
+    <sys:String x:Key="Osm.Download.SearchError">無法搜尋地點。請檢查網路後再試一次。</sys:String>
     <sys:String x:Key="Osm.Download.ZoomIn">放大</sys:String>
     <sys:String x:Key="Osm.Download.ZoomOut">縮小</sys:String>
     <sys:String x:Key="Osm.Download.TileUnavailable">標準地圖圖磚暫時無法使用</sys:String>
@@ -387,4 +418,16 @@
     <sys:String x:Key="Settings.DefaultImportProjection">預設匯入投影</sys:String>
     <sys:String x:Key="Settings.CustomProjectionWkt">自訂 WKT</sys:String>
     <sys:String x:Key="Settings.ImportProjectionHelp">WOSM 會以 WGS 84 經度/緯度儲存並呈現向量資料。此設定會在匯入時轉換 GeoJSON、GML，以及沒有 PRJ 檔案的 Shapefile。OSM、GPX、KML 和含 PRJ 的 Shapefile 會保留各自的座標規則。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignment">地圖對齊</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentProjection">對齊投影</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffset">顯示偏移 X / Y</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffsetRequired">請輸入數字形式的顯示偏移值。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentHelp">只在繪製和互動時套用可逆的顯示偏移。儲存的向量座標仍保持 WGS 84 經度/緯度。</sys:String>
+    <sys:String x:Key="Settings.TileStoragePerformance">圖磚儲存與效能</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMode">影像體驗</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceResponsive">更順手</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMemorySaver">更省記憶體</sys:String>
+    <sys:String x:Key="Settings.TileCacheDays">快取天數</sys:String>
+    <sys:String x:Key="Settings.TileStorageHelp">更順手模式會保留更多已解碼圖磚，並預先載入附近的非志願圖源。更省記憶體模式使用較小的記憶體快取並關閉預取。磁碟快取會依設定天數清理。</sys:String>
+    <sys:String x:Key="Settings.TileCacheDaysRange">快取天數必須是 {0} 到 {1} 之間的整數。</sys:String>
 </ResourceDictionary>

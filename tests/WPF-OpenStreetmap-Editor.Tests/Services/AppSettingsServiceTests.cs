@@ -14,29 +14,58 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
+    public void Clone_PreservesTileCacheSettings() {
+        var settings = new AppSettings {
+            TilePerformanceMode = TilePerformanceMode.MemorySaver,
+            TileCacheMaxAgeDays = 120
+        };
+
+        var clone = settings.Clone();
+
+        Assert.Equal(TilePerformanceMode.MemorySaver, clone.TilePerformanceMode);
+        Assert.Equal(120, clone.TileCacheMaxAgeDays);
+    }
+
+    [Fact]
     public void Clone_PreservesImportProjectionSettings() {
         var settings = new AppSettings {
             DefaultImportProjectionId = ProjectionService.CustomWktId,
-            CustomImportProjectionWkt = "GEOGCS[\"Custom\",DATUM[\"D\",SPHEROID[\"S\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]]"
+            CustomImportProjectionWkt = "GEOGCS[\"Custom\",DATUM[\"D\",SPHEROID[\"S\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433]]",
+            DisplayAlignmentProjectionId = ProjectionService.WebMercatorId,
+            DisplayAlignmentOffsetX = 120,
+            DisplayAlignmentOffsetY = -80,
+            ShowThirdPartyIcons = false
         };
 
         var clone = settings.Clone();
 
         Assert.Equal(ProjectionService.CustomWktId, clone.DefaultImportProjectionId);
         Assert.Equal(settings.CustomImportProjectionWkt, clone.CustomImportProjectionWkt);
+        Assert.Equal(ProjectionService.WebMercatorId, clone.DisplayAlignmentProjectionId);
+        Assert.Equal(120, clone.DisplayAlignmentOffsetX);
+        Assert.Equal(-80, clone.DisplayAlignmentOffsetY);
+        Assert.False(clone.ShowThirdPartyIcons);
     }
 
     [Fact]
     public void EnsureDefaults_NormalizesImportProjectionSettings() {
         var settings = new AppSettings {
             DefaultImportProjectionId = "EPSG900913",
-            CustomImportProjectionWkt = null!
+            CustomImportProjectionWkt = null!,
+            DisplayAlignmentProjectionId = "EPSG25833",
+            CustomDisplayAlignmentProjectionWkt = null!,
+            DisplayAlignmentOffsetX = double.NaN,
+            DisplayAlignmentOffsetY = double.PositiveInfinity
         };
 
         AppSettingsService.EnsureDefaults(settings);
 
         Assert.Equal(ProjectionService.WebMercatorId, settings.DefaultImportProjectionId);
         Assert.Equal(string.Empty, settings.CustomImportProjectionWkt);
+        Assert.Equal(ProjectionService.Etrs89Utm33NId, settings.DisplayAlignmentProjectionId);
+        Assert.Equal(string.Empty, settings.CustomDisplayAlignmentProjectionWkt);
+        Assert.Equal(0, settings.DisplayAlignmentOffsetX);
+        Assert.Equal(0, settings.DisplayAlignmentOffsetY);
     }
 
     [Fact]
@@ -46,6 +75,17 @@ public class AppSettingsServiceTests {
         AppSettingsService.EnsureDefaults(settings);
 
         Assert.Equal(ThemeService.SystemThemeId, settings.ThemeId);
+    }
+
+    [Theory]
+    [InlineData(-10, AppSettings.MinTileCacheMaxAgeDays)]
+    [InlineData(99999, AppSettings.MaxTileCacheMaxAgeDays)]
+    public void EnsureDefaults_ClampsTileCacheDays(int days, int expected) {
+        var settings = new AppSettings { TileCacheMaxAgeDays = days };
+
+        AppSettingsService.EnsureDefaults(settings);
+
+        Assert.Equal(expected, settings.TileCacheMaxAgeDays);
     }
 
     [Fact]
@@ -137,6 +177,32 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
+    public void RotateRasterLayerOrder_MovesFirstRasterLayerBehindOtherRasterLayers() {
+        var settings = CreateLayerOrderSettings();
+        settings.ImageLayers.Insert(1, new MapImageLayer { Id = "data", Kind = MapLayerKind.Data });
+
+        var moved = AppSettingsService.RotateRasterLayerOrder(settings);
+
+        Assert.True(moved);
+        Assert.Equal(["b", "data", "c", "d", "a"], settings.ImageLayers.Select(static layer => layer.Id));
+    }
+
+    [Fact]
+    public void RotateRasterLayerOrder_ReturnsFalseWhenOnlyOneRasterLayerExists() {
+        var settings = new AppSettings {
+            ImageLayers = [
+                new MapImageLayer { Id = "data", Kind = MapLayerKind.Data },
+                new MapImageLayer { Id = "a", Kind = MapLayerKind.Raster }
+            ]
+        };
+
+        var moved = AppSettingsService.RotateRasterLayerOrder(settings);
+
+        Assert.False(moved);
+        Assert.Equal(["data", "a"], settings.ImageLayers.Select(static layer => layer.Id));
+    }
+
+    [Fact]
     public void EnsureDefaults_MigratesKnownSourceEmbeddedMaxZoomToSeparateFields() {
         var settings = new AppSettings {
             ActiveSourceName = "Esri World Imagery",
@@ -194,6 +260,24 @@ public class AppSettingsServiceTests {
             source.Source.StartsWith("bing:", StringComparison.OrdinalIgnoreCase) ||
             source.Source.StartsWith("bing[", StringComparison.OrdinalIgnoreCase) ||
             source.Source.Contains("virtualearth.net", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("Google Maps", "xyz:https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", TileSourceSafetyWarningKind.Google)]
+    [InlineData("高德影像", "xyz:https://webrd02.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}", TileSourceSafetyWarningKind.Amap)]
+    [InlineData("Baidu", "xyz:https://online0.bdimg.com/tile/?qt=tile&x={x}&y={y}&z={z}", TileSourceSafetyWarningKind.Baidu)]
+    [InlineData("腾讯地图", "xyz:https://rt0.map.gtimg.com/tile?z={z}&x={x}&y={y}", TileSourceSafetyWarningKind.Gcj02)]
+    [InlineData("搜狗地图", "xyz:https://p0.go2map.com/seamless1/0/174/717/{z}/{x}/{y}.png", TileSourceSafetyWarningKind.Gcj02)]
+    [InlineData("360地图", "xyz:https://map.so.com/tile/{z}/{x}/{y}.png", TileSourceSafetyWarningKind.Gcj02)]
+    [InlineData("Apple Maps", "xyz:https://maps.apple.com/tile?z={z}&x={x}&y={y}", TileSourceSafetyWarningKind.Proprietary)]
+    [InlineData("HERE Maps", "xyz:https://1.base.maps.ls.hereapi.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png8", TileSourceSafetyWarningKind.Proprietary)]
+    [InlineData("TomTom", "xyz:https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png", TileSourceSafetyWarningKind.Proprietary)]
+    [InlineData("Yandex Maps", "xyz:https://core-renderer-tiles.maps.yandex.net/tiles?x={x}&y={y}&z={z}", TileSourceSafetyWarningKind.Proprietary)]
+    [InlineData("Custom", "xyz:https://tiles.example.com/{z}/{x}/{y}.png", TileSourceSafetyWarningKind.None)]
+    public void TileSourceSafetyService_DetectsKnownProviderWarnings(string name, string source, TileSourceSafetyWarningKind expected) {
+        var warning = TileSourceSafetyService.GetWarningKind(name, source);
+
+        Assert.Equal(expected, warning);
     }
 
     [Fact]

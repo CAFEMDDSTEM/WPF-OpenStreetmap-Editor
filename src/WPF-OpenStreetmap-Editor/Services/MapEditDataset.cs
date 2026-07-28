@@ -86,7 +86,7 @@ public sealed class MapEditDataset {
         if (!Contains(feature) || feature.IsHidden == isHidden) return false;
 
         feature.IsHidden = isHidden;
-        if (markDirty && Document is not null) Document.IsDirty = true;
+        MarkContentChanged(markDirty);
         return true;
     }
 
@@ -131,16 +131,25 @@ public sealed class MapEditDataset {
         if (Document is not null) Document.IsDirty = isDirty;
     }
 
+    public void MarkContentChanged(bool markDirty = true) {
+        if (Document is null) return;
+
+        Document.MarkContentChanged();
+        if (markDirty) Document.IsDirty = true;
+    }
+
     private void MarkGeometryChanged(MapFeature feature, bool markDirty) {
         feature.InvalidateGeometry();
         if (Document is null) return;
 
         Document.InvalidateSpatialIndex();
+        Document.MarkContentChanged();
         if (markDirty) Document.IsDirty = true;
     }
 
     private static void MarkFeatureSetChanged(MapDocument document, bool markDirty) {
         document.InvalidateSpatialIndex();
+        document.MarkContentChanged();
         if (markDirty) document.IsDirty = true;
     }
 }

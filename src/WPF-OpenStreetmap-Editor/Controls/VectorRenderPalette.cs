@@ -14,9 +14,18 @@ internal sealed record VectorRenderPalette(
     IReadOnlyDictionary<VectorFeatureStyleKind, AreaRenderStyle> AreaStyles,
     IReadOnlyDictionary<VectorFeatureStyleKind, LineRenderStyle> LineStyles,
     IReadOnlyDictionary<VectorFeatureStyleKind, PointRenderStyle> PointStyles,
+    Brush LabelTextBrush,
+    Brush LabelBackgroundBrush,
+    Pen LabelBorderPen,
     Brush SelectionStroke,
     Brush SelectionFill,
-    Pen SelectionPen) {
+    Pen SelectionPen,
+    Brush HoverFill,
+    Pen HoverPen,
+    Pen HoverWidePen,
+    Brush VertexHandleFill,
+    Pen VertexHandlePen,
+    Pen VertexHandleSelectedPen) {
     public static VectorRenderPalette Create(Func<string, object?> findResource) {
         var textBrush = FindBrush(findResource, "Theme.TextBrush", SystemColors.WindowTextBrush);
         var borderBrush = FindBrush(findResource, "Theme.BorderBrush", SystemColors.ActiveBorderBrush);
@@ -26,6 +35,7 @@ internal sealed record VectorRenderPalette(
         var genericArea = CreateAreaStyle(findResource, "GenericArea", mapBrush, borderBrush, 0.8);
         var genericLine = CreateLineStyle(findResource, "GenericLine", textBrush, textBrush, 1.2, 1.2);
         var genericPoint = CreatePointStyle(findResource, "GenericPoint", surfaceBrush, textBrush, 3.5, 1.0);
+        var labelBackground = CloneWithOpacity(surfaceBrush, 0.92);
 
         var areaStyles = new Dictionary<VectorFeatureStyleKind, AreaRenderStyle> {
             [VectorFeatureStyleKind.GenericArea] = genericArea,
@@ -43,10 +53,17 @@ internal sealed record VectorRenderPalette(
             [VectorFeatureStyleKind.Waterway] = CreateLineStyle(findResource, "Waterway", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
             [VectorFeatureStyleKind.Rail] = CreateLineStyle(findResource, "Rail", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
             [VectorFeatureStyleKind.Path] = CreateLineStyle(findResource, "Path", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
-            [VectorFeatureStyleKind.LocalRoad] = CreateLineStyle(findResource, "LocalRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
-            [VectorFeatureStyleKind.SecondaryRoad] = CreateLineStyle(findResource, "SecondaryRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
-            [VectorFeatureStyleKind.PrimaryRoad] = CreateLineStyle(findResource, "PrimaryRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness),
-            [VectorFeatureStyleKind.Motorway] = CreateLineStyle(findResource, "Motorway", genericLine.Stroke.Brush, genericLine.Stroke.Brush, genericLine.Stroke.Thickness, genericLine.Stroke.Thickness)
+            [VectorFeatureStyleKind.TrackRoad] = CreateLineStyle(findResource, "TrackRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 0.9, 1.6, [6, 4]),
+            [VectorFeatureStyleKind.ServiceRoad] = CreateLineStyle(findResource, "ServiceRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 1.0, 2.2),
+            [VectorFeatureStyleKind.ResidentialRoad] = CreateLineStyle(findResource, "ResidentialRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 1.8, 3.4),
+            [VectorFeatureStyleKind.LivingStreetRoad] = CreateLineStyle(findResource, "LivingStreetRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 1.8, 3.2),
+            [VectorFeatureStyleKind.UnclassifiedRoad] = CreateLineStyle(findResource, "UnclassifiedRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 2.0, 3.4),
+            [VectorFeatureStyleKind.LocalRoad] = CreateLineStyle(findResource, "LocalRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 2.2, 4.0),
+            [VectorFeatureStyleKind.TertiaryRoad] = CreateLineStyle(findResource, "TertiaryRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 2.6, 4.4),
+            [VectorFeatureStyleKind.SecondaryRoad] = CreateLineStyle(findResource, "SecondaryRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 3.0, 5.0),
+            [VectorFeatureStyleKind.PrimaryRoad] = CreateLineStyle(findResource, "PrimaryRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 3.4, 5.6),
+            [VectorFeatureStyleKind.TrunkRoad] = CreateLineStyle(findResource, "TrunkRoad", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 3.8, 6.2),
+            [VectorFeatureStyleKind.Motorway] = CreateLineStyle(findResource, "Motorway", genericLine.Stroke.Brush, genericLine.Stroke.Brush, 4.2, 6.8)
         };
 
         var pointStyles = new Dictionary<VectorFeatureStyleKind, PointRenderStyle> {
@@ -57,6 +74,12 @@ internal sealed record VectorRenderPalette(
             [VectorFeatureStyleKind.MedicalPoint] = CreatePointStyle(findResource, "MedicalPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
             [VectorFeatureStyleKind.EducationPoint] = CreatePointStyle(findResource, "EducationPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
             [VectorFeatureStyleKind.TransitPoint] = CreatePointStyle(findResource, "TransitPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.FuelPoint] = CreatePointStyle(findResource, "FuelPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.BankPoint] = CreatePointStyle(findResource, "BankPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.ToiletPoint] = CreatePointStyle(findResource, "ToiletPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.SafetyPoint] = CreatePointStyle(findResource, "SafetyPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.PostPoint] = CreatePointStyle(findResource, "PostPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
+            [VectorFeatureStyleKind.HotelPoint] = CreatePointStyle(findResource, "HotelPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
             [VectorFeatureStyleKind.ShopPoint] = CreatePointStyle(findResource, "ShopPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
             [VectorFeatureStyleKind.TourismPoint] = CreatePointStyle(findResource, "TourismPoint", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0),
             [VectorFeatureStyleKind.Place] = CreatePointStyle(findResource, "Place", genericPoint.Fill, genericPoint.Stroke?.Brush ?? textBrush, genericPoint.Radius, genericPoint.Stroke?.Thickness ?? 1.0)
@@ -66,14 +89,27 @@ internal sealed record VectorRenderPalette(
         var selectionFill = CloneWithOpacity(
             FindBrush(findResource, "Theme.SelectionBrush", SystemColors.HighlightBrush),
             0.35);
+        var hoverFill = CloneWithOpacity(
+            FindBrush(findResource, "Theme.SelectionBrush", SystemColors.HighlightBrush),
+            0.18);
+        var vertexHandleFill = CloneWithOpacity(surfaceBrush, 0.92);
 
         return new VectorRenderPalette(
             areaStyles,
             lineStyles,
             pointStyles,
+            textBrush,
+            labelBackground,
+            CreatePen(borderBrush, 1.0),
             selectionStroke,
             selectionFill,
-            CreatePen(selectionStroke, 2.0));
+            CreatePen(selectionStroke, 2.0),
+            hoverFill,
+            CreatePen(CloneWithOpacity(selectionStroke, 0.95), 2.0),
+            CreatePen(CloneWithOpacity(selectionStroke, 0.55), 8.0),
+            vertexHandleFill,
+            CreatePen(textBrush, 1.0),
+            CreatePen(selectionStroke, 1.6));
     }
 
     public AreaRenderStyle GetAreaStyle(VectorFeatureStyleKind kind) {
@@ -100,9 +136,15 @@ internal sealed record VectorRenderPalette(
         Brush fillFallback,
         Brush strokeFallback,
         double strokeThicknessFallback) {
-        var fill = FindBrush(findResource, $"Theme.Map.{name}FillBrush", fillFallback);
-        var stroke = FindBrush(findResource, $"Theme.Map.{name}StrokeBrush", strokeFallback);
-        var strokeThickness = FindDouble(findResource, $"Theme.Map.{name}StrokeThickness", strokeThicknessFallback);
+        var fill = CloneWithOpacity(
+            FindBrush(findResource, $"Theme.Map.{name}FillBrush", fillFallback),
+            GetAreaFillOpacity(name));
+        var stroke = CloneWithOpacity(
+            FindBrush(findResource, $"Theme.Map.{name}StrokeBrush", strokeFallback),
+            0.72);
+        var strokeThickness = Math.Max(
+            FindDouble(findResource, $"Theme.Map.{name}StrokeThickness", strokeThicknessFallback),
+            IsOutlineArea(name) ? 2.4 : 1.3);
         return new AreaRenderStyle(
             fill,
             CreateOptionalPen(stroke, strokeThickness));
@@ -114,12 +156,17 @@ internal sealed record VectorRenderPalette(
         Brush strokeFallback,
         Brush casingFallback,
         double strokeThicknessFallback,
-        double casingThicknessFallback) {
-        var stroke = FindBrush(findResource, $"Theme.Map.{name}StrokeBrush", strokeFallback);
+        double casingThicknessFallback,
+        IReadOnlyList<double>? dashArrayFallback = null) {
+        var stroke = CloneWithOpacity(
+            FindBrush(findResource, $"Theme.Map.{name}StrokeBrush", strokeFallback),
+            0.72);
         var strokeThickness = FindDouble(findResource, $"Theme.Map.{name}StrokeThickness", strokeThicknessFallback);
-        var casing = FindBrush(findResource, $"Theme.Map.{name}CasingBrush", casingFallback);
+        var casing = CloneWithOpacity(
+            FindBrush(findResource, $"Theme.Map.{name}CasingBrush", casingFallback),
+            0.34);
         var casingThickness = FindDouble(findResource, $"Theme.Map.{name}CasingThickness", casingThicknessFallback);
-        var dashArray = FindDashArray(findResource, $"Theme.Map.{name}DashArray");
+        var dashArray = FindDashArray(findResource, $"Theme.Map.{name}DashArray", dashArrayFallback);
 
         return new LineRenderStyle(
             CreatePen(stroke, strokeThickness, dashArray),
@@ -155,11 +202,14 @@ internal sealed record VectorRenderPalette(
         };
     }
 
-    private static IReadOnlyList<double> FindDashArray(Func<string, object?> findResource, string key) {
+    private static IReadOnlyList<double> FindDashArray(
+        Func<string, object?> findResource,
+        string key,
+        IReadOnlyList<double>? fallback = null) {
         return findResource(key) switch {
             double[] values => values,
             DoubleCollection values => values.ToArray(),
-            _ => []
+            _ => fallback ?? []
         };
     }
 
@@ -191,5 +241,13 @@ internal sealed record VectorRenderPalette(
 
     private static void FreezeIfPossible(Freezable value) {
         if (value.CanFreeze) value.Freeze();
+    }
+
+    private static bool IsOutlineArea(string name) {
+        return name is "Building" or "BuiltArea" or "GenericArea";
+    }
+
+    private static double GetAreaFillOpacity(string name) {
+        return IsOutlineArea(name) ? 0.04 : 0.12;
     }
 }

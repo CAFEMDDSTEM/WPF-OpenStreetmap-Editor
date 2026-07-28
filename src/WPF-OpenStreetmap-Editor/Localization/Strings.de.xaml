@@ -16,6 +16,7 @@
     <sys:String x:Key="Common.Status">Status</sys:String>
     <sys:String x:Key="Common.Type">Typ</sys:String>
     <sys:String x:Key="Common.Version">Version</sys:String>
+    <sys:String x:Key="Common.Warning">Warnung</sys:String>
     <sys:String x:Key="Language.System">Systemeinstellung verwenden</sys:String>
     <sys:String x:Key="Language.English">Englisch</sys:String>
     <sys:String x:Key="Language.SimplifiedChinese">Chinesisch (vereinfacht)</sys:String>
@@ -32,8 +33,10 @@
     <sys:String x:Key="Main.Menu.Redo">Wiederholen</sys:String>
     <sys:String x:Key="Main.Menu.CopySelected">Ausgewählte Features kopieren</sys:String>
     <sys:String x:Key="Main.Menu.PasteFeatures">Features einfügen</sys:String>
+    <sys:String x:Key="Main.Menu.PasteTags">Tags einfügen</sys:String>
     <sys:String x:Key="Main.Menu.DuplicateSelected">Ausgewählte Features duplizieren</sys:String>
     <sys:String x:Key="Main.Menu.EditTags">Tags bearbeiten</sys:String>
+    <sys:String x:Key="Main.Menu.FindFeatures">Features suchen</sys:String>
     <sys:String x:Key="Main.Menu.RotateSelected">Ausgewählte Features drehen</sys:String>
     <sys:String x:Key="Main.Menu.MoveSelected">Ausgewählte Features verschieben</sys:String>
     <sys:String x:Key="Main.Menu.OrthogonalizeSelected">Ausgewählte Features orthogonalisieren</sys:String>
@@ -69,6 +72,8 @@
     <sys:String x:Key="Main.Features.Hidden">Ausgeblendet</sys:String>
     <sys:String x:Key="Main.Features.Id">ID</sys:String>
     <sys:String x:Key="Main.Features.GeometryType">Typ</sys:String>
+    <sys:String x:Key="Main.Features.SearchTooltip">Features nach ID, Typ, OSM-ID oder Tags suchen</sys:String>
+    <sys:String x:Key="Main.Features.ClearSearch">Featuresuche löschen</sys:String>
     <sys:String x:Key="Main.AiTags.Header">KI-Tag-Assistent</sys:String>
     <sys:String x:Key="Main.AiTags.Description">Beschreiben Sie das ausgewählte Objekt. BetterID AI erkennt es und schlägt OSM-Tags vor.</sys:String>
     <sys:String x:Key="Main.AiTags.Suggest">Tags erkennen</sys:String>
@@ -122,10 +127,13 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Main.Mode.DrawLine">Linie zeichnen (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">Drehmodus (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">Verschiebemodus (M)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">Extrusionsmodus (X)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">Features löschen</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">Die {0:N0} ausgewählten Features löschen?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">Wählen Sie ein Feature aus, um Tags zu bearbeiten.</sys:String>
     <sys:String x:Key="Main.FeatureCountWithHidden">{0:N0} / ausgeblendet {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCount">{0:N0} / {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCountWithHidden">{0:N0} / {1:N0} / ausgeblendet {2:N0}</sys:String>
     <sys:String x:Key="Main.Status.Command">, Befehl {0}</sys:String>
     <sys:String x:Key="Main.Status.NoMapOpen">Keine Kartendaten geöffnet{0}</sys:String>
     <sys:String x:Key="Main.Status.Selection">, ausgewählt {0:N0}</sys:String>
@@ -171,6 +179,18 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Settings.DefaultImportProjection">Standard-Importprojektion</sys:String>
     <sys:String x:Key="Settings.CustomProjectionWkt">Benutzerdefiniertes WKT</sys:String>
     <sys:String x:Key="Settings.ImportProjectionHelp">WOSM speichert und rendert Vektordaten als WGS-84-Länge/Breite. Diese Einstellung transformiert GeoJSON, GML und Shapefiles ohne PRJ-Datei beim Import. OSM, GPX, KML und Shapefiles mit PRJ behalten ihre eigenen Koordinatenregeln bei.</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignment">Kartenausrichtung</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentProjection">Ausrichtungsprojektion</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffset">Anzeigeversatz X / Y</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffsetRequired">Geben Sie numerische Werte für den Anzeigeversatz ein.</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentHelp">Wendet nur beim Zeichnen und Interagieren mit der Karte einen umkehrbaren Versatz an. Gespeicherte Vektorkoordinaten bleiben WGS-84-Länge/Breite.</sys:String>
+    <sys:String x:Key="Settings.TileStoragePerformance">Kachelspeicher und Leistung</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMode">Bilddarstellung</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceResponsive">Reaktionsschneller</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMemorySaver">Weniger Speicher</sys:String>
+    <sys:String x:Key="Settings.TileCacheDays">Cache-Tage</sys:String>
+    <sys:String x:Key="Settings.TileStorageHelp">Der reaktionsschnelle Modus behält mehr dekodierte Kacheln im Speicher und lädt nahe Nicht-Freiwilligenquellen vor. Der Speichersparmodus nutzt einen kleineren Speichercache und deaktiviert das Vorladen. Der Datenträgercache wird nach der gewählten Anzahl Tage bereinigt.</sys:String>
+    <sys:String x:Key="Settings.TileCacheDaysRange">Cache-Tage müssen eine ganze Zahl von {0} bis {1} sein.</sys:String>
     <sys:String x:Key="Settings.UrlHelp">URL unterstützt die Präfixe xyz[19]:, tms[18]:, tms[auto]: und tms:. Bekannte Quellen verwenden den hier konfigurierten maximalen Bilddatenzoom; benutzerdefinierte tms[auto]/tms:-Quellen werden automatisch erkannt.</sys:String>
     <sys:String x:Key="Settings.AuthorFormat">Autor: {0}</sys:String>
     <sys:String x:Key="Settings.AuthorLabel">Autor: </sys:String>
@@ -189,6 +209,11 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Settings.SourceNameDuplicate">Namen von Kachelquellen müssen eindeutig sein.</sys:String>
     <sys:String x:Key="Settings.SourceUrlRequired">Geben Sie eine URL für die Kachelquelle ein.</sys:String>
     <sys:String x:Key="Settings.ZoomRangeRequired">Die Zoomstufe muss eine ganze Zahl von {0} bis {1} sein.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGoogle">Google-Maps-Bilddaten entsprechen nicht den OSM-Regeln. Bitte prüfen Sie die Nutzungserlaubnis und die korrekte Attribution.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyAmap">Amap verwendet das GCJ-02-„Mars“-Koordinatensystem, das WOSM nicht unterstützt.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyBaidu">Baidu-Bilddaten verwenden das BD-09-Koordinatensystem, das WOSM nicht unterstützt.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGcj02">Diese Bilddatenquelle verwendet häufig das GCJ-02-„Mars“-Koordinatensystem, das WOSM nicht unterstützt.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyProprietary">Dies ist eine häufig eingeschränkte proprietäre Kartenquelle. Verwenden Sie sie nicht für OSM-Bearbeitung, außer Sie haben eine ausdrückliche Erlaubnis und halten die Attribution korrekt.</sys:String>
 
     <sys:String x:Key="Plugins.Title">Plug-Ins</sys:String>
     <sys:String x:Key="Plugins.Description">Native DLL-Plug-Ins werden im Hauptprozess ausgeführt und müssen nach Dateiänderungen erneut bestätigt werden. Prozess-Plug-Ins sind in AppContainer isoliert.</sys:String>
@@ -200,7 +225,7 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Plugins.TrustAndLoad">Vertrauen und laden</sys:String>
     <sys:String x:Key="Plugins.Reload">Erneut scannen</sys:String>
     <sys:String x:Key="Plugins.SelectPackageTitle">Plug-In-Paket auswählen</sys:String>
-    <sys:String x:Key="Plugins.PackageFilter">WOSM-Plug-In|plugin.json5;*.wosm-plugin;*.zip|Plug-In-Manifest|plugin.json5|Plug-In-Paket|*.wosm-plugin;*.zip|Alle Dateien|*.*</sys:String>
+    <sys:String x:Key="Plugins.PackageFilter">WOSM-Plug-In|plugin.json5;*.wosm-plugin;*.zip;*.jar|Plug-In-Manifest|plugin.json5|Plug-In-Paket|*.wosm-plugin;*.zip;*.jar|Alle Dateien|*.*</sys:String>
     <sys:String x:Key="Plugins.NativeRiskTitle">Risiko durch natives DLL-Plug-In</sys:String>
     <sys:String x:Key="Plugins.NativeRiskMessage">"{0}" enthält eine native DLL, die im Hauptprozess ausgeführt wird. Sie kann Dateien lesen oder ändern, auf die der aktuelle Benutzer zugreifen kann, auf das Netzwerk zugreifen, die Host-App steuern und andere Programme starten. Fahren Sie nur fort, wenn Sie der Quelle vertrauen. Installieren und Ausführung zulassen?</sys:String>
     <sys:String x:Key="Plugins.NativeTrustTitle">Natives DLL-Plug-In bestätigen</sys:String>
@@ -218,6 +243,13 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Startup.Version">Version {0}</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Title">Startdiagnose</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Error">Bei den Startprüfungen ist ein Fehler aufgetreten. Die App wird weiter geöffnet, und Details wurden in das Protokoll geschrieben.</sys:String>
+    <sys:String x:Key="Welcome.Title">Willkommen bei WPF OpenStreetmap Editor</sys:String>
+    <sys:String x:Key="Welcome.Warning">Dies ist ein eigenständig bereitgestellter OpenStreetMap-Editor. Prüfen Sie jede Änderung sorgfältig, bevor Sie sie hochladen.</sys:String>
+    <sys:String x:Key="Welcome.Description">Öffnen Sie die Einführung, um die Oberfläche kennenzulernen, oder beginnen Sie direkt mit der Bearbeitung.</sys:String>
+    <sys:String x:Key="Welcome.PrivacyTitle">Ihre Datenschutzeinstellungen</sys:String>
+    <sys:String x:Key="Welcome.ShowThirdPartyIcons">Drittanbieter-Symbole anzeigen</sys:String>
+    <sys:String x:Key="Welcome.StartTutorial">Einführung starten</sys:String>
+    <sys:String x:Key="Welcome.EditNow">Jetzt bearbeiten</sys:String>
 
     <sys:String x:Key="Update.CurrentVersionInvalid">Die aktuelle Version wurde nicht erkannt: {0}</sys:String>
     <sys:String x:Key="Update.HttpFailed">Updates konnten nicht geprüft werden: GitHub HTTP {0} {1}</sys:String>
@@ -253,9 +285,13 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Help.Section.Keyboard">Tastenkombinationen</sys:String>
     <sys:String x:Key="Help.Keyboard.F1">F1 öffnet Hilfe und Info.</sys:String>
     <sys:String x:Key="Help.Keyboard.Save">STRG+S speichert die aktuelle Karte.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Edit">STRG+Z und STRG+Y machen Bearbeitungen rückgängig bzw. wiederholen sie.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">STRG+Z und STRG+Y machen Bearbeitungen rückgängig bzw. wiederholen sie; STRG+UMSCHALT+V fügt kopierte Tags in die Auswahl ein.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Search">STRG+F sucht Objekte in der aktuellen Datenebene.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Tags">STRG+C kopiert ausgewählte Features, STRG+UMSCHALT+V fügt nur kopierte Tags ein, und UMSCHALT+R kopiert Tags vom zuvor ausgewählten Feature.</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S wählt Features aus, V aktiviert Rahmenauswahl und A zeichnet Linien.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R dreht, M verschiebt und Q orthogonalisiert ausgewählte Features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.JosmDrawing">UMSCHALT+F startet schnelles Linienzeichnen; STRG+UMSCHALT+F schaltet die Ansichtsverfolgung beim Linienzeichnen um.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R dreht, M verschiebt, X extrudiert Segmente und Q orthogonalisiert ausgewählte Features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.ImageryOrder">` rotiert die Reihenfolge der Bildebenen für schnellen Vergleich.</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">Geben Sie unterstützte Bearbeitungsbefehle ein, wenn die Tastaturbefehlseingabe aktiv ist.</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">Ziehen Sie ausgewählte Features auf der Karte, wenn der Verschiebemodus aktiv ist.</sys:String>
     <sys:String x:Key="Help.Keyboard.Nodes">Einfg fügt einen Knoten in der Kartenmitte hinzu.</sys:String>
@@ -312,6 +348,13 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Osm.Download.Title">OpenStreetMap-Daten herunterladen</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">Karte des OSM-Downloadbereichs</sys:String>
+    <sys:String x:Key="Osm.Download.SearchTooltip">Ort oder Adresse suchen und Karte zentrieren</sys:String>
+    <sys:String x:Key="Osm.Download.SearchButton">Suchen</sys:String>
+    <sys:String x:Key="Osm.Download.ClearSearch">Suche löschen</sys:String>
+    <sys:String x:Key="Osm.Download.Searching">{0} wird gesucht...</sys:String>
+    <sys:String x:Key="Osm.Download.SearchResult">{0} wird angezeigt</sys:String>
+    <sys:String x:Key="Osm.Download.SearchNoResults">Für "{0}" wurde kein Ort gefunden.</sys:String>
+    <sys:String x:Key="Osm.Download.SearchError">Orte konnten nicht gesucht werden. Prüfen Sie das Netzwerk, und versuchen Sie es erneut.</sys:String>
     <sys:String x:Key="Osm.Download.ZoomIn">Vergrößern</sys:String>
     <sys:String x:Key="Osm.Download.ZoomOut">Verkleinern</sys:String>
     <sys:String x:Key="Osm.Download.NoSelection">Kein Downloadbereich ausgewählt</sys:String>

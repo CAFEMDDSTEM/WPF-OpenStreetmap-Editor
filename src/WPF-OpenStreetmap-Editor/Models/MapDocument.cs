@@ -24,6 +24,7 @@ public sealed class MapDocument {
     public OsmDataset? Osm { get; set; }
     public bool IsDirty { get; set; }
     public int SkippedFeatureCount { get; set; }
+    public long Revision { get; private set; }
 
     public GeoBounds Bounds => _cachedBounds ??= GeoBounds.FromPoints(Features.SelectMany(static feature => feature.Points));
     public IReadOnlyDictionary<string, MapFeature> OriginalFeatures => _originalFeatures;
@@ -36,6 +37,10 @@ public sealed class MapDocument {
     public void InvalidateSpatialIndex() {
         _cachedBounds = null;
         _spatialIndex = null;
+    }
+
+    public void MarkContentChanged() {
+        Revision++;
     }
 
     public void MarkClean(bool updateOsmHistory = true, bool compactOsmHistory = false) {

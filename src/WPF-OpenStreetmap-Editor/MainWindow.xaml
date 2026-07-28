@@ -43,8 +43,10 @@
                 <Separator />
                 <MenuItem Header="{services:Loc Main.Menu.CopySelected}" InputGestureText="Ctrl+C" Click="CopySelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.PasteFeatures}" InputGestureText="Ctrl+V" Click="PasteFeatures_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.PasteTags}" InputGestureText="Ctrl+Shift+V" Click="PasteTags_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.DuplicateSelected}" InputGestureText="Ctrl+Shift+D" Click="DuplicateSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.FindFeatures}" InputGestureText="Ctrl+F" Click="FindFeatures_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.RotateSelected}" InputGestureText="R" Click="RotateSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.MoveSelected}" InputGestureText="M" Click="MoveSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.OrthogonalizeSelected}" InputGestureText="Q" Click="OrthogonalizeSelected_Click" />
@@ -354,6 +356,42 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="{services:Loc Main.Features.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                             <TextBlock x:Name="FeatureCountTextBlock" Grid.Column="1" Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                        </Grid>
+                        <Grid x:Name="FeatureSearchPanel"
+                              DockPanel.Dock="Top"
+                              Margin="8,0,8,6"
+                              Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <iconPacks:PackIconLucide Grid.Column="0"
+                                                      Kind="Search"
+                                                      Width="16"
+                                                      Height="16"
+                                                      Margin="0,0,6,0"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                            <TextBox x:Name="FeatureSearchTextBox"
+                                     Grid.Column="1"
+                                     MinWidth="0"
+                                     Height="26"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="{services:Loc Main.Features.SearchTooltip}"
+                                     TextChanged="FeatureSearchTextBox_TextChanged"
+                                     KeyDown="FeatureSearchTextBox_KeyDown" />
+                            <Button x:Name="ClearFeatureSearchButton"
+                                    Grid.Column="2"
+                                    Width="26"
+                                    Height="26"
+                                    Margin="6,0,0,0"
+                                    Padding="0"
+                                    IsEnabled="False"
+                                    ToolTip="{services:Loc Main.Features.ClearSearch}"
+                                    Click="ClearFeatureSearch_Click">
+                                <iconPacks:PackIconLucide Kind="X" Width="14" Height="14" />
+                            </Button>
                         </Grid>
                         <Expander x:Name="AiTagAssistantExpander"
                                   DockPanel.Dock="Top"

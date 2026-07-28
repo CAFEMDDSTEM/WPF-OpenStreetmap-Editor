@@ -184,7 +184,7 @@ public sealed class SetFeatureAttributesCommand : IEditCommand {
         _wasDirty = dataset.Document.IsDirty;
         _previousAttributes = new Dictionary<string, string>(_feature.Attributes, StringComparer.Ordinal);
         ApplyAttributes(_feature, _attributes, _replaceAll);
-        dataset.RestoreDirty(true);
+        dataset.MarkContentChanged();
         return true;
     }
 
@@ -192,6 +192,7 @@ public sealed class SetFeatureAttributesCommand : IEditCommand {
         if (_previousAttributes is null) return;
 
         ReplaceAttributes(_feature, _previousAttributes);
+        dataset.MarkContentChanged();
         dataset.RestoreDirty(_wasDirty);
     }
 
@@ -269,12 +270,13 @@ public sealed class SetFeatureOsmMetadataCommand : IEditCommand {
         _wasDirty = dataset.Document.IsDirty;
         _previousMetadata = _feature.Osm?.Clone();
         _feature.Osm = _metadata?.Clone();
-        dataset.RestoreDirty(true);
+        dataset.MarkContentChanged();
         return true;
     }
 
     public void Undo(MapEditDataset dataset) {
         _feature.Osm = _previousMetadata?.Clone();
+        dataset.MarkContentChanged();
         dataset.RestoreDirty(_wasDirty);
     }
 

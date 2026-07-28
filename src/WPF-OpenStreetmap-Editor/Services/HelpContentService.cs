@@ -56,8 +56,12 @@ internal static class HelpContentService {
                     l.GetString("Help.Keyboard.F1"),
                     l.GetString("Help.Keyboard.Save"),
                     l.GetString("Help.Keyboard.Edit"),
+                    l.GetString("Help.Keyboard.Search"),
+                    l.GetString("Help.Keyboard.Tags"),
                     l.GetString("Help.Keyboard.Modes"),
+                    l.GetString("Help.Keyboard.JosmDrawing"),
                     l.GetString("Help.Keyboard.Transform"),
+                    l.GetString("Help.Keyboard.ImageryOrder"),
                     l.GetString("Help.Keyboard.TypedCommands"),
                     l.GetString("Help.Keyboard.Drag"),
                     l.GetString("Help.Keyboard.Nodes")

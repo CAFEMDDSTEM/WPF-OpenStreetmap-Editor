@@ -29,6 +29,23 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void CreatePasteTags_DropsConflictingCopiedValues() {
+        var first = CreatePoint("first", 1);
+        first.Attributes["amenity"] = "bench";
+        first.Attributes["name"] = "North";
+        var second = CreatePoint("second", 2);
+        second.Attributes["amenity"] = "bench";
+        second.Attributes["name"] = "South";
+        second.Attributes["surface"] = "wood";
+
+        var tags = MapEditService.CreatePasteTags([first, second]);
+
+        Assert.Equal("bench", tags["amenity"]);
+        Assert.Equal("wood", tags["surface"]);
+        Assert.False(tags.ContainsKey("name"));
+    }
+
+    [Fact]
     public void AddFeaturesCommand_UndoAndRedoTreatsBatchAsSingleEdit() {
         var document = new MapDocument();
         var existing = new MapFeature {
@@ -168,6 +185,61 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void ReplaceParts_AdvancesRevisionWithoutDirtyingPreviewEdit() {
+        var feature = CreatePoint("feature", 1);
+        var document = new MapDocument();
+        document.Features.Add(feature);
+        document.MarkClean();
+        var dataset = new MapEditDataset(document);
+
+        Assert.True(dataset.ReplaceParts(feature, [[new GeoPoint(2, 2)]], markDirty: false));
+
+        Assert.Equal(1, document.Revision);
+        Assert.False(document.IsDirty);
+        Assert.Equal(new GeoPoint(2, 2), feature.Parts[0][0]);
+    }
+
+    [Fact]
+    public void MoveVertex_UpdatesClosedRingEndpoint() {
+        var parts = new List<List<GeoPoint>> {
+            new() {
+                new GeoPoint(0, 0),
+                new GeoPoint(1, 0),
+                new GeoPoint(1, 1),
+                new GeoPoint(0, 0)
+            }
+        };
+
+        var moved = MapEditService.MoveVertex(parts, 0, 0, new GeoPoint(0.2, 0.3));
+
+        Assert.Equal(new GeoPoint(0.2, 0.3), moved[0][0]);
+        Assert.Equal(new GeoPoint(0.2, 0.3), moved[0][^1]);
+        Assert.Equal(new GeoPoint(1, 0), moved[0][1]);
+    }
+
+    [Fact]
+    public void ExtrudeSegment_InsertsOffsetSegmentBetweenOriginalEndpoints() {
+        var parts = new List<List<GeoPoint>> {
+            new() {
+                new GeoPoint(0, 0),
+                new GeoPoint(2, 0),
+                new GeoPoint(2, 2),
+                new GeoPoint(0, 2),
+                new GeoPoint(0, 0)
+            }
+        };
+
+        var extruded = MapEditService.ExtrudeSegment(parts, 0, 0, 1, 0, -1);
+
+        Assert.Equal(7, extruded[0].Count);
+        Assert.Equal(new GeoPoint(0, 0), extruded[0][0]);
+        Assert.Equal(new GeoPoint(0, -1), extruded[0][1]);
+        Assert.Equal(new GeoPoint(2, -1), extruded[0][2]);
+        Assert.Equal(new GeoPoint(2, 0), extruded[0][3]);
+        Assert.Equal(new GeoPoint(0, 0), extruded[0][^1]);
+    }
+
+    [Fact]
     public void OrthogonalizeParts_MakesSkewedPolygonCornersRightAngles() {
         var feature = new MapFeature {
             GeometryType = MapGeometryType.Polygon,
@@ -244,6 +316,41 @@ public class MapEditServiceTests {
         Assert.Equal("Old", feature.Attributes["name"]);
         Assert.Equal("remove me", feature.Attributes["note"]);
         Assert.False(feature.Attributes.ContainsKey("amenity"));
+    }
+
+    [Fact]
+    public void SetFeaturesAttributesCommand_PastesTagsToSelectionAsSingleUndoableEdit() {
+        var first = CreatePoint("first", 1);
+        first.Attributes["name"] = "Old";
+        var second = CreatePoint("second", 2);
+        second.Attributes["amenity"] = "bench";
+        var document = new MapDocument();
+        document.Features.AddRange([first, second]);
+        document.MarkClean();
+        var editor = new EditorSession();
+        editor.ReplaceDocument(document);
+
+        Assert.True(editor.Execute(new SetFeaturesAttributesCommand(
+            [first, second],
+            new Dictionary<string, string> {
+                ["name"] = "Copied",
+                ["surface"] = "wood"
+            })));
+
+        Assert.True(document.IsDirty);
+        Assert.Equal("Copied", first.Attributes["name"]);
+        Assert.Equal("wood", first.Attributes["surface"]);
+        Assert.Equal("Copied", second.Attributes["name"]);
+        Assert.Equal("wood", second.Attributes["surface"]);
+        Assert.Equal("bench", second.Attributes["amenity"]);
+
+        Assert.True(editor.Undo());
+        Assert.False(document.IsDirty);
+        Assert.Equal("Old", first.Attributes["name"]);
+        Assert.False(first.Attributes.ContainsKey("surface"));
+        Assert.False(second.Attributes.ContainsKey("name"));
+        Assert.False(second.Attributes.ContainsKey("surface"));
+        Assert.Equal("bench", second.Attributes["amenity"]);
     }
 
     [Fact]

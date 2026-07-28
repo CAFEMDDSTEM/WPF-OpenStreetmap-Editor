@@ -16,14 +16,24 @@ public static class TileDiskCache {
 
     /// <summary>计划维护：至少间隔 10 分钟才执行一次，后台异步执行 Trim</summary>
     public static void ScheduleMaintenance(string cacheRoot) {
+        ScheduleMaintenance(cacheRoot, DefaultMaxBytes, DefaultMaxAge);
+    }
+
+    public static void ScheduleMaintenance(string cacheRoot, long maxBytes, TimeSpan maxAge, bool force = false) {
         var now = DateTime.UtcNow;
         var nextTicks = Volatile.Read(ref _nextMaintenanceUtcTicks);
-        if (now.Ticks < nextTicks) return;
+        if (!force && now.Ticks < nextTicks) return;
 
         var updatedTicks = now.Add(MaintenanceInterval).Ticks;
-        if (Interlocked.CompareExchange(ref _nextMaintenanceUtcTicks, updatedTicks, nextTicks) != nextTicks) return;
+        if (!force &&
+            Interlocked.CompareExchange(ref _nextMaintenanceUtcTicks, updatedTicks, nextTicks) != nextTicks) {
+            return;
+        }
+        if (force) {
+            Volatile.Write(ref _nextMaintenanceUtcTicks, updatedTicks);
+        }
 
-        _ = Task.Run(() => Trim(cacheRoot, DefaultMaxBytes, DefaultMaxAge, now));
+        _ = Task.Run(() => Trim(cacheRoot, maxBytes, maxAge, now));
     }
 
     /// <summary>

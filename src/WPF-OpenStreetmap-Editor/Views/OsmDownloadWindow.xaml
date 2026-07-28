@@ -20,17 +20,69 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="12,10">
+        <Grid Grid.Row="0" Margin="12,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
             <TextBlock Text="{services:Loc Osm.Download.StandardMap}"
                        FontSize="15"
                        FontWeight="SemiBold"
                        VerticalAlignment="Center" />
+
+            <Grid Grid.Column="1" Margin="16,0" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <iconPacks:PackIconLucide Grid.Column="0"
+                                          Kind="Search"
+                                          Width="16"
+                                          Height="16"
+                                          Margin="0,0,6,0"
+                                          VerticalAlignment="Center"
+                                          Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                <TextBox x:Name="SearchTextBox"
+                         Grid.Column="1"
+                         MinWidth="220"
+                         Height="26"
+                         VerticalContentAlignment="Center"
+                         ToolTip="{services:Loc Osm.Download.SearchTooltip}"
+                         TextChanged="SearchTextBox_TextChanged"
+                         KeyDown="SearchTextBox_KeyDown" />
+                <Button x:Name="SearchButton"
+                        Grid.Column="2"
+                        Width="26"
+                        Height="26"
+                        Margin="6,0,0,0"
+                        Padding="0"
+                        Click="Search_Click"
+                        ToolTip="{services:Loc Osm.Download.SearchButton}">
+                    <iconPacks:PackIconLucide Kind="Search" Width="14" Height="14" />
+                </Button>
+                <Button x:Name="ClearSearchButton"
+                        Grid.Column="3"
+                        Width="26"
+                        Height="26"
+                        Margin="4,0,0,0"
+                        Padding="0"
+                        IsEnabled="False"
+                        Click="ClearSearch_Click"
+                        ToolTip="{services:Loc Osm.Download.ClearSearch}">
+                    <iconPacks:PackIconLucide Kind="X" Width="14" Height="14" />
+                </Button>
+            </Grid>
+
             <TextBlock x:Name="ZoomTextBlock"
-                       DockPanel.Dock="Right"
+                       Grid.Column="2"
                        Margin="16,0,0,0"
                        VerticalAlignment="Center"
                        Foreground="{DynamicResource Theme.MutedTextBrush}" />
-        </DockPanel>
+        </Grid>
 
         <Border Grid.Row="1"
                 Margin="12,0"

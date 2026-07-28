@@ -11,6 +11,7 @@ public readonly struct GeoViewportProjection {
     private readonly int _zoom;
     private readonly double _panOffsetX;
     private readonly double _panOffsetY;
+    private readonly MapDisplayTransform _displayTransform;
 
     private GeoViewportProjection(
         double centerLatitude,
@@ -18,13 +19,15 @@ public readonly struct GeoViewportProjection {
         int zoom,
         Size viewport,
         double panOffsetX,
-        double panOffsetY) {
+        double panOffsetY,
+        MapDisplayTransform displayTransform) {
         (_centerPixelX, _centerPixelY) = GeoConverter.LatLonToPixelXY(centerLatitude, centerLongitude, zoom);
         _halfWidth = viewport.Width / 2.0;
         _halfHeight = viewport.Height / 2.0;
         _zoom = zoom;
         _panOffsetX = panOffsetX;
         _panOffsetY = panOffsetY;
+        _displayTransform = displayTransform;
     }
 
     public static GeoViewportProjection Create(
@@ -33,12 +36,21 @@ public readonly struct GeoViewportProjection {
         int zoom,
         Size viewport,
         double panOffsetX = 0,
-        double panOffsetY = 0) {
-        return new GeoViewportProjection(centerLatitude, centerLongitude, zoom, viewport, panOffsetX, panOffsetY);
+        double panOffsetY = 0,
+        MapDisplayTransform? displayTransform = null) {
+        return new GeoViewportProjection(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform ?? MapDisplayTransform.Identity);
     }
 
     public Point GeoToScreen(GeoPoint point) {
-        var (pointX, pointY) = GeoConverter.LatLonToPixelXY(point.Latitude, point.Longitude, _zoom);
+        var displayPoint = _displayTransform.DocumentToDisplay(point);
+        var (pointX, pointY) = GeoConverter.LatLonToPixelXY(displayPoint.Latitude, displayPoint.Longitude, _zoom);
         return new Point(
             _halfWidth + pointX - _centerPixelX + _panOffsetX,
             _halfHeight + pointY - _centerPixelY + _panOffsetY);
@@ -48,9 +60,18 @@ public readonly struct GeoViewportProjection {
         var pixelX = _centerPixelX + point.X - _halfWidth - _panOffsetX;
         var pixelY = _centerPixelY + point.Y - _halfHeight - _panOffsetY;
         var (latitude, longitude) = GeoConverter.PixelXYToLatLon(pixelX, pixelY, _zoom);
-        return new GeoPoint(longitude, latitude);
+        return _displayTransform.DisplayToDocument(new GeoPoint(longitude, latitude));
     }
 }
+
+public sealed record VertexHit(MapFeature Feature, int PartIndex, int PointIndex, Point ScreenPoint);
+public sealed record SegmentHit(
+    MapFeature Feature,
+    int PartIndex,
+    int StartPointIndex,
+    int EndPointIndex,
+    Point StartScreenPoint,
+    Point EndScreenPoint);
 
 public static class VectorMapInteraction {
     public static Point GeoToScreen(
@@ -60,14 +81,16 @@ public static class VectorMapInteraction {
         int zoom,
         Size viewport,
         double panOffsetX = 0,
-        double panOffsetY = 0) {
+        double panOffsetY = 0,
+        MapDisplayTransform? displayTransform = null) {
         return GeoViewportProjection.Create(
             centerLatitude,
             centerLongitude,
             zoom,
             viewport,
             panOffsetX,
-            panOffsetY).GeoToScreen(point);
+            panOffsetY,
+            displayTransform).GeoToScreen(point);
     }
 
     public static GeoPoint ScreenToGeo(
@@ -77,14 +100,16 @@ public static class VectorMapInteraction {
         int zoom,
         Size viewport,
         double panOffsetX = 0,
-        double panOffsetY = 0) {
+        double panOffsetY = 0,
+        MapDisplayTransform? displayTransform = null) {
         return GeoViewportProjection.Create(
             centerLatitude,
             centerLongitude,
             zoom,
             viewport,
             panOffsetX,
-            panOffsetY).ScreenToGeo(point);
+            panOffsetY,
+            displayTransform).ScreenToGeo(point);
     }
 
     public static GeoBounds GetViewportBounds(
@@ -93,8 +118,16 @@ public static class VectorMapInteraction {
         int zoom,
         Size viewport,
         double panOffsetX = 0,
-        double panOffsetY = 0) {
-        var projection = GeoViewportProjection.Create(centerLatitude, centerLongitude, zoom, viewport, panOffsetX, panOffsetY);
+        double panOffsetY = 0,
+        MapDisplayTransform? displayTransform = null) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform);
         var topLeft = projection.ScreenToGeo(new Point(0, 0));
         var bottomRight = projection.ScreenToGeo(new Point(viewport.Width, viewport.Height));
         return new GeoBounds(
@@ -109,9 +142,10 @@ public static class VectorMapInteraction {
         double centerLatitude,
         double centerLongitude,
         int zoom,
-        Size viewport) {
-        var first = ScreenToGeo(screenRect.TopLeft, centerLatitude, centerLongitude, zoom, viewport);
-        var second = ScreenToGeo(screenRect.BottomRight, centerLatitude, centerLongitude, zoom, viewport);
+        Size viewport,
+        MapDisplayTransform? displayTransform = null) {
+        var first = ScreenToGeo(screenRect.TopLeft, centerLatitude, centerLongitude, zoom, viewport, displayTransform: displayTransform);
+        var second = ScreenToGeo(screenRect.BottomRight, centerLatitude, centerLongitude, zoom, viewport, displayTransform: displayTransform);
         return new GeoBounds(
             Math.Min(first.Longitude, second.Longitude),
             Math.Min(first.Latitude, second.Latitude),
@@ -148,19 +182,27 @@ public static class VectorMapInteraction {
         double centerLongitude,
         int zoom,
         Size viewport,
-        double tolerance = 8) {
-        var projection = GeoViewportProjection.Create(centerLatitude, centerLongitude, zoom, viewport);
+        double tolerance = 8,
+        MapDisplayTransform? displayTransform = null,
+        double panOffsetX = 0,
+        double panOffsetY = 0) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform: displayTransform);
         MapFeature? best = null;
-        var bestDistance = tolerance;
+        var bestRank = int.MaxValue;
+        var bestDistance = double.MaxValue;
         foreach (var feature in features.Where(static item => !item.IsHidden)) {
             foreach (var part in feature.Parts) {
                 if (feature.GeometryType == MapGeometryType.Point) {
                     foreach (var point in part) {
                         var distance = (projection.GeoToScreen(point) - screenPoint).Length;
-                        if (distance <= bestDistance) {
-                            bestDistance = distance;
-                            best = feature;
-                        }
+                        AcceptHit(feature, 0, distance);
                     }
                     continue;
                 }
@@ -169,19 +211,25 @@ public static class VectorMapInteraction {
                     var start = projection.GeoToScreen(part[i - 1]);
                     var end = projection.GeoToScreen(part[i]);
                     var distance = DistanceToSegment(screenPoint, start, end);
-                    if (distance <= bestDistance) {
-                        bestDistance = distance;
-                        best = feature;
-                    }
+                    AcceptHit(feature, 1, distance);
                 }
 
                 if (feature.GeometryType == MapGeometryType.Polygon && IsPointInPolygon(screenPoint, part, projection)) {
-                    bestDistance = 0;
-                    best = feature;
+                    AcceptHit(feature, 2, 0);
                 }
             }
         }
         return best;
+
+        void AcceptHit(MapFeature feature, int rank, double distance) {
+            if (distance > tolerance) return;
+            if (rank > bestRank) return;
+            if (rank == bestRank && distance > bestDistance) return;
+
+            bestRank = rank;
+            bestDistance = distance;
+            best = feature;
+        }
     }
 
     public static IReadOnlyList<MapFeature> FindWithin(
@@ -190,25 +238,135 @@ public static class VectorMapInteraction {
         double centerLatitude,
         double centerLongitude,
         int zoom,
-        Size viewport) {
-        var projection = GeoViewportProjection.Create(centerLatitude, centerLongitude, zoom, viewport);
+        Size viewport,
+        MapDisplayTransform? displayTransform = null,
+        double panOffsetX = 0,
+        double panOffsetY = 0) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform: displayTransform);
         return features.Where(feature =>
             !feature.IsHidden &&
             feature.Points.Any(point => screenRect.Contains(projection.GeoToScreen(point))))
             .ToList();
     }
 
-    public static int GetFitZoom(GeoBounds bounds, Size viewport, int maximumZoom) {
+    public static VertexHit? HitTestVertex(
+        IEnumerable<MapFeature> features,
+        Point screenPoint,
+        double centerLatitude,
+        double centerLongitude,
+        int zoom,
+        Size viewport,
+        double tolerance = 8,
+        MapDisplayTransform? displayTransform = null,
+        double panOffsetX = 0,
+        double panOffsetY = 0) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform: displayTransform);
+        VertexHit? best = null;
+        var bestDistance = tolerance;
+        foreach (var feature in features.Where(static item => !item.IsHidden)) {
+            if (feature.GeometryType == MapGeometryType.Point) continue;
+
+            for (var partIndex = 0; partIndex < feature.Parts.Count; partIndex++) {
+                var part = feature.Parts[partIndex];
+                var pointCount = IsClosedRing(part) ? part.Count - 1 : part.Count;
+                for (var pointIndex = 0; pointIndex < pointCount; pointIndex++) {
+                    var vertexScreen = projection.GeoToScreen(part[pointIndex]);
+                    var distance = (vertexScreen - screenPoint).Length;
+                    if (distance <= bestDistance) {
+                        bestDistance = distance;
+                        best = new VertexHit(feature, partIndex, pointIndex, vertexScreen);
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    public static SegmentHit? HitTestSegment(
+        IEnumerable<MapFeature> features,
+        Point screenPoint,
+        double centerLatitude,
+        double centerLongitude,
+        int zoom,
+        Size viewport,
+        double tolerance = 8,
+        MapDisplayTransform? displayTransform = null,
+        double panOffsetX = 0,
+        double panOffsetY = 0) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform: displayTransform);
+        SegmentHit? best = null;
+        var bestDistance = tolerance;
+        foreach (var feature in features.Where(static item => !item.IsHidden && item.GeometryType != MapGeometryType.Point)) {
+            for (var partIndex = 0; partIndex < feature.Parts.Count; partIndex++) {
+                var part = feature.Parts[partIndex];
+                for (var pointIndex = 1; pointIndex < part.Count; pointIndex++) {
+                    var start = projection.GeoToScreen(part[pointIndex - 1]);
+                    var end = projection.GeoToScreen(part[pointIndex]);
+                    var distance = DistanceToSegment(screenPoint, start, end);
+                    if (distance <= bestDistance) {
+                        bestDistance = distance;
+                        best = new SegmentHit(feature, partIndex, pointIndex - 1, pointIndex, start, end);
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    public static int GetFitZoom(
+        GeoBounds bounds,
+        Size viewport,
+        int maximumZoom,
+        MapDisplayTransform? displayTransform = null) {
         if (!bounds.IsValid || viewport.Width <= 0 || viewport.Height <= 0) return GeoConverter.MinZoom;
+        var displayBounds = ToDisplayBounds(bounds, displayTransform ?? MapDisplayTransform.Identity);
+        if (!displayBounds.IsValid) return GeoConverter.MinZoom;
+
         for (var zoom = maximumZoom; zoom >= GeoConverter.MinZoom; zoom--) {
-            var topLeft = GeoConverter.LatLonToPixelXY(bounds.MaxLatitude, bounds.MinLongitude, zoom);
-            var bottomRight = GeoConverter.LatLonToPixelXY(bounds.MinLatitude, bounds.MaxLongitude, zoom);
+            var topLeft = GeoConverter.LatLonToPixelXY(displayBounds.MaxLatitude, displayBounds.MinLongitude, zoom);
+            var bottomRight = GeoConverter.LatLonToPixelXY(displayBounds.MinLatitude, displayBounds.MaxLongitude, zoom);
             if (Math.Abs(bottomRight.PixelX - topLeft.PixelX) <= viewport.Width * 0.85 &&
                 Math.Abs(bottomRight.PixelY - topLeft.PixelY) <= viewport.Height * 0.85) {
                 return zoom;
             }
         }
         return GeoConverter.MinZoom;
+    }
+
+    public static GeoBounds ToDisplayBounds(GeoBounds bounds, MapDisplayTransform displayTransform) {
+        if (!bounds.IsValid) return bounds;
+
+        var points = new[] {
+            displayTransform.DocumentToDisplay(new GeoPoint(bounds.MinLongitude, bounds.MinLatitude)),
+            displayTransform.DocumentToDisplay(new GeoPoint(bounds.MinLongitude, bounds.MaxLatitude)),
+            displayTransform.DocumentToDisplay(new GeoPoint(bounds.MaxLongitude, bounds.MinLatitude)),
+            displayTransform.DocumentToDisplay(new GeoPoint(bounds.MaxLongitude, bounds.MaxLatitude)),
+            displayTransform.DocumentToDisplay(bounds.Center)
+        };
+        return GeoBounds.FromPoints(points);
     }
 
     private static double DistanceToSegment(Point point, Point start, Point end) {
@@ -233,6 +391,10 @@ public static class VectorMapInteraction {
             }
         }
         return inside;
+    }
+
+    private static bool IsClosedRing(IReadOnlyList<GeoPoint> part) {
+        return part.Count > 2 && part[0] == part[^1];
     }
 
     private static GeoPoint PixelToClampedGeo(double pixelX, double pixelY, int zoom) {

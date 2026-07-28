@@ -43,7 +43,8 @@ public sealed partial class PluginManifestReader {
         PluginActionTypes.EnableNonTextInputImeGuard,
         PluginActionTypes.ManageOsmAccounts,
         PluginActionTypes.DownloadOsm,
-        PluginActionTypes.UploadOsm
+        PluginActionTypes.UploadOsm,
+        PluginActionTypes.OpenPythonTerminal
     };
     private static readonly JsonSerializerOptions JsonOptions = new() {
         PropertyNameCaseInsensitive = true
@@ -226,10 +227,11 @@ public sealed partial class PluginManifestReader {
                 throw new PluginManifestException(
                     "Toolbar contributions require both tooltip and command.");
             }
-            if (toolbarItem.ToolTip.Length > MaximumDisplayTextLength ||
+            if (toolbarItem.Label.Length > MaximumDisplayTextLength ||
+                toolbarItem.ToolTip.Length > MaximumDisplayTextLength ||
                 toolbarItem.Command.Length > MaximumIdentifierLength) {
                 throw new PluginManifestException(
-                    "Toolbar tooltips or command ids exceed the supported length.");
+                    "Toolbar labels, tooltips, or command ids exceed the supported length.");
             }
             if (toolbarItem.Order is < -MaximumToolbarOrder or > MaximumToolbarOrder) {
                 throw new PluginManifestException(
@@ -253,6 +255,7 @@ public sealed partial class PluginManifestReader {
         var requiredName = action.Type switch {
             PluginActionTypes.ShowMessage => "message",
             PluginActionTypes.OpenUrl or PluginActionTypes.AddImagery => "url",
+            PluginActionTypes.OpenPythonTerminal => "command",
             _ => null
         };
         if (requiredName is null) return;
@@ -307,6 +310,7 @@ public sealed partial class PluginManifestReader {
         foreach (var toolbarItem in manifest.Contributions.Toolbar) {
             toolbarItem.Location ??= "";
             toolbarItem.Icon ??= "";
+            toolbarItem.Label ??= "";
             toolbarItem.ToolTip ??= "";
             toolbarItem.Command ??= "";
         }
@@ -355,9 +359,14 @@ public sealed partial class PluginManifestReader {
             throw new PluginManifestException($"Plugin entry does not exist: {runtime.Entry}");
         }
 
-        var expectedExtension = kind == PluginKind.Native ? ".dll" : ".exe";
-        if (!string.Equals(Path.GetExtension(entryPath), expectedExtension, StringComparison.OrdinalIgnoreCase)) {
-            throw new PluginManifestException($"{kind} plugin entry must be a {expectedExtension} file.");
+        var extension = Path.GetExtension(entryPath);
+        if (kind == PluginKind.Native) {
+            if (!string.Equals(extension, ".dll", StringComparison.OrdinalIgnoreCase)) {
+                throw new PluginManifestException($"{kind} plugin entry must be a .dll file.");
+            }
+        } else if (!string.Equals(extension, ".exe", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(extension, ".py", StringComparison.OrdinalIgnoreCase)) {
+            throw new PluginManifestException("Process plugin entry must be a .exe or .py file.");
         }
     }
 

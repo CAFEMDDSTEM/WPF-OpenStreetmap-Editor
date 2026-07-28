@@ -24,6 +24,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
@@ -155,6 +159,12 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
@@ -198,7 +208,101 @@
                                Grid.Column="1"
                                Foreground="{DynamicResource Theme.MutedTextBrush}"
                                TextWrapping="Wrap"
+                               Margin="0,0,0,18"
                                Text="{services:Loc Settings.ImportProjectionHelp}" />
+
+                    <TextBlock Grid.Row="4"
+                               Grid.ColumnSpan="2"
+                               Text="{services:Loc Settings.DisplayAlignment}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,14" />
+                    <TextBlock Grid.Row="5"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.DisplayAlignmentProjection}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,10" />
+                    <ComboBox x:Name="DisplayAlignmentProjectionComboBox"
+                              Grid.Row="5"
+                              Grid.Column="1"
+                              Width="390"
+                              HorizontalAlignment="Left"
+                              DisplayMemberPath="Name"
+                              SelectionChanged="DisplayAlignmentProjectionComboBox_SelectionChanged"
+                              Margin="0,0,0,10" />
+                    <TextBlock Grid.Row="6"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.DisplayAlignmentOffset}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,10" />
+                    <StackPanel Grid.Row="6"
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                Margin="0,0,0,10">
+                        <TextBox x:Name="DisplayAlignmentOffsetXTextBox"
+                                 Width="110"
+                                 Margin="0,0,8,0" />
+                        <TextBox x:Name="DisplayAlignmentOffsetYTextBox"
+                                 Width="110" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="7"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.CustomProjectionWkt}"
+                               VerticalAlignment="Top"
+                               Margin="0,3,8,10" />
+                    <TextBox x:Name="CustomDisplayAlignmentProjectionWktTextBox"
+                             Grid.Row="7"
+                             Grid.Column="1"
+                             Height="110"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,10" />
+                    <TextBlock Grid.Row="8"
+                               Grid.Column="1"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,18"
+                               Text="{services:Loc Settings.DisplayAlignmentHelp}" />
+
+                    <TextBlock Grid.Row="9"
+                               Grid.ColumnSpan="2"
+                               Text="{services:Loc Settings.TileStoragePerformance}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,14" />
+                    <TextBlock Grid.Row="10"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.TilePerformanceMode}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,10" />
+                    <ComboBox x:Name="TilePerformanceModeComboBox"
+                              Grid.Row="10"
+                              Grid.Column="1"
+                              Width="390"
+                              HorizontalAlignment="Left"
+                              Margin="0,0,0,10">
+                        <ComboBoxItem Tag="Responsive"
+                                      Content="{services:Loc Settings.TilePerformanceResponsive}" />
+                        <ComboBoxItem Tag="MemorySaver"
+                                      Content="{services:Loc Settings.TilePerformanceMemorySaver}" />
+                    </ComboBox>
+                    <TextBlock Grid.Row="11"
+                               Grid.Column="0"
+                               Text="{services:Loc Settings.TileCacheDays}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,10" />
+                    <TextBox x:Name="TileCacheDaysTextBox"
+                             Grid.Row="11"
+                             Grid.Column="1"
+                             Width="80"
+                             HorizontalAlignment="Left"
+                             Margin="0,0,0,10" />
+                    <TextBlock Grid.Row="12"
+                               Grid.Column="1"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="{services:Loc Settings.TileStorageHelp}" />
                 </Grid>
             </TabItem>
 

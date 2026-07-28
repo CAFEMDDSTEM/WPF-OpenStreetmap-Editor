@@ -19,6 +19,7 @@
     <sys:String x:Key="Common.Status">状态</sys:String>
     <sys:String x:Key="Common.Type">类型</sys:String>
     <sys:String x:Key="Common.Version">版本</sys:String>
+    <sys:String x:Key="Common.Warning">警告</sys:String>
 
     <sys:String x:Key="Main.Menu.File">文件</sys:String>
     <sys:String x:Key="Main.Menu.New">新建</sys:String>
@@ -29,8 +30,10 @@
     <sys:String x:Key="Main.Menu.Redo">重做</sys:String>
     <sys:String x:Key="Main.Menu.CopySelected">复制选定对象</sys:String>
     <sys:String x:Key="Main.Menu.PasteFeatures">粘贴对象</sys:String>
+    <sys:String x:Key="Main.Menu.PasteTags">粘贴标签</sys:String>
     <sys:String x:Key="Main.Menu.DuplicateSelected">创建选定对象副本</sys:String>
     <sys:String x:Key="Main.Menu.EditTags">编辑标签</sys:String>
+    <sys:String x:Key="Main.Menu.FindFeatures">搜索要素</sys:String>
     <sys:String x:Key="Main.Menu.RotateSelected">旋转选定对象</sys:String>
     <sys:String x:Key="Main.Menu.MoveSelected">移动选定对象</sys:String>
     <sys:String x:Key="Main.Menu.OrthogonalizeSelected">直角化选定对象</sys:String>
@@ -65,6 +68,8 @@
     <sys:String x:Key="Main.Features.Title">地图要素</sys:String>
     <sys:String x:Key="Main.Features.Hidden">隐藏</sys:String>
     <sys:String x:Key="Main.Features.GeometryType">类型</sys:String>
+    <sys:String x:Key="Main.Features.SearchTooltip">按 ID、类型、OSM ID 或标签搜索要素</sys:String>
+    <sys:String x:Key="Main.Features.ClearSearch">清除要素搜索</sys:String>
     <sys:String x:Key="Main.AiTags.Header">AI 标签助手</sys:String>
     <sys:String x:Key="Main.AiTags.Description">描述选中的对象。BetterID AI 会识别对象并建议 OSM 标签。</sys:String>
     <sys:String x:Key="Main.AiTags.Suggest">识别标签</sys:String>
@@ -118,10 +123,13 @@
     <sys:String x:Key="Main.Mode.DrawLine">画线模式 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">旋转模式 (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移动模式 (M)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">挤出模式 (X)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">删除对象</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">确定删除选定的 {0:N0} 个对象吗?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">请选择一个对象编辑标签。</sys:String>
     <sys:String x:Key="Main.FeatureCountWithHidden">{0:N0} / 隐藏 {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCount">{0:N0} / {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCountWithHidden">{0:N0} / {1:N0} / 隐藏 {2:N0}</sys:String>
     <sys:String x:Key="Main.Status.Command">，命令 {0}</sys:String>
     <sys:String x:Key="Main.Status.NoMapOpen">未打开地图数据{0}</sys:String>
     <sys:String x:Key="Main.Status.Selection">，选中 {0:N0}</sys:String>
@@ -161,6 +169,18 @@
     <sys:String x:Key="Settings.DefaultImportProjection">默认导入投影</sys:String>
     <sys:String x:Key="Settings.CustomProjectionWkt">自定义 WKT</sys:String>
     <sys:String x:Key="Settings.ImportProjectionHelp">WOSM 会以 WGS 84 经纬度存储和渲染矢量数据。此设置会在导入 GeoJSON、GML 和没有 PRJ 文件的 Shapefile 时转换坐标。OSM、GPX、KML 以及带 PRJ 的 Shapefile 会保留各自的坐标规则。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignment">地图对齐</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentProjection">对齐投影</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffset">显示偏移 X / Y</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffsetRequired">请输入数字形式的显示偏移值。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentHelp">仅在绘制和交互时应用可逆的显示偏移。保存的矢量坐标仍保持 WGS 84 经纬度。</sys:String>
+    <sys:String x:Key="Settings.TileStoragePerformance">瓦片存储与性能</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMode">影像体验</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceResponsive">更顺手</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMemorySaver">更省内存</sys:String>
+    <sys:String x:Key="Settings.TileCacheDays">缓存天数</sys:String>
+    <sys:String x:Key="Settings.TileStorageHelp">更顺手模式会保留更多已解码瓦片，并预加载附近的非志愿图源。更省内存模式使用更小的内存缓存并关闭预取。磁盘缓存会按设置的天数清理。</sys:String>
+    <sys:String x:Key="Settings.TileCacheDaysRange">缓存天数必须是 {0} 到 {1} 之间的整数。</sys:String>
     <sys:String x:Key="Settings.UrlHelp">URL 支持 xyz[19]:、tms[18]:、tms[auto]: 和 tms: 前缀。已知图源使用这里配置的影像最大层级；自定义 tms[auto]/tms: 图源会自动探测。</sys:String>
     <sys:String x:Key="Settings.AuthorLabel">作者: </sys:String>
     <sys:String x:Key="Settings.BuiltInThemeMetadata">WOSM 内置主题    版本: {0}</sys:String>
@@ -178,6 +198,11 @@
     <sys:String x:Key="Settings.SourceNameDuplicate">图源名称不能重复。</sys:String>
     <sys:String x:Key="Settings.SourceUrlRequired">请输入图源 URL。</sys:String>
     <sys:String x:Key="Settings.ZoomRangeRequired">层级必须是 {0} 到 {1} 之间的整数。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGoogle">Google 地图影像不符合 OSM 规范。请确认你有使用权限，并保持署名准确。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyAmap">高德影像使用火星坐标系（GCJ-02），WOSM 不支持这种坐标系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyBaidu">百度影像使用百度坐标系（通常为 BD-09），WOSM 不支持这种坐标系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGcj02">此影像源通常使用火星坐标系（GCJ-02），WOSM 不支持这种坐标系。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyProprietary">这是常见受限的专有地图源。除非已获得明确许可并保持署名准确，否则不要用于 OSM 编辑。</sys:String>
 
     <sys:String x:Key="Plugins.Title">插件</sys:String>
     <sys:String x:Key="Plugins.Description">原生 DLL 插件在主进程内运行；文件变化后必须重新确认。进程插件在 AppContainer 中隔离。</sys:String>
@@ -206,6 +231,13 @@
     <sys:String x:Key="Startup.Version">版本 {0}</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Title">启动诊断</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Error">启动检查遇到错误。应用将继续打开，详细信息已写入日志。</sys:String>
+    <sys:String x:Key="Welcome.Title">欢迎使用 WPF OpenStreetmap Editor</sys:String>
+    <sys:String x:Key="Welcome.Warning">这是一个独立部署的 OpenStreetMap 编辑器。上传前请仔细检查每一项修改。</sys:String>
+    <sys:String x:Key="Welcome.Description">你可以先看教程熟悉界面，也可以直接开始编辑。</sys:String>
+    <sys:String x:Key="Welcome.PrivacyTitle">你的隐私设置</sys:String>
+    <sys:String x:Key="Welcome.ShowThirdPartyIcons">显示第三方图标</sys:String>
+    <sys:String x:Key="Welcome.StartTutorial">开始教程</sys:String>
+    <sys:String x:Key="Welcome.EditNow">立即编辑</sys:String>
 
     <sys:String x:Key="Help.Title">帮助和关于</sys:String>
     <sys:String x:Key="Help.Usage">帮助</sys:String>
@@ -260,6 +292,13 @@
     <sys:String x:Key="Osm.Download.Title">下载 OpenStreetMap 数据</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 标准地图</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM 下载范围地图</sys:String>
+    <sys:String x:Key="Osm.Download.SearchTooltip">搜索地点或地址以将地图居中</sys:String>
+    <sys:String x:Key="Osm.Download.SearchButton">搜索</sys:String>
+    <sys:String x:Key="Osm.Download.ClearSearch">清除搜索</sys:String>
+    <sys:String x:Key="Osm.Download.Searching">正在搜索 {0}...</sys:String>
+    <sys:String x:Key="Osm.Download.SearchResult">正在显示 {0}</sys:String>
+    <sys:String x:Key="Osm.Download.SearchNoResults">未找到“{0}”对应的地点。</sys:String>
+    <sys:String x:Key="Osm.Download.SearchError">无法搜索地点。请检查网络后重试。</sys:String>
     <sys:String x:Key="Osm.Download.ZoomIn">放大地图</sys:String>
     <sys:String x:Key="Osm.Download.ZoomOut">缩小地图</sys:String>
     <sys:String x:Key="Osm.Download.NoSelection">尚未选择下载区域</sys:String>
@@ -347,7 +386,7 @@
     <sys:String x:Key="Settings.AuthorFormat">作者: {0}</sys:String>
     <sys:String x:Key="Settings.NoTileEtag">无图块 ETag</sys:String>
     <sys:String x:Key="Settings.NoTileMd5">无图块 MD5</sys:String>
-    <sys:String x:Key="Plugins.PackageFilter">WOSM 插件|plugin.json5;*.wosm-plugin;*.zip|插件清单|plugin.json5|插件包|*.wosm-plugin;*.zip|所有文件|*.*</sys:String>
+    <sys:String x:Key="Plugins.PackageFilter">WOSM 插件|plugin.json5;*.wosm-plugin;*.zip;*.jar|插件清单|plugin.json5|插件包|*.wosm-plugin;*.zip;*.jar|所有文件|*.*</sys:String>
     <sys:String x:Key="Update.CurrentVersionInvalid">无法识别当前版本: {0}</sys:String>
     <sys:String x:Key="Update.HttpFailed">无法检查更新: GitHub HTTP {0} {1}</sys:String>
     <sys:String x:Key="Update.NoRelease">未找到可用版本。</sys:String>
@@ -375,9 +414,13 @@
     <sys:String x:Key="Help.Section.Keyboard">键盘快捷方式</sys:String>
     <sys:String x:Key="Help.Keyboard.F1">F1 打开帮助和关于。</sys:String>
     <sys:String x:Key="Help.Keyboard.Save">Ctrl+S 保存当前地图。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z 和 Ctrl+Y 用于撤销和重做编辑。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z 和 Ctrl+Y 用于撤销和重做编辑；Ctrl+Shift+V 将复制的标签粘贴到选定对象。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Search">Ctrl+F 搜索当前数据图层中的对象。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C 复制选定要素，Ctrl+Shift+V 仅粘贴复制的标签，Shift+R 从上一个选定要素复制标签。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S 选择要素，V 框选，A 绘制线段。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R 旋转，M 移动，Q 直角化选定要素。</sys:String>
+    <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F 进入快速绘制线段；Ctrl+Shift+F 切换绘制线段时的视口跟随。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R 旋转，M 移动，X 挤出线段，Q 直角化选定要素。</sys:String>
+    <sys:String x:Key="Help.Keyboard.ImageryOrder">` 轮换影像图层顺序，便于快速比较。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">启用键盘命令输入时，可输入支持的编辑命令。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移动模式下可在地图上拖动选定要素。</sys:String>
     <sys:String x:Key="Help.Keyboard.Nodes">Insert 在地图中心添加节点。</sys:String>

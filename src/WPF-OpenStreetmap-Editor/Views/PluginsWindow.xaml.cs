@@ -26,8 +26,26 @@ public partial class PluginsWindow : Window {
         };
         if (dialog.ShowDialog(this) != true) return;
 
+        await InstallPackageAsync(dialog.FileName);
+    }
+
+    private async void Window_Drop(object sender, DragEventArgs e) {
+        e.Handled = true;
+        if (!TryGetDroppedPluginSource(e.Data, out var sourcePath) || sourcePath is null) {
+            return;
+        }
+
+        await InstallPackageAsync(sourcePath);
+    }
+
+    private void Window_DragOver(object sender, DragEventArgs e) {
+        e.Effects = TryGetDroppedPluginSource(e.Data, out _) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async Task InstallPackageAsync(string sourcePath) {
         try {
-            var candidate = _pluginHost.Installer.Inspect(dialog.FileName);
+            var candidate = _pluginHost.Installer.Inspect(sourcePath);
             var allowCodeExecution = false;
             if (candidate.RequiresCodeExecutionConsent) {
                 var answer = MessageBox.Show(
@@ -40,7 +58,7 @@ public partial class PluginsWindow : Window {
                 allowCodeExecution = true;
             }
 
-            _pluginHost.Installer.Install(dialog.FileName, allowCodeExecution);
+            _pluginHost.Installer.Install(sourcePath, allowCodeExecution);
             await _pluginHost.ReloadAsync();
             RefreshList();
         } catch (Exception ex) {
@@ -92,6 +110,29 @@ public partial class PluginsWindow : Window {
         PluginsDataGrid.ItemsSource = _pluginHost.Plugins;
         TrustButton.IsEnabled = false;
         UpdatePluginDetails(null);
+    }
+
+    private static bool TryGetDroppedPluginSource(IDataObject data, out string? sourcePath) {
+        sourcePath = null;
+        if (data.GetData(DataFormats.FileDrop) is not string[] files || files.Length != 1) {
+            return false;
+        }
+
+        var candidate = files[0];
+        if (!File.Exists(candidate) || !IsSupportedPluginSource(candidate)) {
+            return false;
+        }
+
+        sourcePath = candidate;
+        return true;
+    }
+
+    private static bool IsSupportedPluginSource(string sourcePath) {
+        var extension = Path.GetExtension(sourcePath);
+        return string.Equals(extension, ".json5", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".zip", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".wosm-plugin", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase);
     }
 
     private void UpdatePluginDetails(PluginDescriptor? descriptor) {

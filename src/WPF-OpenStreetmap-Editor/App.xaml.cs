@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using WPF_OpenStreetmap_Editor.Plugins;
@@ -21,6 +22,8 @@ public partial class App : Application {
     protected override async void OnStartup(StartupEventArgs e) {
         base.OnStartup(e);
 
+        var settingsPath = AppPaths.ResolveReadPath(AppPaths.SettingsFile, AppPaths.LegacySettingsFile);
+        var isFirstLaunch = !File.Exists(settingsPath);
         var settings = AppSettingsService.Load();
         LocalizationService.Instance.Initialize(settings.LanguageId);
         ThemeService.Initialize(settings.ThemeId);
@@ -63,6 +66,17 @@ public partial class App : Application {
         MainWindow = mainWindow;
         mainWindow.Show();
         splash.Close();
+
+        var startupChoice = WelcomeAction.EditNow;
+        if (isFirstLaunch) {
+            var welcome = new WelcomeWindow(settings) { Owner = mainWindow };
+            welcome.ShowDialog();
+            startupChoice = welcome.SelectedAction;
+        }
+
+        if (startupChoice == WelcomeAction.Tutorial) {
+            _ = mainWindow.Dispatcher.BeginInvoke(new Action(() => mainWindow.ShowHelpWindow()));
+        }
     }
 
     protected override void OnExit(ExitEventArgs e) {

@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using WPF_OpenStreetmap_Editor.Services;
@@ -20,6 +21,7 @@ public partial class SettingsWindow : Window {
     private readonly string _originalThemeId;
     private readonly string _originalLanguageId;
     private TileSourcePreset? _selectedSource;
+    private TileSourceSafetyWarningKind _loadedSourceSafetyWarningKind;
     private bool _loadingFields;
     private bool _loadingProjectionFields;
     private bool _loadingThemes;
@@ -48,8 +50,10 @@ public partial class SettingsWindow : Window {
 
         SourcesListBox.ItemsSource = _sources;
         ImportProjectionComboBox.ItemsSource = _projections;
+        DisplayAlignmentProjectionComboBox.ItemsSource = _projections;
         ThemeComboBox.ItemsSource = _themes;
         ExperimentalSmoothZoomCheckBox.IsChecked = _workingSettings.ExperimentalSmoothZoom;
+        LoadTileCacheFields();
         LoadProjectionFields();
         LoadThemes(_workingSettings.ThemeId);
         LoadLanguages(_workingSettings.LanguageId);
@@ -91,6 +95,13 @@ public partial class SettingsWindow : Window {
 
         CustomProjectionWktTextBox.IsEnabled =
             (ImportProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id == ProjectionService.CustomWktId;
+    }
+
+    private void DisplayAlignmentProjectionComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) {
+        if (_loadingProjectionFields) return;
+
+        CustomDisplayAlignmentProjectionWktTextBox.IsEnabled =
+            (DisplayAlignmentProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id == ProjectionService.CustomWktId;
     }
 
     private void ImportTheme_Click(object sender, RoutedEventArgs e) {
@@ -179,6 +190,7 @@ public partial class SettingsWindow : Window {
     private void Save_Click(object sender, RoutedEventArgs e) {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
         if (!SaveProjectionFields()) return;
+        if (!SaveTileCacheFields()) return;
 
         _workingSettings.ThemeId = (ThemeComboBox.SelectedItem as ThemeDefinition)?.Id ?? ThemeService.SystemThemeId;
         _workingSettings.LanguageId = (LanguageComboBox.SelectedItem as LanguageOption)?.Id ?? LocalizationService.SystemLanguageId;
@@ -237,6 +249,13 @@ public partial class SettingsWindow : Window {
             ImportProjectionComboBox.SelectedItem = _projections.First(projection => projection.Id == selectedId);
             CustomProjectionWktTextBox.Text = _workingSettings.CustomImportProjectionWkt;
             CustomProjectionWktTextBox.IsEnabled = selectedId == ProjectionService.CustomWktId;
+
+            var displaySelectedId = ProjectionService.NormalizeProjectionId(_workingSettings.DisplayAlignmentProjectionId);
+            DisplayAlignmentProjectionComboBox.SelectedItem = _projections.First(projection => projection.Id == displaySelectedId);
+            CustomDisplayAlignmentProjectionWktTextBox.Text = _workingSettings.CustomDisplayAlignmentProjectionWkt;
+            DisplayAlignmentOffsetXTextBox.Text = _workingSettings.DisplayAlignmentOffsetX.ToString("R", CultureInfo.InvariantCulture);
+            DisplayAlignmentOffsetYTextBox.Text = _workingSettings.DisplayAlignmentOffsetY.ToString("R", CultureInfo.InvariantCulture);
+            CustomDisplayAlignmentProjectionWktTextBox.IsEnabled = displaySelectedId == ProjectionService.CustomWktId;
         } finally {
             _loadingProjectionFields = false;
         }
@@ -254,8 +273,82 @@ public partial class SettingsWindow : Window {
             }
         }
 
+        var displaySelectedId = (DisplayAlignmentProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id ?? ProjectionService.Wgs84Id;
+        var displayCustomWkt = CustomDisplayAlignmentProjectionWktTextBox.Text.Trim();
+        if (!TryReadDouble(DisplayAlignmentOffsetXTextBox.Text, out var displayOffsetX) ||
+            !TryReadDouble(DisplayAlignmentOffsetYTextBox.Text, out var displayOffsetY)) {
+            MessageBox.Show(L.GetString("Settings.DisplayAlignmentOffsetRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        try {
+            _ = MapDisplayTransform.Create(new MapDisplayAlignmentOptions {
+                ProjectionId = displaySelectedId,
+                CustomProjectionWkt = displayCustomWkt,
+                OffsetX = displayOffsetX,
+                OffsetY = displayOffsetY
+            });
+        } catch (InvalidDataException ex) {
+            MessageBox.Show(ex.Message, L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
         _workingSettings.DefaultImportProjectionId = selectedId;
         _workingSettings.CustomImportProjectionWkt = customWkt;
+        _workingSettings.DisplayAlignmentProjectionId = displaySelectedId;
+        _workingSettings.CustomDisplayAlignmentProjectionWkt = displayCustomWkt;
+        _workingSettings.DisplayAlignmentOffsetX = displayOffsetX;
+        _workingSettings.DisplayAlignmentOffsetY = displayOffsetY;
+        return true;
+    }
+
+    private void LoadTileCacheFields() {
+        foreach (System.Windows.Controls.ComboBoxItem item in TilePerformanceModeComboBox.Items) {
+            if (Enum.TryParse<TilePerformanceMode>(item.Tag?.ToString(), out var mode) &&
+                mode == _workingSettings.TilePerformanceMode) {
+                TilePerformanceModeComboBox.SelectedItem = item;
+                break;
+            }
+        }
+
+        TilePerformanceModeComboBox.SelectedItem ??= TilePerformanceModeComboBox.Items[0];
+        TileCacheDaysTextBox.Text = _workingSettings.TileCacheMaxAgeDays.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private bool SaveTileCacheFields() {
+        if (TilePerformanceModeComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            Enum.TryParse<TilePerformanceMode>(item.Tag?.ToString(), out var mode)) {
+            _workingSettings.TilePerformanceMode = mode;
+        } else {
+            _workingSettings.TilePerformanceMode = TilePerformanceMode.Responsive;
+        }
+
+        if (!int.TryParse(TileCacheDaysTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var days) &&
+            !int.TryParse(TileCacheDaysTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out days)) {
+            MessageBox.Show(
+                L.Format(
+                    "Settings.TileCacheDaysRange",
+                    AppSettings.MinTileCacheMaxAgeDays,
+                    AppSettings.MaxTileCacheMaxAgeDays),
+                L.GetString("Settings.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (days < AppSettings.MinTileCacheMaxAgeDays || days > AppSettings.MaxTileCacheMaxAgeDays) {
+            MessageBox.Show(
+                L.Format(
+                    "Settings.TileCacheDaysRange",
+                    AppSettings.MinTileCacheMaxAgeDays,
+                    AppSettings.MaxTileCacheMaxAgeDays),
+                L.GetString("Settings.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        _workingSettings.TileCacheMaxAgeDays = days;
         return true;
     }
 
@@ -273,6 +366,7 @@ public partial class SettingsWindow : Window {
             NoTileMd5sTextBox.Text = string.Join(Environment.NewLine, source?.NoTileMd5s ?? []);
             VisibleCheckBox.IsChecked = source?.IsVisible ?? true;
             KnownSourceCheckBox.IsChecked = source?.IsKnownSource ?? false;
+            _loadedSourceSafetyWarningKind = TileSourceSafetyService.GetWarningKind(source?.Name, source?.Source);
         } finally {
             _loadingFields = false;
         }
@@ -316,7 +410,23 @@ public partial class SettingsWindow : Window {
         _selectedSource.IsVisible = VisibleCheckBox.IsChecked == true;
         _selectedSource.IsKnownSource = KnownSourceCheckBox.IsChecked == true;
         SourcesListBox.Items.Refresh();
+        ShowSourceSafetyWarning(name, url);
+        _loadedSourceSafetyWarningKind = TileSourceSafetyService.GetWarningKind(name, url);
         return true;
+    }
+
+    private void ShowSourceSafetyWarning(string name, string sourceUrl) {
+        var warningKind = TileSourceSafetyService.GetWarningKind(name, sourceUrl);
+        if (warningKind == TileSourceSafetyWarningKind.None ||
+            warningKind == _loadedSourceSafetyWarningKind) {
+            return;
+        }
+
+        MessageBox.Show(
+            TileSourceSafetyService.GetWarningMessage(warningKind),
+            L.GetString("Common.Warning"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 
     private string CreateUniqueSourceName(string baseName) {
@@ -338,6 +448,19 @@ public partial class SettingsWindow : Window {
 
         zoom = GeoConverter.MaxZoom;
         return false;
+    }
+
+    private static bool TryReadDouble(string text, out double value) {
+        return double.TryParse(
+                text.Trim(),
+                NumberStyles.Float,
+                CultureInfo.CurrentCulture,
+                out value) ||
+            double.TryParse(
+                text.Trim(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out value);
     }
 
     private static List<string> SplitSignatures(string text) {

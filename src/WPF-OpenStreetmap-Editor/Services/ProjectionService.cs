@@ -115,14 +115,34 @@ public static class ProjectionService {
             return static (x, y) => ValidatePoint(x, y);
         }
 
-        var source = CreateCoordinateSystem(normalizedId, customWkt);
+        var transform = CreateCoordinateTransform(normalizedId, Wgs84Id, customWkt);
+
+        return (x, y) => {
+            var result = transform(x, y);
+            return ValidatePoint(result.X, result.Y);
+        };
+    }
+
+    public static Func<double, double, (double X, double Y)> CreateCoordinateTransform(
+        string? sourceProjectionId,
+        string? targetProjectionId,
+        string? sourceCustomWkt = null,
+        string? targetCustomWkt = null) {
+        var normalizedSourceId = NormalizeProjectionId(sourceProjectionId);
+        var normalizedTargetId = NormalizeProjectionId(targetProjectionId);
+        if (normalizedSourceId == normalizedTargetId) {
+            return static (x, y) => (x, y);
+        }
+
+        var source = CreateCoordinateSystem(normalizedSourceId, sourceCustomWkt);
+        var target = CreateCoordinateSystem(normalizedTargetId, targetCustomWkt);
         var transform = new CoordinateTransformationFactory()
-            .CreateFromCoordinateSystems(source, GeographicCoordinateSystem.WGS84)
+            .CreateFromCoordinateSystems(source, target)
             .MathTransform;
 
         return (x, y) => {
             var result = transform.Transform([x, y]);
-            return ValidatePoint(result[0], result[1]);
+            return (result[0], result[1]);
         };
     }
 
@@ -136,6 +156,10 @@ public static class ProjectionService {
     }
 
     private static CoordinateSystem CreateCoordinateSystem(string projectionId, string? customWkt) {
+        if (projectionId == Wgs84Id) {
+            return GeographicCoordinateSystem.WGS84;
+        }
+
         if (projectionId == WebMercatorId) {
             return ProjectedCoordinateSystem.WebMercator;
         }
@@ -144,13 +168,13 @@ public static class ProjectionService {
             ? customWkt?.Trim()
             : BuiltInDefinitions.FirstOrDefault(definition => definition.Id == projectionId)?.WellKnownText;
         if (string.IsNullOrWhiteSpace(wkt)) {
-            throw new InvalidDataException("Enter a coordinate system WKT before importing with the custom projection.");
+            throw new InvalidDataException("Enter a coordinate system WKT before using the custom projection.");
         }
 
         try {
             return new CoordinateSystemFactory().CreateFromWkt(wkt);
         } catch (Exception ex) when (ex is not InvalidDataException) {
-            throw new InvalidDataException("The configured import projection WKT could not be parsed.", ex);
+            throw new InvalidDataException("The configured projection WKT could not be parsed.", ex);
         }
     }
 }

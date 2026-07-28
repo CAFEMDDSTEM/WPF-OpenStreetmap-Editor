@@ -78,8 +78,9 @@ public sealed class PluginInstaller {
 
         var extension = Path.GetExtension(fullSourcePath);
         if (!string.Equals(extension, ".zip", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(extension, ".wosm-plugin", StringComparison.OrdinalIgnoreCase)) {
-            throw new InvalidDataException("Select plugin.json5, a .wosm-plugin package, or a .zip package.");
+            !string.Equals(extension, ".wosm-plugin", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase)) {
+            throw new InvalidDataException("Select plugin.json5, a .wosm-plugin package, a .zip package, or a .jar package.");
         }
 
         var temporaryDirectory = Path.Combine(Path.GetTempPath(), "WosmPluginInstall", Guid.NewGuid().ToString("N"));
@@ -88,7 +89,13 @@ public sealed class PluginInstaller {
             ExtractArchive(fullSourcePath, temporaryDirectory);
             var manifestPath = Path.Combine(temporaryDirectory, PluginManifestReader.ManifestFileName);
             if (!File.Exists(manifestPath)) {
-                throw new InvalidDataException("Plugin archives must contain plugin.json5 at the package root.");
+                if (!string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase)) {
+                    throw new InvalidDataException("Plugin archives must contain plugin.json5 at the package root.");
+                }
+
+                Directory.Delete(temporaryDirectory, recursive: true);
+                Directory.CreateDirectory(temporaryDirectory);
+                JavaPluginPackageBuilder.CreatePackage(fullSourcePath, temporaryDirectory);
             }
             return new PreparedPackage(temporaryDirectory, manifestPath, temporaryDirectory);
         } catch {

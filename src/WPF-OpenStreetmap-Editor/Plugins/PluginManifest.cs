@@ -44,6 +44,7 @@ public sealed class PluginMenuManifest {
 public sealed class PluginToolbarManifest {
     public string Location { get; set; } = "main";
     public string Icon { get; set; } = "";
+    public string Label { get; set; } = "";
     public string ToolTip { get; set; } = "";
     public string Command { get; set; } = "";
     public int Order { get; set; }

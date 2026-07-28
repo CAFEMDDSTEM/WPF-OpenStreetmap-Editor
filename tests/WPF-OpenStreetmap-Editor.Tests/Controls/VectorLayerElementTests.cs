@@ -53,4 +53,33 @@ public class VectorLayerElementTests {
 
         Assert.False(refresh);
     }
+
+    [Fact]
+    public void RequiresDrawingRefreshCore_TreatsDocumentRevisionChangeAsNewContent() {
+        var document = new MapDocument();
+
+        var refresh = VectorLayerElement.RequiresDrawingRefreshCore(
+            document,
+            document,
+            currentCenterLatitude: 24.8784031,
+            nextCenterLatitude: 24.8784031,
+            currentCenterLongitude: 113.62372195,
+            nextCenterLongitude: 113.62372195,
+            currentZoom: 17,
+            nextZoom: 17,
+            lastRenderedWidth: 1200,
+            actualWidth: 1200,
+            lastRenderedHeight: 800,
+            actualHeight: 800,
+            drawPanOffsetX: 0,
+            panOffsetX: 0,
+            drawPanOffsetY: 0,
+            panOffsetY: 0,
+            currentDocumentRevision: 1,
+            nextDocumentRevision: 2,
+            currentVisualStateRevision: 0,
+            nextVisualStateRevision: 0);
+
+        Assert.True(refresh);
+    }
 }

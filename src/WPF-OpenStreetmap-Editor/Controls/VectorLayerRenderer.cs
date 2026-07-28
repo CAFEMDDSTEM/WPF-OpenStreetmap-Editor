@@ -7,12 +7,18 @@ namespace WPF_OpenStreetmap_Editor.Controls;
 
 internal static class VectorLayerRenderer {
     private const double SimplifyDistanceSquared = 0.64;
+    private const double VertexHandleRadius = 2.75;
+    private const double SelectedVertexHandleRadius = 4.5;
 
     public static void Render(
         DrawingContext drawingContext,
         IReadOnlyList<MapFeature> features,
         GeoViewportProjection projection,
-        VectorRenderPalette palette) {
+        VectorRenderPalette palette,
+        int zoom,
+        double pixelsPerDip,
+        MapFeature? hoveredFeature = null,
+        VertexHit? hoveredVertex = null) {
         var styledFeatures = features
             .Select(static feature => new StyledFeature(feature, VectorFeatureStyler.GetStyle(feature)))
             .OrderBy(static item => item.Style.LayerOrder)
@@ -22,7 +28,10 @@ internal static class VectorLayerRenderer {
         DrawLineFeatures(drawingContext, styledFeatures, projection, palette, drawCasing: true);
         DrawLineFeatures(drawingContext, styledFeatures, projection, palette, drawCasing: false);
         DrawPointFeatures(drawingContext, styledFeatures, projection, palette);
+        DrawHoveredFeature(drawingContext, hoveredFeature, projection, palette);
+        VectorLabelRenderer.Render(drawingContext, features, projection, palette, zoom, pixelsPerDip);
         DrawSelectionFeatures(drawingContext, styledFeatures, projection, palette);
+        DrawVertexHandles(drawingContext, styledFeatures, projection, palette, hoveredVertex);
     }
 
     private static void DrawAreaFeatures(
@@ -110,6 +119,80 @@ internal static class VectorLayerRenderer {
         }
     }
 
+    private static void DrawVertexHandles(
+        DrawingContext drawingContext,
+        IReadOnlyList<StyledFeature> features,
+        GeoViewportProjection projection,
+        VectorRenderPalette palette,
+        VertexHit? hoveredVertex) {
+        foreach (var styledFeature in features) {
+            if (styledFeature.Style.RenderMode == VectorFeatureRenderMode.Point) continue;
+
+            var radius = styledFeature.Feature.IsSelected
+                ? SelectedVertexHandleRadius
+                : VertexHandleRadius;
+            var fill = styledFeature.Feature.IsSelected
+                ? palette.SelectionFill
+                : palette.VertexHandleFill;
+            var pen = styledFeature.Feature.IsSelected
+                ? palette.VertexHandleSelectedPen
+                : palette.VertexHandlePen;
+
+            foreach (var part in styledFeature.Feature.Parts) {
+                if (part.Count == 0) continue;
+
+                var count = IsClosedRing(part) ? part.Count - 1 : part.Count;
+                for (var i = 0; i < count; i++) {
+                    var isHovered = hoveredVertex is not null &&
+                        ReferenceEquals(hoveredVertex.Feature, styledFeature.Feature) &&
+                        hoveredVertex.PartIndex == styledFeature.Feature.Parts.IndexOf(part) &&
+                        hoveredVertex.PointIndex == i;
+                    drawingContext.DrawEllipse(
+                        isHovered ? palette.HoverFill : fill,
+                        isHovered ? palette.HoverPen : pen,
+                        projection.GeoToScreen(part[i]),
+                        isHovered ? radius + 2.0 : radius,
+                        isHovered ? radius + 2.0 : radius);
+                }
+            }
+        }
+    }
+
+    private static void DrawHoveredFeature(
+        DrawingContext drawingContext,
+        MapFeature? feature,
+        GeoViewportProjection projection,
+        VectorRenderPalette palette) {
+        if (feature is null || feature.IsHidden) return;
+
+        foreach (var part in feature.Parts) {
+            switch (feature.GeometryType) {
+                case MapGeometryType.Point:
+                    foreach (var point in part) {
+                        drawingContext.DrawEllipse(
+                            palette.HoverFill,
+                            palette.HoverPen,
+                            projection.GeoToScreen(point),
+                            7.0,
+                            7.0);
+                    }
+                    break;
+                case MapGeometryType.LineString when part.Count >= 2:
+                    drawingContext.DrawGeometry(
+                        null,
+                        palette.HoverWidePen,
+                        CreateGeometry(part, closed: false, projection));
+                    break;
+                case MapGeometryType.Polygon when part.Count >= 3:
+                    drawingContext.DrawGeometry(
+                        null,
+                        palette.HoverWidePen,
+                        CreateGeometry(part, closed: true, projection));
+                    break;
+            }
+        }
+    }
+
     private static void DrawSelectedArea(
         DrawingContext drawingContext,
         MapFeature feature,
@@ -182,6 +265,10 @@ internal static class VectorLayerRenderer {
         }
         geometry.Freeze();
         return geometry;
+    }
+
+    private static bool IsClosedRing(IReadOnlyList<GeoPoint> part) {
+        return part.Count > 2 && part[0] == part[^1];
     }
 
     private sealed record StyledFeature(MapFeature Feature, VectorFeatureStyle Style);

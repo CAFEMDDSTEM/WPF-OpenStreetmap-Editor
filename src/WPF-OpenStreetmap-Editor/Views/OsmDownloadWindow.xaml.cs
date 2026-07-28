@@ -19,6 +19,7 @@ public partial class OsmDownloadWindow : Window {
     private const int TileWorkerCount = 2;
     private readonly Func<GeoBounds, IProgress<OsmDownloadStage>, CancellationToken, Task<bool>> _downloadAsync;
     private readonly TileService _tileService = new();
+    private readonly OsmPlaceSearchService _placeSearchService = new();
     private GeoPoint _center = new(0, 0);
     private int _zoom = MinimumZoom;
     private Point? _selectionStart;
@@ -26,7 +27,9 @@ public partial class OsmDownloadWindow : Window {
     private CancellationTokenSource? _renderCts;
     private CancellationTokenSource? _renderDebounceCts;
     private CancellationTokenSource? _downloadCts;
+    private CancellationTokenSource? _searchCts;
     private bool _isDownloading;
+    private bool _isSearching;
     private static LocalizationService L => LocalizationService.Instance;
 
     public OsmDownloadWindow(
@@ -36,9 +39,13 @@ public partial class OsmDownloadWindow : Window {
         _downloadAsync = downloadAsync ?? throw new ArgumentNullException(nameof(downloadAsync));
         _tileService.TileTemplate = OsmTileTemplate;
         _tileService.ApplySourceOptions(MaximumZoom, MaximumZoom);
-        Loaded += (_, _) => ScheduleRender();
-        Closed += OsmDownloadWindow_Closed;
+        UpdateSearchControls();
         UpdateZoomText();
+        Loaded += (_, _) => {
+            UpdateSearchControls();
+            ScheduleRender();
+        };
+        Closed += OsmDownloadWindow_Closed;
     }
 
     public GeoBounds? SelectedBounds { get; private set; }
@@ -106,11 +113,17 @@ public partial class OsmDownloadWindow : Window {
         }
 
         if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
-        TileLayer.RenderTransform = Transform.Identity;
-        TileLayer.SetTiles(tiles.OrderBy(static tile => tile.Placement.Top).ThenBy(static tile => tile.Placement.Left));
-        if (tiles.Count == 0 && SelectedBounds is null) {
-            SelectionStatusTextBlock.Text = L.GetString("Osm.Download.TileUnavailable");
-        }
+        await Dispatcher.InvokeAsync(() => {
+            if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
+
+            TileLayer.SetTiles(tiles.OrderBy(static tile => tile.Placement.Top).ThenBy(static tile => tile.Placement.Left));
+            if (_panStart is null) {
+                TileLayer.RenderTransform = Transform.Identity;
+            }
+            if (tiles.Count == 0 && SelectedBounds is null) {
+                SelectionStatusTextBlock.Text = L.GetString("Osm.Download.TileUnavailable");
+            }
+        });
     }
 
     private void MapViewport_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
@@ -158,7 +171,6 @@ public partial class OsmDownloadWindow : Window {
         _panStart = null;
         MapViewport.ReleaseMouseCapture();
         MapViewport.Cursor = Cursors.Cross;
-        TileLayer.RenderTransform = Transform.Identity;
         _center = VectorMapInteraction.GetCenterAfterPan(_center, delta, _zoom);
         ClearSelection();
         ScheduleRender();
@@ -186,6 +198,31 @@ public partial class OsmDownloadWindow : Window {
 
     private void ZoomOut_Click(object sender, RoutedEventArgs e) {
         ChangeZoom(-1, GetViewportCenter());
+    }
+
+    private async void Search_Click(object sender, RoutedEventArgs e) {
+        await SearchAsync();
+    }
+
+    private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e) {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        await SearchAsync();
+    }
+
+    private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e) {
+        UpdateSearchControls();
+    }
+
+    private void ClearSearch_Click(object sender, RoutedEventArgs e) {
+        _searchCts?.Cancel();
+        SearchTextBox.Clear();
+        UpdateSearchControls();
+        if (SelectedBounds is null) {
+            SetStatus(L.GetString("Osm.Download.NoSelection"));
+        } else {
+            UpdateSelectionStatus();
+        }
     }
 
     private void ChangeZoom(int delta, Point anchor) {
@@ -223,7 +260,7 @@ public partial class OsmDownloadWindow : Window {
         SelectedBounds = null;
         SelectionRectangle.Visibility = Visibility.Collapsed;
         SetStatus(L.GetString("Osm.Download.NoSelection"));
-        DownloadButton.IsEnabled = false;
+        UpdateSearchControls();
     }
 
     private void UpdateSelectionStatus() {
@@ -250,10 +287,10 @@ public partial class OsmDownloadWindow : Window {
                         bounds.MaxLatitude,
                         area));
             }
-            DownloadButton.IsEnabled = true;
+            UpdateSearchControls();
         } catch (InvalidDataException ex) {
             SetStatus(ex.Message, isError: true);
-            DownloadButton.IsEnabled = false;
+            UpdateSearchControls();
         }
     }
 
@@ -301,9 +338,59 @@ public partial class OsmDownloadWindow : Window {
     private void SetDownloadState(bool isDownloading) {
         _isDownloading = isDownloading;
         MapViewport.IsEnabled = !isDownloading;
-        DownloadButton.IsEnabled = !isDownloading && SelectedBounds is not null;
         CancelButton.IsEnabled = true;
         DownloadProgressBar.Visibility = isDownloading ? Visibility.Visible : Visibility.Collapsed;
+        UpdateSearchControls();
+    }
+
+    private async Task SearchAsync() {
+        if (_isDownloading || _isSearching) return;
+
+        var query = SearchTextBox.Text.Trim();
+        if (query.Length == 0) return;
+
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        var searchCts = new CancellationTokenSource();
+        _searchCts = searchCts;
+
+        try {
+            SetSearchState(true);
+            SetStatus(L.Format("Osm.Download.Searching", query));
+            var result = await _placeSearchService.SearchAsync(query, searchCts.Token);
+            if (result is null) {
+                SetStatus(L.Format("Osm.Download.SearchNoResults", query), isError: true);
+                return;
+            }
+
+            _center = result.Center;
+            if (result.Bounds is { IsValid: true } bounds) {
+                _zoom = Math.Clamp(
+                    VectorMapInteraction.GetFitZoom(
+                        bounds,
+                        new Size(MapViewport.ActualWidth, MapViewport.ActualHeight),
+                        MaximumZoom),
+                    MinimumZoom,
+                    MaximumZoom);
+            } else {
+                _zoom = Math.Clamp(14, MinimumZoom, MaximumZoom);
+            }
+
+            UpdateZoomText();
+            ClearSelection();
+            ScheduleRender();
+            SetStatus(L.Format("Osm.Download.SearchResult", result.DisplayName));
+        } catch (OperationCanceledException) {
+        } catch (Exception ex) {
+            Logger.Error("OSM place search failed", ex);
+            SetStatus(L.GetString("Osm.Download.SearchError"), isError: true);
+        } finally {
+            if (ReferenceEquals(_searchCts, searchCts)) {
+                _searchCts = null;
+            }
+            searchCts.Dispose();
+            SetSearchState(false);
+        }
     }
 
     private void SetStatus(string message, bool isError = false) {
@@ -311,6 +398,20 @@ public partial class OsmDownloadWindow : Window {
         SelectionStatusTextBlock.SetResourceReference(
             TextBlock.ForegroundProperty,
             isError ? "Theme.ErrorBrush" : "Theme.MutedTextBrush");
+    }
+
+    private void SetSearchState(bool isSearching) {
+        _isSearching = isSearching;
+        UpdateSearchControls();
+    }
+
+    private void UpdateSearchControls() {
+        var hasQuery = !string.IsNullOrWhiteSpace(SearchTextBox.Text);
+        var enabled = !_isDownloading && !_isSearching;
+        SearchTextBox.IsEnabled = enabled;
+        SearchButton.IsEnabled = enabled && hasQuery;
+        ClearSearchButton.IsEnabled = enabled && hasQuery;
+        DownloadButton.IsEnabled = enabled && SelectedBounds is not null;
     }
 
     private static string GetProgressMessage(OsmDownloadStage stage) {
@@ -355,6 +456,9 @@ public partial class OsmDownloadWindow : Window {
         _downloadCts?.Cancel();
         _downloadCts?.Dispose();
         _downloadCts = null;
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        _searchCts = null;
         _renderDebounceCts?.Cancel();
         _renderDebounceCts?.Dispose();
         _renderDebounceCts = null;
@@ -362,6 +466,7 @@ public partial class OsmDownloadWindow : Window {
         _renderCts?.Dispose();
         _renderCts = null;
         _tileService.Dispose();
+        _placeSearchService.Dispose();
     }
 
     protected override void OnClosing(CancelEventArgs e) {

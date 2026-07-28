@@ -224,14 +224,23 @@ public sealed class PluginHost : IAsyncDisposable {
 
         var runtime = manifest.Runtime!;
         var entryPath = PluginManifestReader.ResolvePackagePath(packageDirectory, runtime.Entry);
-        IPluginTransport transport = kind == PluginKind.Native
-            ? new NativePluginTransport(entryPath, manifest.Id)
-            : new ProcessPluginTransport(
+        IPluginTransport transport = kind switch {
+            PluginKind.Native => new NativePluginTransport(entryPath, manifest.Id),
+            PluginKind.Process when string.Equals(
+                Path.GetExtension(entryPath),
+                ".py",
+                StringComparison.OrdinalIgnoreCase) => new PythonScriptPluginTransport(
+                    entryPath,
+                    runtime.Arguments,
+                    packageDirectory,
+                    manifest.Id),
+            _ => new ProcessPluginTransport(
                 entryPath,
                 runtime.Arguments,
                 packageDirectory,
                 manifest.Id,
-                runtime.MemoryLimitMegabytes);
+                runtime.MemoryLimitMegabytes)
+        };
         return new PluginRpcRuntime(manifest, transport);
     }
 

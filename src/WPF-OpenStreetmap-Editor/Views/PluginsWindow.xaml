@@ -6,7 +6,10 @@
         MinHeight="360" MinWidth="620"
         Background="{DynamicResource Theme.WindowBackgroundBrush}"
         Foreground="{DynamicResource Theme.TextBrush}"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

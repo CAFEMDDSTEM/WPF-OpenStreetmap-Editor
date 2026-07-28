@@ -16,6 +16,7 @@
     <sys:String x:Key="Common.Status">Status</sys:String>
     <sys:String x:Key="Common.Type">Type</sys:String>
     <sys:String x:Key="Common.Version">Version</sys:String>
+    <sys:String x:Key="Common.Warning">Warning</sys:String>
     <sys:String x:Key="Language.System">Use system setting</sys:String>
     <sys:String x:Key="Language.English">English</sys:String>
     <sys:String x:Key="Language.SimplifiedChinese">Simplified Chinese</sys:String>
@@ -32,8 +33,10 @@
     <sys:String x:Key="Main.Menu.Redo">Redo</sys:String>
     <sys:String x:Key="Main.Menu.CopySelected">Copy selected features</sys:String>
     <sys:String x:Key="Main.Menu.PasteFeatures">Paste features</sys:String>
+    <sys:String x:Key="Main.Menu.PasteTags">Paste tags</sys:String>
     <sys:String x:Key="Main.Menu.DuplicateSelected">Duplicate selected features</sys:String>
     <sys:String x:Key="Main.Menu.EditTags">Edit tags</sys:String>
+    <sys:String x:Key="Main.Menu.FindFeatures">Find features</sys:String>
     <sys:String x:Key="Main.Menu.RotateSelected">Rotate selected features</sys:String>
     <sys:String x:Key="Main.Menu.MoveSelected">Move selected features</sys:String>
     <sys:String x:Key="Main.Menu.OrthogonalizeSelected">Orthogonalize selected features</sys:String>
@@ -69,6 +72,8 @@
     <sys:String x:Key="Main.Features.Hidden">Hidden</sys:String>
     <sys:String x:Key="Main.Features.Id">ID</sys:String>
     <sys:String x:Key="Main.Features.GeometryType">Type</sys:String>
+    <sys:String x:Key="Main.Features.SearchTooltip">Search features by ID, type, OSM ID, or tags</sys:String>
+    <sys:String x:Key="Main.Features.ClearSearch">Clear feature search</sys:String>
     <sys:String x:Key="Main.AiTags.Header">AI tag assistant</sys:String>
     <sys:String x:Key="Main.AiTags.Description">Describe the selected object. BetterID AI will identify it and suggest OSM tags.</sys:String>
     <sys:String x:Key="Main.AiTags.Suggest">Identify tags</sys:String>
@@ -122,10 +127,13 @@ Open the download page?</sys:String>
     <sys:String x:Key="Main.Mode.DrawLine">Draw line (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">Rotate mode (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">Move mode (M)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">Extrude mode (X)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">Delete features</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">Delete the {0:N0} selected features?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">Select one feature to edit tags.</sys:String>
     <sys:String x:Key="Main.FeatureCountWithHidden">{0:N0} / hidden {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCount">{0:N0} / {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCountWithHidden">{0:N0} / {1:N0} / hidden {2:N0}</sys:String>
     <sys:String x:Key="Main.Status.Command">, command {0}</sys:String>
     <sys:String x:Key="Main.Status.NoMapOpen">No map data is open{0}</sys:String>
     <sys:String x:Key="Main.Status.Selection">, selected {0:N0}</sys:String>
@@ -171,6 +179,18 @@ Open the download page?</sys:String>
     <sys:String x:Key="Settings.DefaultImportProjection">Default import projection</sys:String>
     <sys:String x:Key="Settings.CustomProjectionWkt">Custom WKT</sys:String>
     <sys:String x:Key="Settings.ImportProjectionHelp">WOSM stores and renders vector data as WGS 84 longitude/latitude. This setting transforms GeoJSON, GML, and Shapefiles without a PRJ file while importing. OSM, GPX, KML, and Shapefiles with PRJ keep their own coordinate rules.</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignment">Map alignment</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentProjection">Alignment projection</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffset">Display offset X / Y</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffsetRequired">Enter numeric display offset values.</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentHelp">Applies a reversible offset only while drawing and interacting with the map. Stored vector coordinates remain in WGS 84 longitude/latitude.</sys:String>
+    <sys:String x:Key="Settings.TileStoragePerformance">Tile storage and performance</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMode">Imagery experience</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceResponsive">More responsive</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMemorySaver">Use less memory</sys:String>
+    <sys:String x:Key="Settings.TileCacheDays">Cache days</sys:String>
+    <sys:String x:Key="Settings.TileStorageHelp">Responsive mode keeps more decoded tiles in memory and preloads nearby non-volunteer sources. Memory saver uses a smaller memory cache and disables prefetch. Disk cache cleanup keeps tiles for the selected number of days.</sys:String>
+    <sys:String x:Key="Settings.TileCacheDaysRange">Cache days must be an integer from {0} through {1}.</sys:String>
     <sys:String x:Key="Settings.UrlHelp">URL supports xyz[19]:, tms[18]:, tms[auto]:, and tms: prefixes. Known sources use the imagery max zoom configured here; custom tms[auto]/tms: sources are detected automatically.</sys:String>
     <sys:String x:Key="Settings.AuthorFormat">Author: {0}</sys:String>
     <sys:String x:Key="Settings.AuthorLabel">Author: </sys:String>
@@ -189,6 +209,11 @@ Open the download page?</sys:String>
     <sys:String x:Key="Settings.SourceNameDuplicate">Tile source names must be unique.</sys:String>
     <sys:String x:Key="Settings.SourceUrlRequired">Enter a tile source URL.</sys:String>
     <sys:String x:Key="Settings.ZoomRangeRequired">Zoom level must be an integer from {0} through {1}.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGoogle">Google Maps imagery is not OSM-compliant. Make sure you have permission and keep the attribution accurate.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyAmap">Amap uses the GCJ-02 "Mars" coordinate system, which WOSM does not support.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyBaidu">Baidu imagery uses the BD-09 coordinate system, which WOSM does not support.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGcj02">This imagery source commonly uses the GCJ-02 "Mars" coordinate system, which WOSM does not support.</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyProprietary">This is a commonly restricted proprietary map source. Do not use it for OSM editing unless you have explicit permission and keep the attribution accurate.</sys:String>
 
     <sys:String x:Key="Plugins.Title">Plugins</sys:String>
     <sys:String x:Key="Plugins.Description">Native DLL plugins run in the main process and must be confirmed again after files change. Process plugins are isolated in AppContainer.</sys:String>
@@ -200,7 +225,7 @@ Open the download page?</sys:String>
     <sys:String x:Key="Plugins.TrustAndLoad">Trust and load</sys:String>
     <sys:String x:Key="Plugins.Reload">Rescan</sys:String>
     <sys:String x:Key="Plugins.SelectPackageTitle">Select plugin package</sys:String>
-    <sys:String x:Key="Plugins.PackageFilter">WOSM plugin|plugin.json5;*.wosm-plugin;*.zip|Plugin manifest|plugin.json5|Plugin package|*.wosm-plugin;*.zip|All files|*.*</sys:String>
+    <sys:String x:Key="Plugins.PackageFilter">WOSM plugin|plugin.json5;*.wosm-plugin;*.zip;*.jar|Plugin manifest|plugin.json5|Plugin package|*.wosm-plugin;*.zip;*.jar|All files|*.*</sys:String>
     <sys:String x:Key="Plugins.NativeRiskTitle">Native DLL plugin risk</sys:String>
     <sys:String x:Key="Plugins.NativeRiskMessage">"{0}" includes a native DLL that runs in the main process. It can read or change files available to the current user, access the network, control the host app, and start other programs. Continue only if you trust the source. Install and allow it to run?</sys:String>
     <sys:String x:Key="Plugins.NativeTrustTitle">Confirm native DLL plugin</sys:String>
@@ -218,6 +243,13 @@ Open the download page?</sys:String>
     <sys:String x:Key="Startup.Version">Version {0}</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Title">Startup diagnostics</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Error">Startup checks encountered an error. The app will continue opening and details were written to the log.</sys:String>
+    <sys:String x:Key="Welcome.Title">Welcome to WPF OpenStreetmap Editor</sys:String>
+    <sys:String x:Key="Welcome.Warning">This is a self-hosted OpenStreetMap editor. Check every edit carefully before uploading it.</sys:String>
+    <sys:String x:Key="Welcome.Description">Use the tutorial to learn the interface, or jump straight into editing if you already know the workflow.</sys:String>
+    <sys:String x:Key="Welcome.PrivacyTitle">Your privacy settings</sys:String>
+    <sys:String x:Key="Welcome.ShowThirdPartyIcons">Show third-party icons</sys:String>
+    <sys:String x:Key="Welcome.StartTutorial">Start tutorial</sys:String>
+    <sys:String x:Key="Welcome.EditNow">Start editing</sys:String>
 
     <sys:String x:Key="Update.CurrentVersionInvalid">The current version could not be recognized: {0}</sys:String>
     <sys:String x:Key="Update.HttpFailed">Could not check for updates: GitHub HTTP {0} {1}</sys:String>
@@ -253,9 +285,13 @@ Open the download page?</sys:String>
     <sys:String x:Key="Help.Section.Keyboard">Keyboard shortcuts</sys:String>
     <sys:String x:Key="Help.Keyboard.F1">F1 opens Help and About.</sys:String>
     <sys:String x:Key="Help.Keyboard.Save">Ctrl+S saves the current map.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z and Ctrl+Y undo and redo edits.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z and Ctrl+Y undo and redo edits; Ctrl+Shift+V pastes copied tags onto the selection.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Search">Ctrl+F searches objects in the current data layer.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C copies selected features, Ctrl+Shift+V pastes only copied tags, and Shift+R copies tags from the previously selected feature.</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S selects features, V box-selects, and A draws lines.</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R rotates, M moves, and Q orthogonalizes selected features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F enters fast line drawing; Ctrl+Shift+F toggles viewport following while drawing lines.</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R rotates, M moves, X extrudes segments, and Q orthogonalizes selected features.</sys:String>
+    <sys:String x:Key="Help.Keyboard.ImageryOrder">` rotates imagery layer order for quick comparison.</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">Type supported edit commands when keyboard command input is active.</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">Drag selected features on the map when move mode is active.</sys:String>
     <sys:String x:Key="Help.Keyboard.Nodes">Insert adds a node at the map center.</sys:String>
@@ -312,6 +348,13 @@ Open the download page?</sys:String>
     <sys:String x:Key="Osm.Download.Title">Download OpenStreetMap data</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM download area map</sys:String>
+    <sys:String x:Key="Osm.Download.SearchTooltip">Search for a place or address to center the map</sys:String>
+    <sys:String x:Key="Osm.Download.SearchButton">Search</sys:String>
+    <sys:String x:Key="Osm.Download.ClearSearch">Clear search</sys:String>
+    <sys:String x:Key="Osm.Download.Searching">Searching for {0}...</sys:String>
+    <sys:String x:Key="Osm.Download.SearchResult">Showing {0}</sys:String>
+    <sys:String x:Key="Osm.Download.SearchNoResults">No place was found for "{0}".</sys:String>
+    <sys:String x:Key="Osm.Download.SearchError">Could not search for places. Check the network and try again.</sys:String>
     <sys:String x:Key="Osm.Download.ZoomIn">Zoom in</sys:String>
     <sys:String x:Key="Osm.Download.ZoomOut">Zoom out</sys:String>
     <sys:String x:Key="Osm.Download.NoSelection">No download area selected</sys:String>

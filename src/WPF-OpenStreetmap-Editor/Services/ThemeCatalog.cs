@@ -379,9 +379,16 @@ public static partial class ThemeCatalog {
             ["waterway"] = mapStyle.Waterway,
             ["rail"] = mapStyle.Rail,
             ["path"] = mapStyle.Path,
+            ["trackRoad"] = mapStyle.TrackRoad,
+            ["serviceRoad"] = mapStyle.ServiceRoad,
+            ["residentialRoad"] = mapStyle.ResidentialRoad,
+            ["livingStreetRoad"] = mapStyle.LivingStreetRoad,
+            ["unclassifiedRoad"] = mapStyle.UnclassifiedRoad,
             ["localRoad"] = mapStyle.LocalRoad,
+            ["tertiaryRoad"] = mapStyle.TertiaryRoad,
             ["secondaryRoad"] = mapStyle.SecondaryRoad,
             ["primaryRoad"] = mapStyle.PrimaryRoad,
+            ["trunkRoad"] = mapStyle.TrunkRoad,
             ["motorway"] = mapStyle.Motorway
         };
         foreach (var (name, style) in lineStyles) {
@@ -396,6 +403,12 @@ public static partial class ThemeCatalog {
             ["medicalPoint"] = mapStyle.MedicalPoint,
             ["educationPoint"] = mapStyle.EducationPoint,
             ["transitPoint"] = mapStyle.TransitPoint,
+            ["fuelPoint"] = mapStyle.FuelPoint,
+            ["bankPoint"] = mapStyle.BankPoint,
+            ["toiletPoint"] = mapStyle.ToiletPoint,
+            ["safetyPoint"] = mapStyle.SafetyPoint,
+            ["postPoint"] = mapStyle.PostPoint,
+            ["hotelPoint"] = mapStyle.HotelPoint,
             ["shopPoint"] = mapStyle.ShopPoint,
             ["tourismPoint"] = mapStyle.TourismPoint,
             ["place"] = mapStyle.Place

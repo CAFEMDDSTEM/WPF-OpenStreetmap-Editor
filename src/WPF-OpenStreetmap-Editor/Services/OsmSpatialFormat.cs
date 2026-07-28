@@ -99,12 +99,6 @@ internal static class OsmSpatialFormat {
                         Tags = ReadTags(way.Tags)
                     };
                     dataset.Ways[osmWay.Id] = osmWay;
-                    var feature = OsmDocumentSync.CreateWayFeature(dataset, osmWay);
-                    if (feature is null) {
-                        document.SkippedFeatureCount++;
-                        break;
-                    }
-                    AddFeature(document, options, feature);
                     break;
                 case Relation relation when relation.Id.HasValue:
                     dataset.Relations[relation.Id.Value] = new OsmRelation {
@@ -119,6 +113,15 @@ internal static class OsmSpatialFormat {
             if (count % 10_000 == 0) {
                 progress?.Report(new SpatialImportProgress(document.Features.Count, stage));
             }
+        }
+
+        foreach (var way in dataset.Ways.Values.OrderBy(static way => way.Id)) {
+            var feature = OsmDocumentSync.CreateWayFeature(dataset, way);
+            if (feature is null) {
+                document.SkippedFeatureCount++;
+                continue;
+            }
+            AddFeature(document, options, feature);
         }
 
         foreach (var relation in dataset.Relations.Values.OrderBy(static relation => relation.Id)) {

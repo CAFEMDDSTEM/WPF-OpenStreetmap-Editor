@@ -11,6 +11,26 @@ public static class MapEditService {
         return sourceFeatures.Select(static feature => feature.Clone()).ToList();
     }
 
+    public static IReadOnlyDictionary<string, string> CreatePasteTags(IEnumerable<MapFeature> sourceFeatures) {
+        ArgumentNullException.ThrowIfNull(sourceFeatures);
+
+        var tags = new Dictionary<string, string>(StringComparer.Ordinal);
+        var conflictedKeys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var feature in sourceFeatures) {
+            foreach (var attribute in feature.Attributes) {
+                if (conflictedKeys.Contains(attribute.Key)) continue;
+                if (!tags.TryGetValue(attribute.Key, out var existingValue)) {
+                    tags[attribute.Key] = attribute.Value;
+                } else if (existingValue != attribute.Value) {
+                    tags.Remove(attribute.Key);
+                    conflictedKeys.Add(attribute.Key);
+                }
+            }
+        }
+
+        return tags;
+    }
+
     public static IReadOnlyList<MapFeature> CreateNewCopies(
         IEnumerable<MapFeature> sourceFeatures,
         IEnumerable<string> reservedFeatureIds,
@@ -76,6 +96,59 @@ public static class MapEditService {
         double referenceLatitude) {
         var (longitudeOffset, latitudeOffset) = GetMeterOffsets(eastMeters, northMeters, referenceLatitude);
         return MoveParts(parts, longitudeOffset, latitudeOffset);
+    }
+
+    public static List<List<GeoPoint>> MoveVertex(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        int partIndex,
+        int pointIndex,
+        GeoPoint point) {
+        ArgumentNullException.ThrowIfNull(parts);
+
+        var result = parts.Select(static part => part.ToList()).ToList();
+        if (!point.IsValid ||
+            partIndex < 0 ||
+            partIndex >= result.Count ||
+            pointIndex < 0 ||
+            pointIndex >= result[partIndex].Count) {
+            return result;
+        }
+
+        var part = result[partIndex];
+        var wasClosed = part.Count > 2 && part[0] == part[^1];
+        part[pointIndex] = point;
+        if (wasClosed) {
+            if (pointIndex == 0) part[^1] = point;
+            else if (pointIndex == part.Count - 1) part[0] = point;
+        }
+
+        return result;
+    }
+
+    public static List<List<GeoPoint>> ExtrudeSegment(
+        IEnumerable<IEnumerable<GeoPoint>> parts,
+        int partIndex,
+        int startPointIndex,
+        int endPointIndex,
+        double longitudeOffset,
+        double latitudeOffset) {
+        ArgumentNullException.ThrowIfNull(parts);
+
+        var result = parts.Select(static part => part.ToList()).ToList();
+        if (partIndex < 0 ||
+            partIndex >= result.Count ||
+            startPointIndex < 0 ||
+            endPointIndex < 0 ||
+            endPointIndex >= result[partIndex].Count ||
+            startPointIndex >= endPointIndex) {
+            return result;
+        }
+
+        var part = result[partIndex];
+        var start = OffsetPoint(part[startPointIndex], longitudeOffset, latitudeOffset);
+        var end = OffsetPoint(part[endPointIndex], longitudeOffset, latitudeOffset);
+        part.InsertRange(endPointIndex, [start, end]);
+        return result;
     }
 
     public static List<List<GeoPoint>> OrthogonalizeParts(IEnumerable<IEnumerable<GeoPoint>> parts) {

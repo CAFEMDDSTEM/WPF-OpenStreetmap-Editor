@@ -161,9 +161,16 @@ public static class ThemeService {
         SetLineStyle(resources, "Waterway", style.Waterway!);
         SetLineStyle(resources, "Rail", style.Rail!);
         SetLineStyle(resources, "Path", style.Path!);
+        SetLineStyle(resources, "TrackRoad", style.TrackRoad!);
+        SetLineStyle(resources, "ServiceRoad", style.ServiceRoad!);
+        SetLineStyle(resources, "ResidentialRoad", style.ResidentialRoad!);
+        SetLineStyle(resources, "LivingStreetRoad", style.LivingStreetRoad!);
+        SetLineStyle(resources, "UnclassifiedRoad", style.UnclassifiedRoad!);
         SetLineStyle(resources, "LocalRoad", style.LocalRoad!);
+        SetLineStyle(resources, "TertiaryRoad", style.TertiaryRoad!);
         SetLineStyle(resources, "SecondaryRoad", style.SecondaryRoad!);
         SetLineStyle(resources, "PrimaryRoad", style.PrimaryRoad!);
+        SetLineStyle(resources, "TrunkRoad", style.TrunkRoad!);
         SetLineStyle(resources, "Motorway", style.Motorway!);
 
         SetPointStyle(resources, "GenericPoint", style.GenericPoint!);
@@ -173,6 +180,12 @@ public static class ThemeService {
         SetPointStyle(resources, "MedicalPoint", style.MedicalPoint!);
         SetPointStyle(resources, "EducationPoint", style.EducationPoint!);
         SetPointStyle(resources, "TransitPoint", style.TransitPoint!);
+        SetPointStyle(resources, "FuelPoint", style.FuelPoint!);
+        SetPointStyle(resources, "BankPoint", style.BankPoint!);
+        SetPointStyle(resources, "ToiletPoint", style.ToiletPoint!);
+        SetPointStyle(resources, "SafetyPoint", style.SafetyPoint!);
+        SetPointStyle(resources, "PostPoint", style.PostPoint!);
+        SetPointStyle(resources, "HotelPoint", style.HotelPoint!);
         SetPointStyle(resources, "ShopPoint", style.ShopPoint!);
         SetPointStyle(resources, "TourismPoint", style.TourismPoint!);
         SetPointStyle(resources, "Place", style.Place!);
@@ -192,10 +205,17 @@ public static class ThemeService {
         SetLineStyle(resources, "Waterway", SystemColors.HighlightBrush, SystemColors.HighlightBrush, 1.8, 1.8);
         SetLineStyle(resources, "Rail", SystemColors.WindowTextBrush, SystemColors.WindowBrush, 1.6, 3.4, [8, 3]);
         SetLineStyle(resources, "Path", SystemColors.WindowTextBrush, SystemColors.WindowTextBrush, 1.4, 1.4, [4, 3]);
+        SetLineStyle(resources, "TrackRoad", SystemColors.WindowTextBrush, SystemColors.WindowTextBrush, 1.2, 1.2, [6, 4]);
+        SetLineStyle(resources, "ServiceRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 1.6, 3.0);
+        SetLineStyle(resources, "ResidentialRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.2, 3.9);
+        SetLineStyle(resources, "LivingStreetRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.2, 3.8);
+        SetLineStyle(resources, "UnclassifiedRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.2, 4.0);
         SetLineStyle(resources, "LocalRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.4, 4.4);
-        SetLineStyle(resources, "SecondaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.0, 5.0);
-        SetLineStyle(resources, "PrimaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.6, 5.6);
-        SetLineStyle(resources, "Motorway", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 4.2, 6.4);
+        SetLineStyle(resources, "TertiaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 2.8, 4.8);
+        SetLineStyle(resources, "SecondaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.2, 5.3);
+        SetLineStyle(resources, "PrimaryRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.7, 5.8);
+        SetLineStyle(resources, "TrunkRoad", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 4.0, 6.2);
+        SetLineStyle(resources, "Motorway", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 4.5, 6.8);
 
         SetPointStyle(resources, "GenericPoint", SystemColors.WindowBrush, SystemColors.WindowTextBrush, 3.5, 1.2);
         SetPointStyle(resources, "Poi", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 4.0, 1.2);
@@ -204,6 +224,12 @@ public static class ThemeService {
         SetPointStyle(resources, "MedicalPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
         SetPointStyle(resources, "EducationPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
         SetPointStyle(resources, "TransitPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "FuelPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "BankPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "ToiletPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "SafetyPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "PostPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
+        SetPointStyle(resources, "HotelPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
         SetPointStyle(resources, "ShopPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
         SetPointStyle(resources, "TourismPoint", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 5.0, 1.2);
         SetPointStyle(resources, "Place", SystemColors.HighlightBrush, SystemColors.HighlightTextBrush, 4.5, 1.4);

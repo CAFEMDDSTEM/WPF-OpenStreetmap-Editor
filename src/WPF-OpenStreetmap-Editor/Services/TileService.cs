@@ -14,11 +14,7 @@ using System.Threading.Tasks;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
-/// <summary>
-/// 核心瓦片服务：管理瓦片 URL 构建、缓存读写、Bing/ArcGIS 元数据、并发控制与维护。
-/// </summary>
 public partial class TileService : IDisposable {
-    // ===== 常量 =====
     private const int DefaultMaxConnectionsPerServer = 16;
     private const string BingMetadataEndpoint = "https://dev.virtualearth.net/REST/v1/Imagery/Metadata/Aerial";
     private const string BingTermsUrl = "https://www.microsoft.com/maps/product/terms.html";
@@ -28,48 +24,44 @@ public partial class TileService : IDisposable {
     private static readonly TimeSpan PooledConnectionLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2);
     private const int WriteLockStripeCount = 256;
-
-    // ===== 运行时状态 =====
-    private readonly HttpClient _http;                  // HTTP 客户端（共享或自有）
-    private readonly string _cacheRoot;                 // 磁盘缓存根目录
-    private readonly bool _ownsHttpClient;              // 是否拥有 HttpClient 生命周期
-    private readonly HashSet<string> _noTileEtags = new(StringComparer.OrdinalIgnoreCase);  // 已知的无瓦片 ETag
-    private readonly HashSet<string> _noTileMd5s = new(StringComparer.OrdinalIgnoreCase);   // 已知的无瓦片内容 MD5
-    private readonly SemaphoreSlim _sourceInitializationLock = new(1, 1); // Bing 初始化锁
-    private IReadOnlyList<BingImageryProvider> _bingImageryProviders = []; // Bing 图片来源提供商
-    private string _bingCopyright = "";                 // Bing 版权信息
-    private bool _sourceInitialized;                    // Bing 元数据是否已加载
+    private readonly HttpClient _http;
+    private readonly string _cacheRoot;
+    private readonly bool _ownsHttpClient;
+    private readonly TimeSpan _cacheMaxAge;
+    private readonly HashSet<string> _noTileEtags = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _noTileMd5s = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _sourceInitializationLock = new(1, 1);
+    private IReadOnlyList<BingImageryProvider> _bingImageryProviders = [];
+    private string _bingCopyright = "";
+    private bool _sourceInitialized;
     private bool _disposed;
 
-    // ===== 静态缓存 =====
     private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"];
     private static readonly SemaphoreSlim[] WriteLocks = Enumerable.Range(0, WriteLockStripeCount)
         .Select(static _ => new SemaphoreSlim(1, 1))
-        .ToArray();  // 256 个写锁槽位，按哈希分配减少锁竞争
+        .ToArray();
 
-    // ===== 公开属性 =====
-    public string? TileTemplate { get; set; }           // 当前瓦片 URL 模板
-    public bool IsTms { get; set; }                     // 是否 TMS（Y 翻转）
+    public string? TileTemplate { get; set; }
+    public bool IsTms { get; set; }
     public int ImageMinZoom { get; private set; } = GeoConverter.MinZoom;
     public int MapMaxZoom { get; private set; } = GeoConverter.MaxZoom;
     public int ImageMaxZoom { get; private set; } = GeoConverter.MaxZoom;
     public int MaxZoom => ImageMaxZoom;
-    public bool IsMaxZoomAuto { get; private set; }     // 是否自动检测最大缩放级别
-    public bool IsBing { get; private set; }            // 当前是否 Bing 图源
+    public bool IsMaxZoomAuto { get; private set; }
+    public bool IsBing { get; private set; }
     public string CacheIdentity => CreateCacheIdentity(IsBing ? "bing:aerial" : TileTemplate, IsTms);
 
-    /// <summary>构造函数：初始化 HTTP 客户端、缓存目录，并触发磁盘缓存维护</summary>
-    public TileService(HttpClient? http = null, string? cacheRoot = null) {
+    public TileService(HttpClient? http = null, string? cacheRoot = null, TimeSpan? cacheMaxAge = null) {
         _ownsHttpClient = http is null;
         _http = http ?? CreateDefaultHttpClient();
         EnsureDefaultHeaders(_http);
         _cacheRoot = AppPaths.Normalize(cacheRoot ?? AppPaths.TileCacheDirectory);
+        _cacheMaxAge = cacheMaxAge ?? TileDiskCache.DefaultMaxAge;
         if (string.Equals(_cacheRoot, AppPaths.TileCacheDirectory, StringComparison.OrdinalIgnoreCase)) {
-            TileDiskCache.ScheduleMaintenance(_cacheRoot);
+            TileDiskCache.ScheduleMaintenance(_cacheRoot, TileDiskCache.DefaultMaxBytes, _cacheMaxAge);
         }
     }
 
-    /// <summary>构建瓦片的最终 HTTP URL：处理 TMS/Y 翻转、子域名、AccessToken、QuadKey 及模板替换</summary>
     public string BuildTileUrl(int z, int x, int y, string? accessToken) {
         if (string.IsNullOrEmpty(TileTemplate))
             throw new InvalidOperationException("Tile template is not set");
@@ -92,7 +84,6 @@ public partial class TileService : IDisposable {
             .Replace("{y}", yForUrl.ToString());
     }
 
-    /// <summary>初始化 Bing 图源：从 Bing 元数据 API 获取瓦片模板、缩放范围和版权信息</summary>
     public async Task InitializeSourceAsync(string? accessToken, CancellationToken ct = default) {
         if (!IsBing || _sourceInitialized) return;
         if (string.IsNullOrWhiteSpace(accessToken)) {
@@ -119,7 +110,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>获取当前视口范围内的 Bing 版权归属信息</summary>
     public IReadOnlyList<TileAttribution> GetAttributions(
         int zoom,
         double south,
@@ -148,7 +138,6 @@ public partial class TileService : IDisposable {
         return attributions;
     }
 
-    /// <summary>应用图源配置：缩放范围、已知的无瓦片 ETag/MD5 黑名单</summary>
     public void ApplySourceOptions(
         int mapMaxZoom,
         int imageMaxZoom,
@@ -170,9 +159,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    // ===== URL 模板辅助 =====
-
-    /// <summary>替换 {switch:...} 或 {s} 子域名占位符，用瓦片坐标哈希选择子域名</summary>
     private static string ApplySubdomains(string template, int x, int y) {
         var result = template;
 
@@ -196,7 +182,6 @@ public partial class TileService : IDisposable {
         return result;
     }
 
-    /// <summary>替换 {quadkey} 占位符为 Bing QuadKey</summary>
     private static string ApplyQuadKey(string template, int z, int x, int y) {
         if (template.IndexOf("{quadkey}", StringComparison.OrdinalIgnoreCase) < 0) return template;
 
@@ -204,7 +189,6 @@ public partial class TileService : IDisposable {
         return Regex.Replace(template, @"\{quadkey\}", quadKey, RegexOptions.IgnoreCase);
     }
 
-    /// <summary>构建 Bing QuadKey：将 (z,x,y) 编码为四叉树字符串</summary>
     private static string BuildQuadKey(int z, int x, int y) {
         var quadKey = new char[z];
         for (var i = z; i > 0; i--) {
@@ -218,7 +202,6 @@ public partial class TileService : IDisposable {
         return new string(quadKey);
     }
 
-    /// <summary>替换 {access_token} / {token} 占位符为 URL 编码后的 Token</summary>
     private static string ApplyAccessToken(string template, string? accessToken) {
         if (string.IsNullOrEmpty(accessToken)) {
             return template;
@@ -237,14 +220,10 @@ public partial class TileService : IDisposable {
             RegexOptions.IgnoreCase);
     }
 
-    // ===== 磁盘缓存 =====
-
-    /// <summary>获取缓存路径（自动创建目录）</summary>
     public string GetCacheBasePath(int z, int x, int y) {
         return GetCacheBasePath(z, x, y, createDirectory: true);
     }
 
-    /// <summary>获取缓存路径：按 CacheIdentity/z/x/y 组织，x 做环绕归一化</summary>
     private string GetCacheBasePath(int z, int x, int y, bool createDirectory) {
         var n = 1 << z;
         var xWrapped = ((x % n) + n) % n;
@@ -257,7 +236,6 @@ public partial class TileService : IDisposable {
         return Path.Combine(dir, y.ToString());
     }
 
-    /// <summary>查找缓存中是否存在该瓦片的已知图片格式文件</summary>
     public string? FindCachedFile(int z, int x, int y) {
         var basePath = GetCacheBasePath(z, x, y, createDirectory: false);
         foreach (var ext in ImageExtensions) {
@@ -268,13 +246,11 @@ public partial class TileService : IDisposable {
         return null;
     }
 
-    /// <summary>查找该瓦片是否被标记为"无瓦片"</summary>
     public string? FindNoTileMarker(int z, int x, int y) {
         var path = GetCacheBasePath(z, x, y, createDirectory: false) + NoTileExtension;
         return File.Exists(path) ? path : null;
     }
 
-    /// <summary>同步读取已缓存的瓦片文件，经校验后返回字节数组</summary>
     public byte[]? TryReadCachedTile(int z, int x, int y) {
         try {
             var cached = FindCachedFile(z, x, y);
@@ -290,7 +266,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>异步读取已缓存的瓦片文件，带校验（适用于大量瓦片时的非阻塞 I/O）</summary>
     public async Task<byte[]?> TryReadCachedTileAsync(int z, int x, int y, CancellationToken ct = default) {
         try {
             var cached = FindCachedFile(z, x, y);
@@ -324,36 +299,26 @@ public partial class TileService : IDisposable {
         }
     }
 
-    // ===== 瓦片字节数据获取（核心链路） =====
-
-    /// <summary>
-    /// 获取瓦片字节数组的主入口：
-    /// 1) 检查范围 + 无瓦片标记 → 2) 异步读缓存 → 3) 写锁（防重复下载）→ 4) HTTP 下载 → 5) 校验 → 6) 写缓存
-    /// </summary>
     public async Task<byte[]?> GetTileBytesAsync(int z, int x, int y, string? accessToken, CancellationToken ct = default) {
         try {
             if (string.IsNullOrEmpty(TileTemplate)) return null;
             if (z < ImageMinZoom || z > ImageMaxZoom) return null;
             if (FindNoTileMarker(z, x, y) is not null) return null;
 
-            // 尝试读缓存
             var cachedBytes = await TryReadCachedTileAsync(z, x, y, ct).ConfigureAwait(false);
             if (cachedBytes is not null) return cachedBytes;
 
-            // 取写锁（按 cacheKey 哈希到 256 个槽位之一）
             var n = 1 << z;
             var xWrapped = ((x % n) + n) % n;
             var cacheKey = $"{CacheIdentity}/{z}/{xWrapped}/{y}";
             var semaphore = GetWriteLock(cacheKey);
             await semaphore.WaitAsync(ct).ConfigureAwait(false);
             try {
-                // 双重检查：取锁后再次检查无瓦片标记和缓存
                 if (FindNoTileMarker(z, x, y) is not null) return null;
 
                 cachedBytes = await TryReadCachedTileAsync(z, x, y, ct).ConfigureAwait(false);
                 if (cachedBytes is not null) return cachedBytes;
 
-                // 构建 URL 并发送 HTTP 请求
                 var url = BuildTileUrl(z, x, y, accessToken);
                 if (string.IsNullOrEmpty(url)) return null;
 
@@ -362,7 +327,6 @@ public partial class TileService : IDisposable {
                 Logger.Log(url, resp.StatusCode.ToString());
                 if (!resp.IsSuccessStatusCode) return null;
 
-                // 读取并校验响应体
                 var bytes = await ReadContentWithinLimitAsync(resp.Content, ct).ConfigureAwait(false);
                 if (bytes is null) {
                     Logger.Error($"Rejected oversized tile response (z={z}, x={x}, y={y})");
@@ -380,12 +344,11 @@ public partial class TileService : IDisposable {
                     return null;
                 }
 
-                // 写入磁盘缓存
                 var cachePath = GetCacheBasePath(z, x, y) + ext;
                 try {
                     File.WriteAllBytes(cachePath, bytes);
                     if (string.Equals(_cacheRoot, AppPaths.TileCacheDirectory, StringComparison.OrdinalIgnoreCase)) {
-                        TileDiskCache.ScheduleMaintenance(_cacheRoot);
+                        TileDiskCache.ScheduleMaintenance(_cacheRoot, TileDiskCache.DefaultMaxBytes, _cacheMaxAge);
                     }
                 } catch (Exception ex) {
                     Logger.Error("Failed to write tile cache", ex);
@@ -403,9 +366,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    // ===== 无瓦片标记 =====
-
-    /// <summary>写一个 .notile 标记文件，表示该瓦片在此缩放级别不存在，避免重复 HTTP 请求</summary>
     private void MarkNoTile(int z, int x, int y) {
         try {
             var markerPath = GetCacheBasePath(z, x, y) + NoTileExtension;
@@ -415,7 +375,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>根据 ETag 或 MD5 判断服务器返回的是否是"无瓦片"响应</summary>
     private bool IsNoTileResponse(HttpResponseMessage response, byte[] bytes) {
         var etag = NormalizeSignature(response.Headers.ETag?.Tag);
         if (!string.IsNullOrEmpty(etag) && _noTileEtags.Contains(etag)) {
@@ -428,17 +387,11 @@ public partial class TileService : IDisposable {
         return _noTileMd5s.Contains(md5);
     }
 
-    // ===== 并发控制 =====
-
-    /// <summary>按 cacheKey 哈希取写锁，分布到 256 个 SemaphoreSlim 上</summary>
     private static SemaphoreSlim GetWriteLock(string cacheKey) {
         var hash = (uint)StringComparer.Ordinal.GetHashCode(cacheKey);
         return WriteLocks[hash % WriteLockStripeCount];
     }
 
-    // ===== HTTP 响应读取 =====
-
-    /// <summary>将 HTTP 内容流读取到字节数组，同时校验不超 MaxResponseBytes</summary>
     private static async Task<byte[]?> ReadContentWithinLimitAsync(
         HttpContent content,
         CancellationToken ct) {
@@ -458,9 +411,6 @@ public partial class TileService : IDisposable {
         return destination.Length == 0 ? null : destination.ToArray();
     }
 
-    // ===== 最大缩放自动检测 =====
-
-    /// <summary>探测 ArcGIS 元数据或通过二分试探确定图源支持的最大缩放级别</summary>
     public async Task ResolveAutoMaxZoomAsync(
         double sampleLat,
         double sampleLon,
@@ -477,9 +427,6 @@ public partial class TileService : IDisposable {
         IsMaxZoomAuto = false;
     }
 
-    // ===== URL 模板解析 =====
-
-    /// <summary>解析 URL 模板：识别图源类型（Bing/XYZ/TMS/ArcGIS/WMTS），替换占位符，设置 IsTms/IsBing/缩放范围</summary>
     public void ParseUrlTemplate(string url, string? accessToken, string? layerType = null) {
         if (string.IsNullOrEmpty(url))
             return;
@@ -501,10 +448,11 @@ public partial class TileService : IDisposable {
             return;
         }
 
-        // 处理 {-y}：{z}/{-y}/{x} → ArcGIS，{z}/{x}/{-y} → TMS
         if (template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase) >= 0) {
             var xPos = template.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
             var negYPos = template.IndexOf("{-y}", StringComparison.OrdinalIgnoreCase);
+            // TMS:  {z}/{x}/{-y}  → {-y} after {x}, flip Y
+            // ArcGIS: {z}/{-y}/{x} → {-y} before {x}, NO flip
             IsTms = xPos >= 0 && negYPos > xPos;
             template = template.Replace("{-y}", "{y}");
         } else if (source.ForceTmsYFlip && IsXBeforeY(template)) {
@@ -513,7 +461,6 @@ public partial class TileService : IDisposable {
 
         template = template.Replace("{zoom}", "{z}");
 
-        // WMTS 占位符归一化
         if (template.IndexOf("tilematrix", StringComparison.OrdinalIgnoreCase) >= 0 ||
             template.IndexOf("tilecol", StringComparison.OrdinalIgnoreCase) >= 0 ||
             template.IndexOf("tilerow", StringComparison.OrdinalIgnoreCase) >= 0) {
@@ -525,9 +472,6 @@ public partial class TileService : IDisposable {
         TileTemplate = template;
     }
 
-    // ===== Bing 元数据加载 =====
-
-    /// <summary>从 Bing Maps API 获取瓦片元数据（URL 模板、子域名、缩放范围、版权）</summary>
     private async Task<BingMetadata> LoadBingMetadataAsync(string accessToken, CancellationToken ct) {
         var metadataUrl = $"{BingMetadataEndpoint}?include=ImageryProviders&output=json&uriScheme=https&key={Uri.EscapeDataString(accessToken)}";
         try {
@@ -557,7 +501,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>解析 Bing 元数据 JSON，提取瓦片模板、缩放范围和版权/图片来源列表</summary>
     private static BingMetadata ParseBingMetadata(JsonElement root) {
         if (root.TryGetProperty("authenticationResultCode", out var authenticationResult) &&
             !string.Equals(authenticationResult.GetString(), "ValidCredentials", StringComparison.OrdinalIgnoreCase)) {
@@ -586,7 +529,6 @@ public partial class TileService : IDisposable {
         return new BingMetadata(template, minZoom, maxZoom, copyright, providers);
     }
 
-    /// <summary>归一化 Bing 瓦片模板：替换 {culture}、{subdomain}，校验 {quadkey} 和 HTTPS</summary>
     private static string NormalizeBingTileTemplate(string imageUrl, IReadOnlyList<string> subdomains) {
         var template = Regex.Replace(
             imageUrl,
@@ -614,7 +556,6 @@ public partial class TileService : IDisposable {
         return template;
     }
 
-    /// <summary>解析 Bing 图片来源提供商列表（含归属文本和覆盖区域）</summary>
     private static IReadOnlyList<BingImageryProvider> ParseBingImageryProviders(
         JsonElement resource,
         int defaultMinZoom,
@@ -647,7 +588,6 @@ public partial class TileService : IDisposable {
         return providers;
     }
 
-    /// <summary>解析 Bing 单个覆盖区域（bbox + zoom 范围）</summary>
     private static bool TryParseBingCoverageArea(
         JsonElement element,
         int defaultMinZoom,
@@ -684,8 +624,6 @@ public partial class TileService : IDisposable {
         coverageArea = new BingCoverageArea(minZoom, maxZoom, south, west, north, east);
         return true;
     }
-
-    // ===== JSON 辅助 =====
 
     private static bool TryGetFirstArrayItem(JsonElement parent, string propertyName, out JsonElement item) {
         item = default;
@@ -730,9 +668,6 @@ public partial class TileService : IDisposable {
             .Where(static item => item.Length > 0);
     }
 
-    // ===== ArcGIS 最大缩放检测 =====
-
-    /// <summary>从 ArcGIS REST 元数据端点探测最大缩放级别</summary>
     private async Task<int?> TryDetectArcGisMaxZoomAsync(CancellationToken ct) {
         var metadataUrl = TryBuildArcGisMetadataUrl();
         if (metadataUrl is null) return null;
@@ -773,7 +708,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>从瓦片模板构建 ArcGIS REST 服务元数据 URL（将 /tile/{z}/{y}/{x} 替换为 ?f=pjson）</summary>
     private string? TryBuildArcGisMetadataUrl() {
         if (string.IsNullOrEmpty(TileTemplate)) return null;
 
@@ -784,9 +718,6 @@ public partial class TileService : IDisposable {
         return template[..tileIndex] + "?f=pjson";
     }
 
-    // ===== 瓦片可用性探测（用于自动缩放级别检测） =====
-
-    /// <summary>从 upperZoom 向下试探，找到第一个能成功返回有效瓦片的缩放级别</summary>
     private async Task<int?> ProbeMaxAvailableZoomAsync(
         int upperZoom,
         double sampleLat,
@@ -804,7 +735,6 @@ public partial class TileService : IDisposable {
         return null;
     }
 
-    /// <summary>检查特定瓦片是否可以正常下载并解码</summary>
     private async Task<bool> IsTileAvailableAsync(
         int z,
         int x,
@@ -838,7 +768,6 @@ public partial class TileService : IDisposable {
         }
     }
 
-    /// <summary>获取某坐标在某缩放级别下的采样瓦片坐标</summary>
     private static (int X, int Y) GetSampleTile(double lat, double lon, int zoom) {
         var n = GeoConverter.GetTileCount(zoom);
         var (pixelX, pixelY) = GeoConverter.LatLonToPixelXY(lat, lon, zoom);
@@ -847,16 +776,12 @@ public partial class TileService : IDisposable {
         return (tileX, tileY);
     }
 
-    // ===== 工具方法 =====
-
-    /// <summary>判断模板中 {x} 是否在 {y} 之前（用于 TMS/XYZ 判断）</summary>
     private static bool IsXBeforeY(string template) {
         var xPos = template.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
         var yPos = template.IndexOf("{y}", StringComparison.OrdinalIgnoreCase);
         return xPos >= 0 && yPos > xPos;
     }
 
-    /// <summary>创建默认 HttpClient：支持 GZip/Brotli 解压、连接池复用、HTTP/2</summary>
     private static HttpClient CreateDefaultHttpClient() {
         var handler = new SocketsHttpHandler {
             AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
@@ -872,19 +797,16 @@ public partial class TileService : IDisposable {
         };
     }
 
-    /// <summary>确保 User-Agent 头部已设置</summary>
     private static void EnsureDefaultHeaders(HttpClient http) {
         if (!http.DefaultRequestHeaders.UserAgent.Any()) {
             http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", DefaultUserAgent);
         }
     }
 
-    /// <summary>归一化 ETag/MD5 签名字符串（去引号、转小写）</summary>
     private static string NormalizeSignature(string? signature) {
         return signature?.Trim().Trim('"').ToLowerInvariant() ?? "";
     }
 
-    /// <summary>创建缓存标识（SHA256 哈希的前 16 位十六进制），区分 TMS/XYZ 和 User-Agent</summary>
     private static string CreateCacheIdentity(string? template, bool isTms) {
         if (string.IsNullOrEmpty(template)) return "default";
 
@@ -906,10 +828,11 @@ public partial class TileService : IDisposable {
         }
     }
 
-    // ===== 内部数据结构 =====
-
     private sealed record BingMetadata(
-        string TileTemplate, int MinZoom, int MaxZoom, string Copyright,
+        string TileTemplate,
+        int MinZoom,
+        int MaxZoom,
+        string Copyright,
         IReadOnlyList<BingImageryProvider> ImageryProviders);
 
     private sealed record BingImageryProvider(string Attribution, IReadOnlyList<BingCoverageArea> CoverageAreas) {
@@ -920,14 +843,19 @@ public partial class TileService : IDisposable {
     }
 
     private readonly record struct BingCoverageArea(
-        int MinZoom, int MaxZoom, double South, double West, double North, double East) {
+        int MinZoom,
+        int MaxZoom,
+        double South,
+        double West,
+        double North,
+        double East) {
         public bool Intersects(int zoom, double south, double west, double north, double east) {
             if (zoom < MinZoom || zoom > MaxZoom || north < South || south > North) return false;
+
             return LongitudeRangesIntersect(west, east, West, East);
         }
 
-        private static bool LongitudeRangesIntersect(
-            double firstWest, double firstEast, double secondWest, double secondEast) {
+        private static bool LongitudeRangesIntersect(double firstWest, double firstEast, double secondWest, double secondEast) {
             var firstRanges = GetLongitudeRanges(firstWest, firstEast);
             var secondRanges = GetLongitudeRanges(secondWest, secondEast);
             return firstRanges.Any(first => secondRanges.Any(second =>
@@ -936,6 +864,7 @@ public partial class TileService : IDisposable {
 
         private static IReadOnlyList<(double West, double East)> GetLongitudeRanges(double west, double east) {
             if (east - west >= 360) return [(-180, 180)];
+
             var normalizedWest = NormalizeLongitude(west);
             var normalizedEast = NormalizeLongitude(east);
             return normalizedWest <= normalizedEast

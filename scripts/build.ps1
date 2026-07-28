@@ -12,6 +12,11 @@ if ([string]::IsNullOrWhiteSpace($PluginSourceRoot)) {
 $pluginOutputRoot = Join-Path $repoRoot "artifacts\plugins"
 
 dotnet restore $solution
+
+if (Get-Command jpackage -ErrorAction SilentlyContinue) {
+    & (Join-Path $PSScriptRoot "build-java-plugin-support.ps1") -Configuration $Configuration
+}
+
 dotnet build $solution --configuration $Configuration --no-restore
 
 if (!(Test-Path -LiteralPath $PluginSourceRoot)) {

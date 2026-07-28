@@ -16,6 +16,7 @@
     <sys:String x:Key="Common.Status">状態</sys:String>
     <sys:String x:Key="Common.Type">種類</sys:String>
     <sys:String x:Key="Common.Version">バージョン</sys:String>
+    <sys:String x:Key="Common.Warning">警告</sys:String>
     <sys:String x:Key="Language.System">システム設定を使用</sys:String>
     <sys:String x:Key="Language.English">英語</sys:String>
     <sys:String x:Key="Language.SimplifiedChinese">簡体字中国語</sys:String>
@@ -32,8 +33,10 @@
     <sys:String x:Key="Main.Menu.Redo">やり直し</sys:String>
     <sys:String x:Key="Main.Menu.CopySelected">選択したフィーチャをコピー</sys:String>
     <sys:String x:Key="Main.Menu.PasteFeatures">フィーチャを貼り付け</sys:String>
+    <sys:String x:Key="Main.Menu.PasteTags">タグを貼り付け</sys:String>
     <sys:String x:Key="Main.Menu.DuplicateSelected">選択したフィーチャを複製</sys:String>
     <sys:String x:Key="Main.Menu.EditTags">タグの編集</sys:String>
+    <sys:String x:Key="Main.Menu.FindFeatures">フィーチャを検索</sys:String>
     <sys:String x:Key="Main.Menu.RotateSelected">選択したフィーチャを回転</sys:String>
     <sys:String x:Key="Main.Menu.MoveSelected">選択したフィーチャを移動</sys:String>
     <sys:String x:Key="Main.Menu.OrthogonalizeSelected">選択したフィーチャを直交化</sys:String>
@@ -69,6 +72,8 @@
     <sys:String x:Key="Main.Features.Hidden">非表示</sys:String>
     <sys:String x:Key="Main.Features.Id">ID</sys:String>
     <sys:String x:Key="Main.Features.GeometryType">種類</sys:String>
+    <sys:String x:Key="Main.Features.SearchTooltip">ID、種類、OSM ID、タグでフィーチャを検索</sys:String>
+    <sys:String x:Key="Main.Features.ClearSearch">フィーチャ検索をクリア</sys:String>
     <sys:String x:Key="Main.AiTags.Header">AI タグ アシスタント</sys:String>
     <sys:String x:Key="Main.AiTags.Description">選択したオブジェクトを説明してください。BetterID AI が識別し、OSM タグを提案します。</sys:String>
     <sys:String x:Key="Main.AiTags.Suggest">タグを識別</sys:String>
@@ -122,10 +127,13 @@
     <sys:String x:Key="Main.Mode.DrawLine">線の描画 (A)</sys:String>
     <sys:String x:Key="Main.Mode.Rotate">回転モード (R)</sys:String>
     <sys:String x:Key="Main.Mode.Move">移動モード (M)</sys:String>
+    <sys:String x:Key="Main.Mode.Extrude">押し出しモード (X)</sys:String>
     <sys:String x:Key="Main.DeleteSelectedTitle">フィーチャの削除</sys:String>
     <sys:String x:Key="Main.DeleteSelectedConfirm">選択した {0:N0} 件のフィーチャを削除しますか?</sys:String>
     <sys:String x:Key="Main.EditTagsSelectOne">タグを編集するフィーチャを 1 つ選択してください。</sys:String>
     <sys:String x:Key="Main.FeatureCountWithHidden">{0:N0} / 非表示 {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCount">{0:N0} / {1:N0}</sys:String>
+    <sys:String x:Key="Main.FeatureSearchCountWithHidden">{0:N0} / {1:N0} / 非表示 {2:N0}</sys:String>
     <sys:String x:Key="Main.Status.Command">、コマンド {0}</sys:String>
     <sys:String x:Key="Main.Status.NoMapOpen">地図データが開かれていません{0}</sys:String>
     <sys:String x:Key="Main.Status.Selection">、選択中 {0:N0}</sys:String>
@@ -171,6 +179,18 @@
     <sys:String x:Key="Settings.DefaultImportProjection">既定のインポート投影</sys:String>
     <sys:String x:Key="Settings.CustomProjectionWkt">カスタム WKT</sys:String>
     <sys:String x:Key="Settings.ImportProjectionHelp">WOSM はベクター データを WGS 84 の経度/緯度として保存し、レンダリングします。この設定は、インポート時に GeoJSON、GML、および PRJ ファイルのない Shapefile を変換します。OSM、GPX、KML、および PRJ 付きの Shapefile は、それぞれの座標規則を保持します。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignment">地図の位置合わせ</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentProjection">位置合わせ投影</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffset">表示オフセット X / Y</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentOffsetRequired">表示オフセットには数値を入力してください。</sys:String>
+    <sys:String x:Key="Settings.DisplayAlignmentHelp">描画および操作時のみ、可逆的な表示オフセットを適用します。保存されるベクター座標は WGS 84 の経度/緯度のままです。</sys:String>
+    <sys:String x:Key="Settings.TileStoragePerformance">タイルの保存とパフォーマンス</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMode">画像表示</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceResponsive">応答性を優先</sys:String>
+    <sys:String x:Key="Settings.TilePerformanceMemorySaver">メモリを節約</sys:String>
+    <sys:String x:Key="Settings.TileCacheDays">キャッシュ日数</sys:String>
+    <sys:String x:Key="Settings.TileStorageHelp">応答性を優先すると、デコード済みタイルをより多く保持し、ボランティア運営ではない近隣ソースを事前読み込みします。メモリ節約ではメモリキャッシュを小さくし、プリフェッチを無効にします。ディスクキャッシュは指定した日数で整理されます。</sys:String>
+    <sys:String x:Key="Settings.TileCacheDaysRange">キャッシュ日数は {0} から {1} までの整数で入力してください。</sys:String>
     <sys:String x:Key="Settings.UrlHelp">URL は xyz[19]:、tms[18]:、tms[auto]:、tms: プレフィックスをサポートします。既知のソースでは、ここで設定した画像の最大ズームを使用します。カスタム tms[auto]/tms: ソースは自動的に検出されます。</sys:String>
     <sys:String x:Key="Settings.AuthorFormat">作成者: {0}</sys:String>
     <sys:String x:Key="Settings.AuthorLabel">作成者: </sys:String>
@@ -189,6 +209,11 @@
     <sys:String x:Key="Settings.SourceNameDuplicate">タイル ソース名は一意である必要があります。</sys:String>
     <sys:String x:Key="Settings.SourceUrlRequired">タイル ソース URL を入力してください。</sys:String>
     <sys:String x:Key="Settings.ZoomRangeRequired">ズーム レベルは {0} から {1} までの整数である必要があります。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGoogle">Google Maps 画像は OSM の規約に合致しません。利用許可と帰属表示を確認してください。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyAmap">Amap は GCJ-02 の「火星座標系」を使っており、WOSM は対応していません。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyBaidu">Baidu 画像は BD-09 座標系を使っており、WOSM は対応していません。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyGcj02">この画像ソースは一般に GCJ-02 の「火星座標系」を使っており、WOSM は対応していません。</sys:String>
+    <sys:String x:Key="Settings.SourceSafetyProprietary">これは一般に制限のある専有地図ソースです。明示的な許可があり、帰属表示を正しく保てる場合を除き、OSM 編集には使わないでください。</sys:String>
 
     <sys:String x:Key="Plugins.Title">プラグイン</sys:String>
     <sys:String x:Key="Plugins.Description">ネイティブ DLL プラグインはメイン プロセスで実行され、ファイル変更後は再確認が必要です。プロセス プラグインは AppContainer で分離されます。</sys:String>
@@ -200,7 +225,7 @@
     <sys:String x:Key="Plugins.TrustAndLoad">信頼して読み込む</sys:String>
     <sys:String x:Key="Plugins.Reload">再スキャン</sys:String>
     <sys:String x:Key="Plugins.SelectPackageTitle">プラグイン パッケージの選択</sys:String>
-    <sys:String x:Key="Plugins.PackageFilter">WOSM プラグイン|plugin.json5;*.wosm-plugin;*.zip|プラグイン マニフェスト|plugin.json5|プラグイン パッケージ|*.wosm-plugin;*.zip|すべてのファイル|*.*</sys:String>
+    <sys:String x:Key="Plugins.PackageFilter">WOSM プラグイン|plugin.json5;*.wosm-plugin;*.zip;*.jar|プラグイン マニフェスト|plugin.json5|プラグイン パッケージ|*.wosm-plugin;*.zip;*.jar|すべてのファイル|*.*</sys:String>
     <sys:String x:Key="Plugins.NativeRiskTitle">ネイティブ DLL プラグインのリスク</sys:String>
     <sys:String x:Key="Plugins.NativeRiskMessage">"{0}" にはメイン プロセスで実行されるネイティブ DLL が含まれています。現在のユーザーがアクセスできるファイルの読み取りや変更、ネットワーク アクセス、ホスト アプリの制御、他のプログラムの起動が可能です。ソースを信頼できる場合にのみ続行してください。インストールして実行を許可しますか?</sys:String>
     <sys:String x:Key="Plugins.NativeTrustTitle">ネイティブ DLL プラグインの確認</sys:String>
@@ -218,6 +243,13 @@
     <sys:String x:Key="Startup.Version">バージョン {0}</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Title">起動診断</sys:String>
     <sys:String x:Key="Startup.Diagnostics.Error">起動チェックでエラーが発生しました。アプリは引き続き開かれ、詳細はログに書き込まれました。</sys:String>
+    <sys:String x:Key="Welcome.Title">WPF OpenStreetmap Editor へようこそ</sys:String>
+    <sys:String x:Key="Welcome.Warning">これは独立して配置された OpenStreetMap エディターです。アップロード前にすべての編集を慎重に確認してください。</sys:String>
+    <sys:String x:Key="Welcome.Description">チュートリアルで画面を確認するか、ワークフローを知っている場合はすぐに編集を始められます。</sys:String>
+    <sys:String x:Key="Welcome.PrivacyTitle">プライバシー設定</sys:String>
+    <sys:String x:Key="Welcome.ShowThirdPartyIcons">サードパーティ アイコンを表示</sys:String>
+    <sys:String x:Key="Welcome.StartTutorial">チュートリアルを開始</sys:String>
+    <sys:String x:Key="Welcome.EditNow">すぐに編集</sys:String>
 
     <sys:String x:Key="Update.CurrentVersionInvalid">現在のバージョンを認識できませんでした: {0}</sys:String>
     <sys:String x:Key="Update.HttpFailed">更新プログラムを確認できませんでした: GitHub HTTP {0} {1}</sys:String>
@@ -253,9 +285,13 @@
     <sys:String x:Key="Help.Section.Keyboard">キーボード ショートカット</sys:String>
     <sys:String x:Key="Help.Keyboard.F1">F1 キーでヘルプとバージョン情報を開きます。</sys:String>
     <sys:String x:Key="Help.Keyboard.Save">Ctrl+S で現在の地図を保存します。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z と Ctrl+Y で編集を元に戻し、やり直します。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Edit">Ctrl+Z と Ctrl+Y で編集を元に戻し、やり直します。Ctrl+Shift+V でコピーしたタグを選択対象に貼り付けます。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Search">Ctrl+F で現在のデータ レイヤー内のオブジェクトを検索します。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Tags">Ctrl+C で選択したフィーチャをコピーし、Ctrl+Shift+V でコピーしたタグだけを貼り付け、Shift+R で直前に選択していたフィーチャからタグをコピーします。</sys:String>
     <sys:String x:Key="Help.Keyboard.Modes">S でフィーチャ選択、V でボックス選択、A で線の描画を行います。</sys:String>
-    <sys:String x:Key="Help.Keyboard.Transform">R で回転、M で移動、Q で選択したフィーチャを直交化します。</sys:String>
+    <sys:String x:Key="Help.Keyboard.JosmDrawing">Shift+F で高速な線描画に入り、Ctrl+Shift+F で線描画中のビューポート追従を切り替えます。</sys:String>
+    <sys:String x:Key="Help.Keyboard.Transform">R で回転、M で移動、X でセグメントを押し出し、Q で選択したフィーチャを直交化します。</sys:String>
+    <sys:String x:Key="Help.Keyboard.ImageryOrder">` で画像レイヤーの順序を循環させ、すばやく比較できます。</sys:String>
     <sys:String x:Key="Help.Keyboard.TypedCommands">キーボード コマンド入力が有効な場合は、サポートされている編集コマンドを入力します。</sys:String>
     <sys:String x:Key="Help.Keyboard.Drag">移動モードが有効な場合は、選択したフィーチャを地図上でドラッグします。</sys:String>
     <sys:String x:Key="Help.Keyboard.Nodes">Insert キーで地図の中心にノードを追加します。</sys:String>
@@ -312,6 +348,13 @@
     <sys:String x:Key="Osm.Download.Title">OpenStreetMap データのダウンロード</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 標準</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM ダウンロード領域マップ</sys:String>
+    <sys:String x:Key="Osm.Download.SearchTooltip">場所または住所を検索して地図の中心に移動</sys:String>
+    <sys:String x:Key="Osm.Download.SearchButton">検索</sys:String>
+    <sys:String x:Key="Osm.Download.ClearSearch">検索をクリア</sys:String>
+    <sys:String x:Key="Osm.Download.Searching">{0} を検索しています...</sys:String>
+    <sys:String x:Key="Osm.Download.SearchResult">{0} を表示しています</sys:String>
+    <sys:String x:Key="Osm.Download.SearchNoResults">"{0}" に一致する場所は見つかりませんでした。</sys:String>
+    <sys:String x:Key="Osm.Download.SearchError">場所を検索できませんでした。ネットワークを確認してから再試行してください。</sys:String>
     <sys:String x:Key="Osm.Download.ZoomIn">拡大</sys:String>
     <sys:String x:Key="Osm.Download.ZoomOut">縮小</sys:String>
     <sys:String x:Key="Osm.Download.NoSelection">ダウンロード領域が選択されていません</sys:String>

@@ -49,14 +49,18 @@ public partial class MainWindow : Window {
     private MapDocument? _document {
         get => Editor.Document;
         set {
-            if ((_featureRotation is not null || _featureMove is not null) && MapViewport.IsMouseCaptured) {
+            if ((_featureRotation is not null || _featureMove is not null || _vertexMove is not null || _segmentExtrude is not null) &&
+                MapViewport.IsMouseCaptured) {
                 MapViewport.ReleaseMouseCapture();
             }
             _featureRotation = null;
             _featureMove = null;
+            _vertexMove = null;
+            _segmentExtrude = null;
             _keyboardEditCommand = "";
             Editor.ReplaceDocument(value);
             _featureClipboard = [];
+            _previousSingleSelectedFeature = null;
             _clipboardPasteCount = 0;
         }
     }
@@ -65,7 +69,14 @@ public partial class MainWindow : Window {
     private int _clipboardPasteCount;
     private FeatureRotation? _featureRotation;
     private FeatureMove? _featureMove;
+    private VertexMove? _vertexMove;
+    private SegmentExtrude? _segmentExtrude;
+    private MapFeature? _hoveredFeature;
+    private VertexHit? _hoveredVertex;
+    private long _selectionRevision;
     private string _keyboardEditCommand = "";
+    private MapFeature? _previousSingleSelectedFeature;
+    private bool _followDrawingViewport;
     private Point? _boxSelectionStart;
     private GeoBounds? _selectionBounds;
     private MouseButton? _panButton;
@@ -83,6 +94,7 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _aiTagCts;
     private IReadOnlyList<AiTagSuggestionItem> _aiTagSuggestions = [];
     private AppSettings _settings = AppSettingsService.Load();
+    private MapDisplayTransform _displayTransform = MapDisplayTransform.Identity;
     private MapImageLayer? _activeImageLayer;
     private TileSourcePreset _activeSource = TileSourcePreset.CreateDefaults()[0];
     private IReadOnlyList<TileLayerContext> _tileLayers = [];
@@ -123,6 +135,8 @@ public partial class MainWindow : Window {
         InitializeComponent();
         ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
+        ApplyTileCacheSettings(forceDiskMaintenance: false);
+        _displayTransform = CreateDisplayTransform(_settings);
         RefreshImageryMenu();
         RefreshLayerList(_settings.GetActiveLayer());
 
@@ -304,7 +318,7 @@ public partial class MainWindow : Window {
                 if (source is null) continue;
 
                 var sourceSnapshot = source.Clone();
-                var tileService = new TileService();
+                var tileService = new TileService(cacheMaxAge: GetTileCacheMaxAge());
                 try {
                     await ApplyTileSourceAsync(tileService, sourceSnapshot, ct);
                 } catch (OperationCanceledException) {
@@ -425,7 +439,15 @@ public partial class MainWindow : Window {
         }
 
         if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
-        if (loadedLayers.Sum(static result => result.TileCount) == 0 && _activeLayer is not null) return;
+        if (_activeLayer is not null &&
+            loadedLayers.Sum(static result => result.TileCount) == 0) {
+            return;
+        }
+        if (_activeLayer is not null &&
+            loadedLayers.Sum(static result => result.ExactTileCount) == 0 &&
+            loadedLayers.Sum(static result => result.TileCount) > 0) {
+            return;
+        }
 
         await Dispatcher.InvokeAsync(() => {
             if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
@@ -461,7 +483,7 @@ public partial class MainWindow : Window {
         CancellationToken ct) {
         var imageZoom = Math.Min(renderZoom, context.Service.ImageMaxZoom);
         if (imageZoom < context.Service.ImageMinZoom) {
-            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0);
+            return new TileLayerLoadResult(new TileRenderGroup([], context.Opacity), 0, 0);
         }
 
         var scale = Math.Pow(2, renderZoom - imageZoom);
@@ -481,6 +503,7 @@ public partial class MainWindow : Window {
         var addedTileKeys = new HashSet<string>();
         var tileItemsLock = new object();
         var loadedTileCount = 0;
+        var exactTileCount = 0;
 
         List<Task> workers = [];
         var workerCount = Math.Min(GetTileWorkerCount(context.Source), pendingRequests.Count);
@@ -492,7 +515,8 @@ public partial class MainWindow : Window {
         lock (tileItemsLock) {
             return new TileLayerLoadResult(
                 new TileRenderGroup([.. tileItems], context.Opacity),
-                loadedTileCount);
+                loadedTileCount,
+                exactTileCount);
         }
 
         async Task LoadPendingTilesAsync() {
@@ -536,6 +560,9 @@ public partial class MainWindow : Window {
                 tileItems.Add(new TileRenderItem(tile.Source, placement, tile.IsFallback));
             }
             Interlocked.Increment(ref loadedTileCount);
+            if (!tile.IsFallback) {
+                Interlocked.Increment(ref exactTileCount);
+            }
         }
     }
 
@@ -564,15 +591,22 @@ public partial class MainWindow : Window {
             var candidateX = shift == 0 ? tileX : tileX >> shift;
             var candidateY = shift == 0 ? tileY : tileY >> shift;
             await TileThrottle.WaitAsync(ct).ConfigureAwait(false);
+            BitmapSource? source;
             try {
-                var source = await TileImageLoader.Shared
+                source = await TileImageLoader.Shared
                     .LoadAsync(context.Service, zoom, candidateX, candidateY, context.Source.AccessToken, ct)
                     .ConfigureAwait(false);
-                if (source is null) continue;
-
-                return new LoadedTile(source, zoom, candidateX, candidateY, zoom < requestedZoom);
             } finally {
                 TileThrottle.Release();
+            }
+
+            if (source is not null) {
+                return new LoadedTile(source, zoom, candidateX, candidateY, zoom < requestedZoom);
+            }
+
+            if (zoom == requestedZoom &&
+                (!allowNoTileFallback || context.Service.FindNoTileMarker(zoom, candidateX, candidateY) is null)) {
+                return null;
             }
         }
 
@@ -603,12 +637,17 @@ public partial class MainWindow : Window {
         return Math.Clamp(zoom, GeoConverter.MinZoom, mapMaxZoom);
     }
 
-    private static int GetTileWorkerCount(TileSourcePreset source) {
-        return IsOpenStreetMapVolunteerSource(source) ? 2 : MaxConcurrentTileLoads;
+    private int GetTileWorkerCount(TileSourcePreset source) {
+        if (IsOpenStreetMapVolunteerSource(source)) return 2;
+
+        return _settings.TilePerformanceMode == TilePerformanceMode.MemorySaver
+            ? Math.Min(4, MaxConcurrentTileLoads)
+            : MaxConcurrentTileLoads;
     }
 
-    private static bool ShouldPrefetch(TileSourcePreset source) {
-        return !IsOpenStreetMapVolunteerSource(source);
+    private bool ShouldPrefetch(TileSourcePreset source) {
+        return _settings.TilePerformanceMode == TilePerformanceMode.Responsive &&
+            !IsOpenStreetMapVolunteerSource(source);
     }
 
     private static bool IsOpenStreetMapVolunteerSource(TileSourcePreset source) {
@@ -845,6 +884,8 @@ public partial class MainWindow : Window {
     private async Task SaveDocumentAsync(bool forceSaveAs) {
         if (_featureRotation is not null) CommitFeatureRotation();
         if (_featureMove is not null) CommitFeatureMove();
+        if (_vertexMove is not null) CommitVertexMove();
+        if (_segmentExtrude is not null) CommitSegmentExtrude();
         if (Editor.HasDraftLine) FinishDraftLine();
 
         if (_document is null) {
@@ -905,14 +946,46 @@ public partial class MainWindow : Window {
 
         _settings = win.ResultSettings;
         AppSettingsService.EnsureDefaults(_settings);
+        _displayTransform = CreateDisplayTransform(_settings);
         AppSettingsService.Save(_settings);
         ThemeService.ApplyTheme(_settings.ThemeId);
         LocalizationService.Instance.ApplyLanguage(_settings.LanguageId);
-        TileImageLoader.Shared.Clear();
+        ApplyTileCacheSettings(forceDiskMaintenance: true);
         RefreshImageryMenu();
         var activeLayer = _settings.GetActiveLayer();
         RefreshLocalizedText();
         RefreshRenderedLayerFromStack(activeLayer);
+        UpdateVectorLayer();
+    }
+
+    private static MapDisplayTransform CreateDisplayTransform(AppSettings settings) {
+        try {
+            return MapDisplayTransform.Create(new MapDisplayAlignmentOptions {
+                ProjectionId = settings.DisplayAlignmentProjectionId,
+                CustomProjectionWkt = settings.CustomDisplayAlignmentProjectionWkt,
+                OffsetX = settings.DisplayAlignmentOffsetX,
+                OffsetY = settings.DisplayAlignmentOffsetY
+            });
+        } catch (InvalidDataException ex) {
+            Logger.Error("Failed to create map display alignment", ex);
+            return MapDisplayTransform.Identity;
+        }
+    }
+
+    private void ApplyTileCacheSettings(bool forceDiskMaintenance) {
+        TileImageLoader.ConfigureShared(_settings.TilePerformanceMode);
+        TileDiskCache.ScheduleMaintenance(
+            AppPaths.TileCacheDirectory,
+            TileDiskCache.DefaultMaxBytes,
+            GetTileCacheMaxAge(),
+            forceDiskMaintenance);
+    }
+
+    private TimeSpan GetTileCacheMaxAge() {
+        return TimeSpan.FromDays(Math.Clamp(
+            _settings.TileCacheMaxAgeDays,
+            AppSettings.MinTileCacheMaxAgeDays,
+            AppSettings.MaxTileCacheMaxAgeDays));
     }
 
     private void Plugins_Click(object sender, RoutedEventArgs e) {
@@ -928,6 +1001,10 @@ public partial class MainWindow : Window {
     }
 
     private void Help_Click(object sender, RoutedEventArgs e) {
+        ShowHelp();
+    }
+
+    internal void ShowHelpWindow() {
         ShowHelp();
     }
 
@@ -989,13 +1066,13 @@ public partial class MainWindow : Window {
                 ? contribution.PluginName
                 : contribution.Toolbar.ToolTip;
             var button = new Button {
-                Width = 34,
+                MinWidth = string.IsNullOrWhiteSpace(contribution.Toolbar.Label) ? 34 : 96,
                 Height = 34,
                 Margin = new Thickness(2),
                 Padding = new Thickness(0),
                 ToolTip = toolTip,
                 Tag = contribution,
-                Content = CreatePluginToolbarIcon(contribution.Toolbar.Icon)
+                Content = CreatePluginToolbarContent(contribution.Toolbar)
             };
             AutomationProperties.SetName(button, toolTip);
             button.Click += PluginToolbarCommand_Click;
@@ -1011,6 +1088,26 @@ public partial class MainWindow : Window {
             Kind = kind,
             Width = 18,
             Height = 18
+        };
+    }
+
+    private static object CreatePluginToolbarContent(PluginToolbarManifest toolbarItem) {
+        var icon = CreatePluginToolbarIcon(toolbarItem.Icon);
+        if (string.IsNullOrWhiteSpace(toolbarItem.Label)) {
+            return icon;
+        }
+
+        return new StackPanel {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(8, 0, 8, 0),
+            Children = {
+                icon,
+                new TextBlock {
+                    Text = toolbarItem.Label,
+                    Margin = new Thickness(6, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            }
         };
     }
 
@@ -1031,7 +1128,7 @@ public partial class MainWindow : Window {
                 pluginId,
                 commandId);
             foreach (var action in result.Actions) {
-                await ApplyPluginActionAsync(pluginName, action);
+                await ApplyPluginActionAsync(pluginId, pluginName, action);
             }
         } catch (Exception ex) {
             Logger.Error($"Plugin command '{commandId}' failed", ex);
@@ -1056,7 +1153,7 @@ public partial class MainWindow : Window {
                 commandId,
                 payload);
             foreach (var action in result.Actions) {
-                await ApplyPluginActionAsync(pluginName, action);
+                await ApplyPluginActionAsync(pluginId, pluginName, action);
             }
             return true;
         } catch (Exception ex) {
@@ -1067,11 +1164,11 @@ public partial class MainWindow : Window {
 
     private async Task ApplyPluginActionsAsync(IEnumerable<PluginActionRequest> requests) {
         foreach (var request in requests) {
-            await ApplyPluginActionAsync(request.PluginName, request.Action);
+            await ApplyPluginActionAsync(request.PluginId, request.PluginName, request.Action);
         }
     }
 
-    private async Task ApplyPluginActionAsync(string pluginName, PluginActionManifest action) {
+    private async Task ApplyPluginActionAsync(string pluginId, string pluginName, PluginActionManifest action) {
         switch (action.Type) {
             case PluginActionTypes.ShowMessage:
                 var message = GetPluginArgument(action, "message");
@@ -1108,6 +1205,24 @@ public partial class MainWindow : Window {
                 break;
             case PluginActionTypes.UploadOsm:
                 await UploadOsmChangesAsync();
+                break;
+            case PluginActionTypes.OpenPythonTerminal:
+                if (_pluginHost is null) return;
+
+                var command = GetPluginArgument(action, "command");
+                if (string.IsNullOrWhiteSpace(command)) {
+                    throw new InvalidOperationException("openPythonTerminal requires a command.");
+                }
+                var terminal = new Views.PythonTerminalWindow(
+                    _pluginHost,
+                    pluginId,
+                    pluginName,
+                    command,
+                    GetPluginArgument(action, "title") ?? pluginName,
+                    GetPluginArgument(action, "intro") ?? "") {
+                    Owner = this
+                };
+                terminal.Show();
                 break;
             default:
                 throw new InvalidOperationException(L.Format("Main.PluginUnsupportedAction", action.Type));
@@ -1343,11 +1458,28 @@ public partial class MainWindow : Window {
         if (modifiers == ModifierKeys.Control && e.Key == Key.S) {
             await SaveDocumentAsync(forceSaveAs: false);
             e.Handled = true;
-        } else if (modifiers == ModifierKeys.Control && e.Key == Key.C) {
+            return;
+        }
+        if (modifiers == ModifierKeys.Control && e.Key == Key.F) {
+            FocusFeatureSearch();
+            e.Handled = true;
+            return;
+        }
+        if (NonTextInputImeGuard.IsEditableTextInput(e.OriginalSource as DependencyObject)) {
+            return;
+        }
+
+        if (modifiers == ModifierKeys.Control && e.Key == Key.C) {
             CopySelectedFeatures();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.Control && e.Key == Key.V) {
             PasteFeatures();
+            e.Handled = true;
+        } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.V) {
+            PasteTagsSelectedFeatures();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.R) {
+            PasteTagsFromPreviousSingleSelection();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.Control && e.Key == Key.T) {
             EditTagsSelectedFeatures();
@@ -1368,8 +1500,19 @@ public partial class MainWindow : Window {
         } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.Up) {
             await ExecuteOsmPluginCommandAsync("upload");
             e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.F) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SetEditorMode(EditorMode.DrawLine);
+            e.Handled = true;
+        } else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.F) {
+            _followDrawingViewport = !_followDrawingViewport;
+            UpdateDocumentUi();
+            e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.F1) {
             ShowHelp();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Oem3) {
+            ReorderImageryLayers();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && HandleKeyboardEditCommandKey(e)) {
             e.Handled = true;
@@ -1380,6 +1523,10 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.None && e.Key == Key.V) {
             ClearKeyboardEditCommand(updateUi: false);
             SetEditorMode(EditorMode.BoxSelect);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.X) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SetEditorMode(_editorMode == EditorMode.Extrude ? EditorMode.Select : EditorMode.Extrude);
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Insert) {
             ClearKeyboardEditCommand(updateUi: false);
@@ -1481,6 +1628,14 @@ public partial class MainWindow : Window {
             CommitFeatureMove();
             return true;
         }
+        if (_vertexMove is not null) {
+            CommitVertexMove();
+            return true;
+        }
+        if (_segmentExtrude is not null) {
+            CommitSegmentExtrude();
+            return true;
+        }
         if (_editorMode == EditorMode.DrawLine) {
             FinishDraftLine();
             return true;
@@ -1540,7 +1695,7 @@ public partial class MainWindow : Window {
 
     private void MapCanvas_MouseWheel(object sender, MouseWheelEventArgs e) {
         e.Handled = true;
-        if (_featureRotation is not null || _featureMove is not null) return;
+        if (_featureRotation is not null || _featureMove is not null || _vertexMove is not null || _segmentExtrude is not null) return;
         if (!int.TryParse(ZoomTextBox.Text, out var zoom)) return;
 
         var nextZoom = e.Delta > 0
@@ -1561,6 +1716,16 @@ public partial class MainWindow : Window {
             e.Handled = true;
             return;
         }
+        if (_vertexMove is not null) {
+            CommitVertexMove();
+            e.Handled = true;
+            return;
+        }
+        if (_segmentExtrude is not null) {
+            CommitSegmentExtrude();
+            e.Handled = true;
+            return;
+        }
         if (_isPanning) {
             e.Handled = true;
             return;
@@ -1568,6 +1733,11 @@ public partial class MainWindow : Window {
 
         var position = e.GetPosition(MapViewport);
         if (_editorMode == EditorMode.Select) {
+            if (TryBeginVertexMove(position)) {
+                e.Handled = true;
+                return;
+            }
+
             if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) && TryBeginSelectedFeatureDrag(position)) {
                 e.Handled = true;
                 return;
@@ -1590,6 +1760,16 @@ public partial class MainWindow : Window {
             e.Handled = true;
             return;
         }
+        if (_editorMode == EditorMode.Extrude) {
+            if (TryBeginSegmentExtrude(position)) {
+                e.Handled = true;
+                return;
+            }
+
+            SelectFeatureAt(position, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+            return;
+        }
 
         BeginPan(position, MouseButton.Left);
         e.Handled = true;
@@ -1604,6 +1784,16 @@ public partial class MainWindow : Window {
         }
         if (_featureMove is not null) {
             CancelFeatureMove();
+            e.Handled = true;
+            return;
+        }
+        if (_vertexMove is not null) {
+            CancelVertexMove();
+            e.Handled = true;
+            return;
+        }
+        if (_segmentExtrude is not null) {
+            CancelSegmentExtrude();
             e.Handled = true;
             return;
         }
@@ -1631,20 +1821,39 @@ public partial class MainWindow : Window {
 
     private void MapCanvas_MouseMove(object sender, MouseEventArgs e) {
         if (_featureRotation is not null) {
+            ClearMapHover();
             UpdateFeatureRotation(e.GetPosition(MapViewport));
             e.Handled = true;
             return;
         }
         if (_featureMove is not null) {
+            ClearMapHover();
             UpdateFeatureMove(e.GetPosition(MapViewport));
             e.Handled = true;
             return;
         }
+        if (_vertexMove is not null) {
+            ClearMapHover();
+            UpdateVertexMove(e.GetPosition(MapViewport));
+            e.Handled = true;
+            return;
+        }
+        if (_segmentExtrude is not null) {
+            ClearMapHover();
+            UpdateSegmentExtrude(e.GetPosition(MapViewport));
+            e.Handled = true;
+            return;
+        }
         if (_boxSelectionStart is { } boxStart) {
+            ClearMapHover();
             ShowSelectionRectangle(new Rect(boxStart, e.GetPosition(MapViewport)));
             return;
         }
-        if (!_isPanning) return;
+        if (!_isPanning) {
+            UpdateMapHover(e.GetPosition(MapViewport));
+            return;
+        }
+        ClearMapHover();
         var pos = e.GetPosition(MapViewport);
         _panOffsetX = pos.X - _panStart.X;
         _panOffsetY = pos.Y - _panStart.Y;
@@ -1672,6 +1881,16 @@ public partial class MainWindow : Window {
     private void MapCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
         if (_featureMove is not null) {
             CommitFeatureMove();
+            e.Handled = true;
+            return;
+        }
+        if (_vertexMove is not null) {
+            CommitVertexMove();
+            e.Handled = true;
+            return;
+        }
+        if (_segmentExtrude is not null) {
+            CommitSegmentExtrude();
             e.Handled = true;
             return;
         }
@@ -1767,9 +1986,28 @@ public partial class MainWindow : Window {
 
     private void PasteFeatures_Click(object sender, RoutedEventArgs e) => PasteFeatures();
 
+    private void PasteTags_Click(object sender, RoutedEventArgs e) => PasteTagsSelectedFeatures();
+
     private void DuplicateSelected_Click(object sender, RoutedEventArgs e) => DuplicateSelectedFeatures();
 
     private void EditTagsSelected_Click(object sender, RoutedEventArgs e) => EditTagsSelectedFeatures();
+
+    private void FindFeatures_Click(object sender, RoutedEventArgs e) => FocusFeatureSearch();
+
+    private void FeatureSearchTextBox_TextChanged(object sender, TextChangedEventArgs e) {
+        RefreshFeatureList();
+        UpdateFeatureSearchUi();
+        UpdateDocumentUi();
+    }
+
+    private void FeatureSearchTextBox_KeyDown(object sender, KeyEventArgs e) {
+        if (e.Key != Key.Escape) return;
+
+        ClearFeatureSearch();
+        e.Handled = true;
+    }
+
+    private void ClearFeatureSearch_Click(object sender, RoutedEventArgs e) => ClearFeatureSearch();
 
     private void RotateSelected_Click(object sender, RoutedEventArgs e) {
         if (_featureRotation is null) BeginFeatureRotation();
@@ -1803,6 +2041,12 @@ public partial class MainWindow : Window {
         if (_editorMode == EditorMode.Move && mode != EditorMode.Move && _featureMove is not null) {
             CommitFeatureMove();
         }
+        if (_editorMode == EditorMode.VertexMove && mode != EditorMode.VertexMove && _vertexMove is not null) {
+            CommitVertexMove();
+        }
+        if (_editorMode == EditorMode.Extrude && mode != EditorMode.Extrude && _segmentExtrude is not null) {
+            CommitSegmentExtrude();
+        }
         if (_editorMode == EditorMode.DrawLine && mode != EditorMode.DrawLine) FinishDraftLine();
         _editorMode = mode;
         PanToolButton.ClearValue(Control.BackgroundProperty);
@@ -1816,6 +2060,8 @@ public partial class MainWindow : Window {
             EditorMode.DrawLine => DrawLineToolButton,
             EditorMode.Rotate => SelectToolButton,
             EditorMode.Move => SelectToolButton,
+            EditorMode.VertexMove => SelectToolButton,
+            EditorMode.Extrude => SelectToolButton,
             _ => SelectToolButton
         };
         activeButton.SetResourceReference(Control.BackgroundProperty, "Theme.SelectionBrush");
@@ -1826,6 +2072,8 @@ public partial class MainWindow : Window {
             EditorMode.DrawLine => L.GetString("Main.Mode.DrawLine"),
             EditorMode.Rotate => L.GetString("Main.Mode.Rotate"),
             EditorMode.Move => L.GetString("Main.Mode.Move"),
+            EditorMode.VertexMove => L.GetString("Main.Mode.Move"),
+            EditorMode.Extrude => L.GetString("Main.Mode.Extrude"),
             _ => ""
         };
         Cursor = GetEditorModeCursor();
@@ -1838,6 +2086,8 @@ public partial class MainWindow : Window {
             EditorMode.BoxSelect => Cursors.Cross,
             EditorMode.Rotate => Cursors.SizeAll,
             EditorMode.Move => Cursors.SizeAll,
+            EditorMode.VertexMove => Cursors.SizeAll,
+            EditorMode.Extrude => Cursors.SizeAll,
             _ => Cursors.Arrow
         };
     }
@@ -1851,10 +2101,80 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             zoom,
-            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight),
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
         if (feature is null || !Selection.Features.Contains(feature)) return false;
 
         return TryBeginFeatureMove(position);
+    }
+
+    private void UpdateMapHover(Point position) {
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) {
+            ClearMapHover();
+            return;
+        }
+
+        var viewport = GetMapViewportSize();
+        var candidates = GetInteractionCandidates();
+        var vertex = VectorMapInteraction.HitTestVertex(
+            GetVertexInteractionCandidates(),
+            position,
+            _centerLat,
+            _centerLon,
+            zoom,
+            viewport,
+            tolerance: 12,
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
+        var feature = vertex?.Feature ?? VectorMapInteraction.HitTest(
+            candidates,
+            position,
+            _centerLat,
+            _centerLon,
+            zoom,
+            viewport,
+            tolerance: 10,
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
+
+        var changed = !SameVertex(_hoveredVertex, vertex) ||
+            !ReferenceEquals(_hoveredFeature, feature);
+        _hoveredVertex = vertex;
+        _hoveredFeature = feature;
+        Cursor = vertex is not null
+            ? Cursors.SizeAll
+            : feature is not null
+                ? Cursors.Hand
+                : GetEditorModeCursor();
+        if (changed) UpdateVectorLayer();
+    }
+
+    private void ClearMapHover() {
+        if (_hoveredFeature is null && _hoveredVertex is null) return;
+
+        _hoveredFeature = null;
+        _hoveredVertex = null;
+        Cursor = GetEditorModeCursor();
+        UpdateVectorLayer();
+    }
+
+    private IReadOnlyList<MapFeature> GetInteractionCandidates() {
+        return VectorLayer.LastPlan?.Features ?? [];
+    }
+
+    private IReadOnlyList<MapFeature> GetVertexInteractionCandidates() {
+        var visible = GetInteractionCandidates();
+        if (Selection.Count == 0) return visible;
+
+        var result = Selection.Features
+            .Concat(visible)
+            .Distinct()
+            .ToList();
+        return result;
     }
 
     private void SelectFeatureAt(Point point, bool extendSelection) {
@@ -1866,7 +2186,10 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             zoom,
-            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight),
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
         if (feature is null) {
             if (!extendSelection) SetSelectedFeatures([]);
             return;
@@ -1890,12 +2213,15 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             zoom,
-            viewport).ToList();
+            viewport,
+            _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY).ToList();
         if (extendSelection) selected.AddRange(Selection.Features.Where(feature => !selected.Contains(feature)));
         SetSelectedFeatures(selected);
 
-        var first = VectorMapInteraction.ScreenToGeo(rect.TopLeft, _centerLat, _centerLon, zoom, viewport);
-        var second = VectorMapInteraction.ScreenToGeo(rect.BottomRight, _centerLat, _centerLon, zoom, viewport);
+        var first = VectorMapInteraction.ScreenToGeo(rect.TopLeft, _centerLat, _centerLon, zoom, viewport, displayTransform: _displayTransform);
+        var second = VectorMapInteraction.ScreenToGeo(rect.BottomRight, _centerLat, _centerLon, zoom, viewport, displayTransform: _displayTransform);
         _selectionBounds = new GeoBounds(
             Math.Min(first.Longitude, second.Longitude),
             Math.Min(first.Latitude, second.Latitude),
@@ -1920,12 +2246,14 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             zoom,
-            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight));
+            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight),
+            displayTransform: _displayTransform);
         if (!point.IsValid) return;
 
         if (!Editor.AddDraftLinePoint(point)) return;
 
         if (Editor.DraftLine is not null) SetSelectedFeatures([Editor.DraftLine]);
+        if (_followDrawingViewport) CenterViewportOnDocumentPoint(point);
         RefreshFeatureList();
         UpdateVectorLayer();
         UpdateDocumentUi();
@@ -1942,9 +2270,12 @@ public partial class MainWindow : Window {
     }
 
     private void AddNodeAtCenter() {
+        var point = _displayTransform.DisplayToDocument(new GeoPoint(_centerLon, _centerLat));
+        if (!point.IsValid) return;
+
         var feature = new MapFeature {
             GeometryType = MapGeometryType.Point,
-            Parts = [[new GeoPoint(_centerLon, _centerLat)]]
+            Parts = [[point]]
         };
         if (!Editor.Execute(new AddFeatureCommand(feature))) return;
 
@@ -2002,6 +2333,34 @@ public partial class MainWindow : Window {
         }
     }
 
+    private void PasteTagsSelectedFeatures() {
+        PasteTagsSelectedFeatures(_featureClipboard);
+    }
+
+    private void PasteTagsFromPreviousSingleSelection() {
+        if (_previousSingleSelectedFeature is null ||
+            _document?.Features.Contains(_previousSingleSelectedFeature) != true) {
+            return;
+        }
+
+        PasteTagsSelectedFeatures([_previousSingleSelectedFeature]);
+    }
+
+    private void PasteTagsSelectedFeatures(IReadOnlyList<MapFeature> sourceFeatures) {
+        if (sourceFeatures.Count == 0) return;
+
+        var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
+        if (selectedFeatures.Count == 0) return;
+
+        var tags = MapEditService.CreatePasteTags(sourceFeatures);
+        if (tags.Count == 0) return;
+        if (!Editor.Execute(new SetFeaturesAttributesCommand(selectedFeatures, tags))) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
     private void DuplicateSelectedFeatures() {
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
         if (selectedFeatures.Count == 0) return;
@@ -2012,6 +2371,8 @@ public partial class MainWindow : Window {
     private void EditTagsSelectedFeatures() {
         if (_featureRotation is not null) CommitFeatureRotation();
         if (_featureMove is not null) CommitFeatureMove();
+        if (_vertexMove is not null) CommitVertexMove();
+        if (_segmentExtrude is not null) CommitSegmentExtrude();
         if (Editor.HasDraftLine) FinishDraftLine();
 
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
@@ -2033,7 +2394,7 @@ public partial class MainWindow : Window {
     }
 
     private void OrthogonalizeSelectedFeatures() {
-        if (_featureRotation is not null || _featureMove is not null) return;
+        if (_featureRotation is not null || _featureMove is not null || _vertexMove is not null || _segmentExtrude is not null) return;
         if (Editor.HasDraftLine) FinishDraftLine();
 
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder()
@@ -2079,6 +2440,18 @@ public partial class MainWindow : Window {
         return _document.Features.Where(selectedFeatures.Contains).ToList();
     }
 
+    private void CenterViewportOnDocumentPoint(GeoPoint documentPoint) {
+        var displayPoint = _displayTransform.DocumentToDisplay(documentPoint);
+        if (!displayPoint.IsValid) return;
+
+        _centerLon = displayPoint.Longitude;
+        _centerLat = GeoConverter.ClampLatitude(displayPoint.Latitude);
+        ApplyLayerTransforms();
+        if (int.TryParse(ZoomTextBox.Text, out var zoom) && _tileLayers.Count > 0) {
+            ScheduleRender(zoom, 0);
+        }
+    }
+
     private (double Longitude, double Latitude) GetFeaturePasteOffset() {
         var zoom = int.TryParse(ZoomTextBox.Text, out var parsedZoom)
             ? ClampZoom(parsedZoom)
@@ -2087,19 +2460,20 @@ public partial class MainWindow : Window {
             MapViewport.ActualWidth > 0 ? MapViewport.ActualWidth : 1024,
             MapViewport.ActualHeight > 0 ? MapViewport.ActualHeight : 768);
         var center = new Point(viewport.Width / 2.0, viewport.Height / 2.0);
-        var origin = VectorMapInteraction.ScreenToGeo(center, _centerLat, _centerLon, zoom, viewport);
+        var origin = VectorMapInteraction.ScreenToGeo(center, _centerLat, _centerLon, zoom, viewport, displayTransform: _displayTransform);
         var shifted = VectorMapInteraction.ScreenToGeo(
             new Point(center.X + FeaturePasteOffsetPixels, center.Y + FeaturePasteOffsetPixels),
             _centerLat,
             _centerLon,
             zoom,
-            viewport);
+            viewport,
+            displayTransform: _displayTransform);
 
         return (shifted.Longitude - origin.Longitude, shifted.Latitude - origin.Latitude);
     }
 
     private void BeginFeatureRotation() {
-        if (_featureMove is not null) return;
+        if (_featureMove is not null || _vertexMove is not null || _segmentExtrude is not null) return;
         if (Editor.HasDraftLine) FinishDraftLine();
 
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
@@ -2195,7 +2569,8 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             int.TryParse(ZoomTextBox.Text, out var zoom) ? ClampZoom(zoom) : GeoConverter.MinZoom,
-            viewport);
+            viewport,
+            displayTransform: _displayTransform);
         return Math.Atan2(pointerPosition.Y - centerPoint.Y, pointerPosition.X - centerPoint.X);
     }
 
@@ -2209,6 +2584,14 @@ public partial class MainWindow : Window {
         while (radians > Math.PI) radians -= Math.PI * 2.0;
         while (radians < -Math.PI) radians += Math.PI * 2.0;
         return radians;
+    }
+
+    private static bool SameVertex(VertexHit? left, VertexHit? right) {
+        if (left is null || right is null) return left is null && right is null;
+
+        return ReferenceEquals(left.Feature, right.Feature) &&
+            left.PartIndex == right.PartIndex &&
+            left.PointIndex == right.PointIndex;
     }
 
     private bool RotateSelectedFeaturesByDegrees(double angleDegrees) {
@@ -2226,7 +2609,7 @@ public partial class MainWindow : Window {
     }
 
     private bool TryBeginFeatureMove(Point pointer) {
-        if (_featureRotation is not null) return false;
+        if (_featureRotation is not null || _vertexMove is not null || _segmentExtrude is not null) return false;
         if (Editor.HasDraftLine) FinishDraftLine();
 
         var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
@@ -2242,6 +2625,295 @@ public partial class MainWindow : Window {
         MapViewport.CaptureMouse();
         UpdateDocumentUi();
         return true;
+    }
+
+    private bool TryBeginVertexMove(Point pointer) {
+        if (_featureRotation is not null || _featureMove is not null || _segmentExtrude is not null) return false;
+        if (Editor.HasDraftLine) FinishDraftLine();
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return false;
+
+        var hit = _hoveredVertex ?? VectorMapInteraction.HitTestVertex(
+            GetVertexInteractionCandidates(),
+            pointer,
+            _centerLat,
+            _centerLon,
+            zoom,
+            GetMapViewportSize(),
+            tolerance: 16,
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
+        if (hit is null) return false;
+
+        if (!Selection.Features.Contains(hit.Feature)) {
+            SetSelectedFeatures([hit.Feature]);
+        }
+
+        var targets = GetSharedVertexTargets(hit);
+        var originalStates = targets
+            .Select(static target => target.Feature)
+            .Distinct()
+            .Select(CaptureFeatureParts)
+            .ToList();
+        if (targets.Count == 0 || originalStates.Count == 0) return false;
+
+        MapViewport.Focus();
+        _vertexMove = new VertexMove(
+            _editorMode,
+            originalStates,
+            targets,
+            pointer);
+        SetEditorMode(EditorMode.VertexMove);
+        MapViewport.CaptureMouse();
+        UpdateDocumentUi();
+        return true;
+    }
+
+    private bool TryBeginSegmentExtrude(Point pointer) {
+        if (_featureRotation is not null || _featureMove is not null || _vertexMove is not null) return false;
+        if (Editor.HasDraftLine) FinishDraftLine();
+        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return false;
+
+        var hit = VectorMapInteraction.HitTestSegment(
+            GetInteractionCandidates(),
+            pointer,
+            _centerLat,
+            _centerLon,
+            zoom,
+            GetMapViewportSize(),
+            tolerance: 14,
+            displayTransform: _displayTransform,
+            panOffsetX: _panOffsetX,
+            panOffsetY: _panOffsetY);
+        if (hit is null) return false;
+
+        if (!Selection.Features.Contains(hit.Feature)) {
+            SetSelectedFeatures([hit.Feature]);
+        }
+
+        MapViewport.Focus();
+        _segmentExtrude = new SegmentExtrude(
+            _editorMode,
+            CaptureFeatureParts(hit.Feature),
+            hit,
+            pointer,
+            GetPointerGeo(pointer));
+        SetEditorMode(EditorMode.Extrude);
+        MapViewport.CaptureMouse();
+        UpdateDocumentUi();
+        return true;
+    }
+
+    private void UpdateSegmentExtrude(Point pointerPosition) {
+        if (_segmentExtrude is not { } extrude) return;
+
+        extrude.CurrentPointer = pointerPosition;
+        var pointerGeo = GetPointerGeo(pointerPosition);
+        var longitudeOffset = pointerGeo.Longitude - extrude.StartPointerGeo.Longitude;
+        var latitudeOffset = pointerGeo.Latitude - extrude.StartPointerGeo.Latitude;
+        Editor.Dataset.ReplaceParts(
+            extrude.OriginalState.Feature,
+            MapEditService.ExtrudeSegment(
+                extrude.OriginalState.Parts,
+                extrude.Hit.PartIndex,
+                extrude.Hit.StartPointIndex,
+                extrude.Hit.EndPointIndex,
+                longitudeOffset,
+                latitudeOffset),
+            markDirty: false);
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void CommitSegmentExtrude(bool forceCommit = false) {
+        if (_segmentExtrude is not { } extrude) return;
+
+        _segmentExtrude = null;
+        ClearKeyboardEditCommand(updateUi: false);
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        var afterState = CaptureFeatureParts(extrude.OriginalState.Feature);
+        var pointerDelta = extrude.CurrentPointer - extrude.StartPointer;
+        var committed = (forceCommit || pointerDelta.Length >= MinimumCommittedMovePixels) &&
+            Editor.Execute(new SetFeaturePartsCommand([extrude.OriginalState], [afterState]));
+        if (!committed) RestoreSegmentExtrude(extrude);
+
+        SetEditorMode(extrude.PreviousMode == EditorMode.Extrude ? EditorMode.Select : extrude.PreviousMode);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void CancelSegmentExtrude() {
+        if (_segmentExtrude is not { } extrude) return;
+
+        _segmentExtrude = null;
+        ClearKeyboardEditCommand(updateUi: false);
+        RestoreSegmentExtrude(extrude);
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        SetEditorMode(extrude.PreviousMode == EditorMode.Extrude ? EditorMode.Select : extrude.PreviousMode);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void RestoreSegmentExtrude(SegmentExtrude extrude) {
+        Editor.Dataset.ReplaceParts(
+            extrude.OriginalState.Feature,
+            extrude.OriginalState.Parts.Select(static part => part.ToList()),
+            markDirty: false);
+    }
+
+    private void UpdateVertexMove(Point pointerPosition) {
+        if (_vertexMove is not { } move) return;
+
+        move.CurrentPointer = pointerPosition;
+        var point = GetPointerGeo(pointerPosition);
+        foreach (var state in move.OriginalStates) {
+            var parts = state.Parts.Select(static part => part.ToList()).ToList();
+            foreach (var target in move.Targets.Where(target => ReferenceEquals(target.Feature, state.Feature))) {
+                parts = MapEditService.MoveVertex(parts, target.PartIndex, target.PointIndex, point);
+            }
+            Editor.Dataset.ReplaceParts(state.Feature, parts, markDirty: false);
+        }
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void CommitVertexMove(bool forceCommit = false) {
+        if (_vertexMove is not { } move) return;
+
+        _vertexMove = null;
+        ClearKeyboardEditCommand(updateUi: false);
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        var afterStates = move.OriginalStates.Select(state => CaptureFeatureParts(state.Feature)).ToList();
+        var pointerDelta = move.CurrentPointer - move.StartPointer;
+        var committed = (forceCommit || pointerDelta.Length >= MinimumCommittedMovePixels) &&
+            Editor.Execute(new SetFeaturePartsCommand(move.OriginalStates, afterStates));
+        if (!committed) RestoreVertexMove(move);
+
+        SetEditorMode(move.PreviousMode == EditorMode.VertexMove ? EditorMode.Select : move.PreviousMode);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void CancelVertexMove() {
+        if (_vertexMove is not { } move) return;
+
+        _vertexMove = null;
+        ClearKeyboardEditCommand(updateUi: false);
+        RestoreVertexMove(move);
+        if (MapViewport.IsMouseCaptured) MapViewport.ReleaseMouseCapture();
+        SetEditorMode(move.PreviousMode == EditorMode.VertexMove ? EditorMode.Select : move.PreviousMode);
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void RestoreVertexMove(VertexMove move) {
+        foreach (var state in move.OriginalStates) {
+            Editor.Dataset.ReplaceParts(
+                state.Feature,
+                state.Parts.Select(static part => part.ToList()),
+                markDirty: false);
+        }
+    }
+
+    private IReadOnlyList<VertexEditTarget> GetSharedVertexTargets(VertexHit hit) {
+        if (_document is null ||
+            hit.PartIndex < 0 ||
+            hit.PartIndex >= hit.Feature.Parts.Count ||
+            hit.PointIndex < 0 ||
+            hit.PointIndex >= hit.Feature.Parts[hit.PartIndex].Count) {
+            return [];
+        }
+
+        if (TryGetOsmNodeId(hit.Feature, hit.PointIndex, out var nodeId)) {
+            var byNode = GetVertexTargetsForOsmNode(nodeId).ToList();
+            if (byNode.Count > 0) return byNode;
+        }
+
+        return GetVertexTargetsForPoint(hit.Feature.Parts[hit.PartIndex][hit.PointIndex]).ToList();
+    }
+
+    private IEnumerable<VertexEditTarget> GetVertexTargetsForOsmNode(long nodeId) {
+        if (_document is null) yield break;
+
+        var seen = new HashSet<(MapFeature Feature, int PartIndex, int PointIndex)>();
+        foreach (var feature in _document.Features) {
+            if (feature.GeometryType == MapGeometryType.Point &&
+                feature.Osm?.PrimitiveType == OsmPrimitiveType.Node &&
+                feature.Osm.Id == nodeId &&
+                AddVertexTarget(seen, feature, 0, 0)) {
+                yield return new VertexEditTarget(feature, 0, 0);
+                continue;
+            }
+
+            if (feature.Osm?.PrimitiveType != OsmPrimitiveType.Way ||
+                feature.Osm.NodeReferences.Count == 0) {
+                continue;
+            }
+
+            var count = Math.Min(feature.Osm.NodeReferences.Count, feature.Parts.FirstOrDefault()?.Count ?? 0);
+            for (var i = 0; i < count; i++) {
+                if (feature.Osm.NodeReferences[i].Id != nodeId ||
+                    !AddVertexTarget(seen, feature, 0, NormalizeClosedRingPointIndex(feature.Parts[0], i))) {
+                    continue;
+                }
+
+                yield return new VertexEditTarget(feature, 0, NormalizeClosedRingPointIndex(feature.Parts[0], i));
+            }
+        }
+    }
+
+    private IEnumerable<VertexEditTarget> GetVertexTargetsForPoint(GeoPoint point) {
+        if (_document is null) yield break;
+
+        var seen = new HashSet<(MapFeature Feature, int PartIndex, int PointIndex)>();
+        foreach (var feature in _document.Features) {
+            for (var partIndex = 0; partIndex < feature.Parts.Count; partIndex++) {
+                var part = feature.Parts[partIndex];
+                var count = IsClosedRing(part) ? part.Count - 1 : part.Count;
+                for (var pointIndex = 0; pointIndex < count; pointIndex++) {
+                    if (part[pointIndex] != point || !AddVertexTarget(seen, feature, partIndex, pointIndex)) continue;
+
+                    yield return new VertexEditTarget(feature, partIndex, pointIndex);
+                }
+            }
+        }
+    }
+
+    private static bool TryGetOsmNodeId(MapFeature feature, int pointIndex, out long nodeId) {
+        nodeId = 0;
+        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Node) {
+            nodeId = feature.Osm.Id;
+            return true;
+        }
+
+        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Way &&
+            pointIndex >= 0 &&
+            pointIndex < feature.Osm.NodeReferences.Count) {
+            nodeId = feature.Osm.NodeReferences[pointIndex].Id;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static int NormalizeClosedRingPointIndex(IReadOnlyList<GeoPoint> part, int pointIndex) {
+        return IsClosedRing(part) && pointIndex == part.Count - 1 ? 0 : pointIndex;
+    }
+
+    private static bool IsClosedRing(IReadOnlyList<GeoPoint> part) {
+        return part.Count > 2 && part[0] == part[^1];
+    }
+
+    private static bool AddVertexTarget(
+        HashSet<(MapFeature Feature, int PartIndex, int PointIndex)> seen,
+        MapFeature feature,
+        int partIndex,
+        int pointIndex) {
+        return seen.Add((feature, partIndex, pointIndex));
     }
 
     private void UpdateFeatureMove(Point pointerPosition) {
@@ -2337,7 +3009,8 @@ public partial class MainWindow : Window {
             _centerLat,
             _centerLon,
             int.TryParse(ZoomTextBox.Text, out var zoom) ? ClampZoom(zoom) : GeoConverter.MinZoom,
-            GetMapViewportSize());
+            GetMapViewportSize(),
+            displayTransform: _displayTransform);
     }
 
     private void UndoLastEdit() {
@@ -2539,14 +3212,25 @@ public partial class MainWindow : Window {
     }
 
     private void SetSelectedFeatures(IEnumerable<MapFeature> features, bool updateGrid = true) {
-        Selection.Set(features);
+        var nextFeatures = features.ToList();
+        var currentSingleSelection = Selection.Count == 1 ? Selection.Features.FirstOrDefault() : null;
+        var nextSingleSelection = nextFeatures.Count == 1 ? nextFeatures[0] : null;
+        if (currentSingleSelection is not null && !ReferenceEquals(currentSingleSelection, nextSingleSelection)) {
+            _previousSingleSelectedFeature = currentSingleSelection;
+        }
+
+        if (Selection.Set(nextFeatures)) _selectionRevision++;
 
         if (updateGrid) {
             _isUpdatingFeatureSelection = true;
             try {
+                var displayedFeatures = GetDisplayedFeatures().ToHashSet();
                 FeatureDataGrid.SelectedItems.Clear();
-                foreach (var feature in Selection.Features.Take(100)) FeatureDataGrid.SelectedItems.Add(feature);
-                if (Selection.Count > 0) FeatureDataGrid.ScrollIntoView(Selection.Features.First());
+                foreach (var feature in Selection.Features.Take(100).Where(displayedFeatures.Contains)) {
+                    FeatureDataGrid.SelectedItems.Add(feature);
+                }
+                var firstDisplayedSelection = Selection.Features.FirstOrDefault(displayedFeatures.Contains);
+                if (firstDisplayedSelection is not null) FeatureDataGrid.ScrollIntoView(firstDisplayedSelection);
             } finally {
                 _isUpdatingFeatureSelection = false;
             }
@@ -2563,13 +3247,14 @@ public partial class MainWindow : Window {
     private void FitDocumentToViewport() {
         if (_document is null || !_document.Bounds.IsValid) return;
         var bounds = _document.Bounds;
-        var center = bounds.Center;
+        var displayBounds = VectorMapInteraction.ToDisplayBounds(bounds, _displayTransform);
+        var center = displayBounds.IsValid ? displayBounds.Center : bounds.Center;
         _centerLon = center.Longitude;
         _centerLat = GeoConverter.ClampLatitude(center.Latitude);
         var viewport = new Size(
             Math.Max(320, MapViewport.ActualWidth),
             Math.Max(240, MapViewport.ActualHeight));
-        var zoom = VectorMapInteraction.GetFitZoom(bounds, viewport, Math.Min(GeoConverter.MaxZoom, 20));
+        var zoom = VectorMapInteraction.GetFitZoom(bounds, viewport, Math.Min(GeoConverter.MaxZoom, 20), _displayTransform);
         ZoomTextBox.Text = ClampZoom(zoom).ToString();
         ApplyLayerTransforms();
         if (_tileLayers.Count > 0) ScheduleRender(zoom, 0);
@@ -2578,11 +3263,47 @@ public partial class MainWindow : Window {
     private void RefreshFeatureList() {
         _isUpdatingFeatureSelection = true;
         try {
+            var displayedFeatures = GetDisplayedFeatures();
             FeatureDataGrid.ItemsSource = null;
-            FeatureDataGrid.ItemsSource = _document?.Features;
+            FeatureDataGrid.ItemsSource = displayedFeatures;
+            foreach (var feature in Selection.Features.Take(100).Where(displayedFeatures.Contains)) {
+                FeatureDataGrid.SelectedItems.Add(feature);
+            }
         } finally {
             _isUpdatingFeatureSelection = false;
         }
+    }
+
+    private IReadOnlyList<MapFeature> GetDisplayedFeatures() {
+        if (_document is null) return [];
+
+        var query = FeatureSearchTextBox?.Text;
+        return FeatureSearchService.Filter(_document.Features, query);
+    }
+
+    private bool HasActiveFeatureSearch() {
+        return !string.IsNullOrWhiteSpace(FeatureSearchTextBox?.Text);
+    }
+
+    private void FocusFeatureSearch() {
+        ClearKeyboardEditCommand(updateUi: false);
+        FeatureSearchPanel.Visibility = Visibility.Visible;
+        FeatureSearchTextBox.Focus();
+        FeatureSearchTextBox.SelectAll();
+    }
+
+    private void ClearFeatureSearch() {
+        if (FeatureSearchTextBox is null) return;
+
+        FeatureSearchTextBox.Clear();
+        FeatureSearchPanel.Visibility = Visibility.Collapsed;
+        MapViewport.Focus();
+    }
+
+    private void UpdateFeatureSearchUi() {
+        if (ClearFeatureSearchButton is null) return;
+
+        ClearFeatureSearchButton.IsEnabled = HasActiveFeatureSearch();
     }
 
     private void UpdateVectorLayer() {
@@ -2594,7 +3315,18 @@ public partial class MainWindow : Window {
             : Math.Clamp(dataLayer?.Opacity ?? 1.0, 0.0, 1.0);
         VectorLayer.Opacity = opacity;
         VectorLayer.Visibility = opacity <= 0 ? Visibility.Hidden : Visibility.Visible;
-        VectorLayer.UpdateView(_document, _centerLat, _centerLon, zoom, _panOffsetX, _panOffsetY);
+        VectorLayer.UpdateView(
+            _document,
+            _centerLat,
+            _centerLon,
+            zoom,
+            _panOffsetX,
+            _panOffsetY,
+            _document?.Revision ?? 0,
+            _selectionRevision,
+            _displayTransform,
+            _hoveredFeature,
+            _hoveredVertex);
     }
 
     private MapImageLayer? GetVectorDataLayer() {
@@ -2605,10 +3337,17 @@ public partial class MainWindow : Window {
     private void UpdateDocumentUi() {
         var total = _document?.Features.Count ?? 0;
         var hidden = _document?.Features.Count(static feature => feature.IsHidden) ?? 0;
+        var displayed = HasActiveFeatureSearch() ? GetDisplayedFeatures().Count : total;
         var command = _keyboardEditCommand.Length > 0 ? L.Format("Main.Status.Command", _keyboardEditCommand) : "";
-        FeatureCountTextBlock.Text = hidden > 0
-            ? L.Format("Main.FeatureCountWithHidden", total, hidden)
-            : total.ToString("N0", CultureInfo.CurrentCulture);
+        if (HasActiveFeatureSearch()) {
+            FeatureCountTextBlock.Text = hidden > 0
+                ? L.Format("Main.FeatureSearchCountWithHidden", displayed, total, hidden)
+                : L.Format("Main.FeatureSearchCount", displayed, total);
+        } else {
+            FeatureCountTextBlock.Text = hidden > 0
+                ? L.Format("Main.FeatureCountWithHidden", total, hidden)
+                : total.ToString("N0", CultureInfo.CurrentCulture);
+        }
         if (_document is null) {
             DocumentStatusTextBlock.Text = L.Format("Main.Status.NoMapOpen", command);
             return;
@@ -2640,7 +3379,9 @@ public partial class MainWindow : Window {
         if (_document?.IsDirty != true &&
             !Editor.HasDraftLine &&
             _featureRotation is null &&
-            _featureMove is null) {
+            _featureMove is null &&
+            _vertexMove is null &&
+            _segmentExtrude is null) {
             return true;
         }
         return MessageBox.Show(
@@ -2658,6 +3399,14 @@ public partial class MainWindow : Window {
         }
         if (_featureMove is not null) {
             CancelFeatureMove();
+            return;
+        }
+        if (_vertexMove is not null) {
+            CancelVertexMove();
+            return;
+        }
+        if (_segmentExtrude is not null) {
+            CancelSegmentExtrude();
             return;
         }
 
@@ -2755,6 +3504,8 @@ public partial class MainWindow : Window {
     private async Task UploadOsmChangesAsync() {
         if (_featureRotation is not null) CommitFeatureRotation();
         if (_featureMove is not null) CommitFeatureMove();
+        if (_vertexMove is not null) CommitVertexMove();
+        if (_segmentExtrude is not null) CommitSegmentExtrude();
         if (Editor.HasDraftLine) FinishDraftLine();
 
         if (_document is null) {
@@ -2836,6 +3587,13 @@ public partial class MainWindow : Window {
         var rasterLayers = LayerRenderPlanner.GetLayersToRender(_settings.ImageLayers);
         RefreshLayerList(selectedLayer ?? _settings.GetActiveLayer());
         LoadImageLayers(rasterLayers);
+    }
+
+    private void ReorderImageryLayers() {
+        if (!AppSettingsService.RotateRasterLayerOrder(_settings)) return;
+
+        AppSettingsService.Save(_settings);
+        RefreshRenderedLayerFromStack(_settings.GetActiveLayer());
     }
 
     private void CancelPendingMapWork() {
@@ -2947,10 +3705,22 @@ public partial class MainWindow : Window {
             IsVisible = true,
             IsKnownSource = false
         };
+        ShowSourceSafetyWarning(source);
         _settings.TileSources.Add(source);
         AppSettingsService.Save(_settings);
         RefreshImageryMenu();
         return source;
+    }
+
+    private void ShowSourceSafetyWarning(TileSourcePreset source) {
+        var warningKind = TileSourceSafetyService.GetWarningKind(source.Name, source.Source);
+        if (warningKind == TileSourceSafetyWarningKind.None) return;
+
+        MessageBox.Show(
+            TileSourceSafetyService.GetWarningMessage(warningKind),
+            L.GetString("Common.Warning"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 
     private string CreateUniqueSourceName(string baseName) {
@@ -3096,7 +3866,7 @@ public partial class MainWindow : Window {
 
     private sealed record LoadedTile(BitmapSource Source, int Zoom, int X, int Y, bool IsFallback);
 
-    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount);
+    private sealed record TileLayerLoadResult(TileRenderGroup Group, int TileCount, int ExactTileCount);
 
     private sealed record TileLayerContext(
         string LayerId,
@@ -3153,7 +3923,9 @@ public partial class MainWindow : Window {
         BoxSelect,
         DrawLine,
         Rotate,
-        Move
+        Move,
+        VertexMove,
+        Extrude
     }
 
     private sealed class FeatureRotation {
@@ -3202,6 +3974,60 @@ public partial class MainWindow : Window {
 
         public GeoPoint StartPointerGeo { get; }
     }
+
+    private sealed class VertexMove {
+        public VertexMove(
+            EditorMode previousMode,
+            IReadOnlyList<FeaturePartsSnapshot> originalStates,
+            IReadOnlyList<VertexEditTarget> targets,
+            Point startPointer) {
+            PreviousMode = previousMode;
+            OriginalStates = originalStates;
+            Targets = targets;
+            StartPointer = startPointer;
+            CurrentPointer = startPointer;
+        }
+
+        public EditorMode PreviousMode { get; }
+
+        public IReadOnlyList<FeaturePartsSnapshot> OriginalStates { get; }
+
+        public IReadOnlyList<VertexEditTarget> Targets { get; }
+
+        public Point StartPointer { get; }
+
+        public Point CurrentPointer { get; set; }
+    }
+
+    private sealed class SegmentExtrude {
+        public SegmentExtrude(
+            EditorMode previousMode,
+            FeaturePartsSnapshot originalState,
+            SegmentHit hit,
+            Point startPointer,
+            GeoPoint startPointerGeo) {
+            PreviousMode = previousMode;
+            OriginalState = originalState;
+            Hit = hit;
+            StartPointer = startPointer;
+            CurrentPointer = startPointer;
+            StartPointerGeo = startPointerGeo;
+        }
+
+        public EditorMode PreviousMode { get; }
+
+        public FeaturePartsSnapshot OriginalState { get; }
+
+        public SegmentHit Hit { get; }
+
+        public Point StartPointer { get; }
+
+        public Point CurrentPointer { get; set; }
+
+        public GeoPoint StartPointerGeo { get; }
+    }
+
+    private readonly record struct VertexEditTarget(MapFeature Feature, int PartIndex, int PointIndex);
 
     private static double ClampWorldPixel(double value, double worldSize) {
         return Math.Clamp(value, 0, worldSize);

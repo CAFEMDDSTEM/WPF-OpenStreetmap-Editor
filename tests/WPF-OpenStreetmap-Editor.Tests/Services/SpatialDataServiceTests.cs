@@ -88,6 +88,23 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public void MapDisplayTransform_AppliesMetricOffsetReversibly() {
+        var transform = MapDisplayTransform.Create(new MapDisplayAlignmentOptions {
+            ProjectionId = ProjectionService.Etrs89Utm33NId,
+            OffsetX = 25,
+            OffsetY = -15
+        });
+        var documentPoint = new GeoPoint(13.405, 52.52);
+
+        var displayPoint = transform.DocumentToDisplay(documentPoint);
+        var restoredPoint = transform.DisplayToDocument(displayPoint);
+
+        Assert.NotEqual(documentPoint.Longitude, displayPoint.Longitude, precision: 8);
+        Assert.Equal(documentPoint.Longitude, restoredPoint.Longitude, precision: 6);
+        Assert.Equal(documentPoint.Latitude, restoredPoint.Latitude, precision: 6);
+    }
+
+    [Fact]
     public async Task SaveAsync_GeoJsonRoundTripsDocument() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "saved.geojson");
@@ -176,6 +193,32 @@ public class SpatialDataServiceTests {
             Assert.Equal(3, way.Parts[0].Count);
             Assert.Same(document.Osm, document.OriginalOsm);
             Assert.All(document.OriginalFeatures.Values, feature => Assert.Empty(feature.Parts));
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
+    public async Task ImportAsync_OsmXmlResolvesWayGeometryWhenNodesAppearAfterWay() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "map.osm");
+        try {
+            File.WriteAllText(path, """
+                <osm version="0.6">
+                  <way id="10" version="4"><nd ref="1"/><nd ref="2"/><nd ref="3"/><tag k="highway" v="service"/></way>
+                  <node id="1" lat="1.30" lon="103.80" version="2" />
+                  <node id="2" lat="1.31" lon="103.81" version="1" />
+                  <node id="3" lat="1.32" lon="103.82" version="1" />
+                </osm>
+                """);
+
+            var document = await SpatialDataService.ImportAsync(path);
+
+            var way = Assert.Single(document.Features);
+            Assert.Equal(MapGeometryType.LineString, way.GeometryType);
+            Assert.Equal(3, way.Parts[0].Count);
+            Assert.Equal(103.82, way.Parts[0][2].Longitude, precision: 6);
+            Assert.Equal(1.32, way.Parts[0][2].Latitude, precision: 6);
         } finally {
             DeleteTestDirectory(root);
         }
