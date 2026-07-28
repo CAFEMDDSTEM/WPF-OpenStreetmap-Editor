@@ -6,18 +6,18 @@ WOSM は WPF OpenStreetMap Editor の略称で、C# / WPF で作成された Ope
 
 現在のアプリケーションでは、OpenStreetMap 互換のタイル レイヤーの読み込み、一般的なベクター地図形式のインポート、地図フィーチャのプレビューと編集、再利用可能な画像、テーマ、プラグインの管理を行うことができます。
 
-> プロジェクトの状態: Beta テスト。WOSM v0.2.0-beta.1 では、5 言語の UI ローカライズ、投影法に対応したインポート、BetterID AI による OSM 変更セット コメント支援、OSM 編集ワークフローの改善が追加されています。未完成の部分が残っている可能性があります。OpenStreetMap にアップロードする前に、必ず内容を確認してください。
+> プロジェクトの状態: 正式版。WOSM v0.2.0 では、5 言語の UI ローカライズ、投影法に対応したインポート、BetterID AI による OSM 変更セット コメント支援、OSM 編集ワークフローの改善が追加されています。OpenStreetMap にアップロードする前に、必ず内容を確認してください。
 
 ## リリース
 
-最新の Beta テスト版は、Windows x64 の自己完結型パッケージとして提供されています。
+最新の正式版は、Windows x64 の自己完結型パッケージとして提供されています。
 
-[WOSM v0.2.0-beta.1 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/WOSM-v0.2.0-beta.1-win-x64.zip)
+[WOSM v0.2.0 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/WOSM-v0.2.0-win-x64.zip)
 
-OpenStreetMap へのサインインまたは変更のアップロードを行う前に、[`SHA256SUMS-v0.2.0-beta.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0-beta.1/SHA256SUMS-v0.2.0-beta.1.txt) を使用して ZIP を検証してください。
+OpenStreetMap へのサインインまたは変更のアップロードを行う前に、[`SHA256SUMS-v0.2.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/SHA256SUMS-v0.2.0.txt) を使用して ZIP を検証してください。
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.0-beta.1-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.0-win-x64.zip -Algorithm SHA256
 ```
 
 ZIP を展開し、`WPF-OpenStreetmap-Editor.exe` を実行します。同じ実行可能ファイルでは、`help`、`import`、`convert`、`download`、`changeset`、`upload` などのコマンドライン データ ワークフロー コマンドも使用できます。このビルドは署名されていないため、Windows で SmartScreen 警告が表示される場合があります。再現可能な問題は [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) で報告してください。
