@@ -8,6 +8,7 @@ data imports, and AI-assisted OSM editing documentation. The canonical
 maintenance pages are currently maintained in English.
 
 - [Development Guide](development.md)
+- [Getting Started](getting-started.md)
 - [Code Style](code-style.md)
 - [Issues and Bug Reports](issues.md)
 - [Pull Requests](pull-requests.md)
@@ -15,3 +16,4 @@ maintenance pages are currently maintained in English.
 - [Map data, CLI workflows, and OSM transfer](map-data.md)
 - [Theme packages](themes.md)
 - [Plugin architecture](plugins.md)
+- [Plugin SDK](../sdk/README.md)

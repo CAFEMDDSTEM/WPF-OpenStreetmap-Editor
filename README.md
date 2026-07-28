@@ -151,11 +151,14 @@ The application writes runtime data under `%LOCALAPPDATA%\WPF-OpenStreetmap-Edit
 Contributor and maintenance documentation lives in [docs/README.md](docs/README.md):
 
 - [Development Guide](docs/development.md)
+- [Getting Started](docs/getting-started.md)
 - [Code Style](docs/code-style.md)
 - [Testing Guide](docs/testing.md)
 - [Map data, CLI workflows, and OSM transfer](docs/map-data.md)
 - [Theme packages](docs/themes.md)
 - [Plugin architecture](docs/plugins.md)
+- [Python plugin SDK](https://github.com/koharachan/WOSM-Python-SDK)
+- [Python hello-world toolbar example](https://github.com/koharachan/WOSM-Python-SDK/tree/master/examples/hello-world-toolbar)
 - [Issues and Bug Reports](docs/issues.md)
 - [Pull Requests](docs/pull-requests.md)
 

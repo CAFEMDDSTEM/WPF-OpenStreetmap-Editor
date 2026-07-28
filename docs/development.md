@@ -7,6 +7,7 @@ src/WPF-OpenStreetmap-Editor/          WPF application source
 tests/WPF-OpenStreetmap-Editor.Tests/  Unit tests
 docs/                                  Contributor documentation
 sdk/native/                            Native plugin C ABI header
+sdk/                                   Published SDK notes and mirrors
 scripts/                               CLI helpers for local automation
 external-plugins/                      Optional local plugin worktrees
 .github/workflows/                     CI pipeline definitions
@@ -29,6 +30,9 @@ external-plugins/                      Optional local plugin worktrees
 fetch plugin branches automatically. When plugin source is present, it builds
 the plugin projects and writes their outputs under `artifacts/plugins/` instead
 of merging them into the main app output.
+
+The plugin SDK itself is published from a separate repository. This tree keeps
+only the editor-side mirrors and documentation that the app needs directly.
 
 The application stores runtime files under `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor\`:
 

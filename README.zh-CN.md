@@ -136,11 +136,14 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 贡献和维护文档位于 [docs/README.zh-CN.md](docs/README.zh-CN.md)：
 
 - [开发指南](docs/development.md)
+- [入门指南](docs/getting-started.md)
 - [代码风格](docs/code-style.md)
 - [测试指南](docs/testing.md)
 - [地图数据、CLI 工作流和 OSM 传输](docs/map-data.md)
 - [主题包](docs/themes.md)
 - [插件架构](docs/plugins.md)
+- [Python 插件 SDK](https://github.com/koharachan/WOSM-Python-SDK)
+- [Python 你好世界工具栏示例](https://github.com/koharachan/WOSM-Python-SDK/tree/master/examples/hello-world-toolbar)
 - [Issue 与错误报告](docs/issues.md)
 - [Pull Request](docs/pull-requests.md)
 

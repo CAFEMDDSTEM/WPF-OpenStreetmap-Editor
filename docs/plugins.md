@@ -144,6 +144,52 @@ present locally, `scripts/build.ps1` can build it alongside the app and place
 its output under `artifacts/plugins/<plugin-name>/`; if it is absent, the app
 build continues without it.
 
+## Default plugin workflow
+
+Default plugins are built and shipped as separate packages, not checked into the
+main application tree. The normal flow is:
+
+1. Put the plugin source in its own repository or worktree.
+2. Keep the package root small and explicit: `plugin.json5`, `icon`, and
+   `description`.
+3. For code-bearing plugins, declare the runtime entry in the manifest and keep
+   the executable inside the package root.
+4. Build the plugin into `artifacts/plugins/<plugin-name>/` with the main build
+   script or a package-specific build.
+5. Install the package from the Plugins window by selecting the manifest or a
+   packaged archive.
+
+The main repo is intentionally not the SDK host. The SDK is published from a
+separate repository so plugin authors can version the API surface without
+coupling it to the editor release cycle. This repository keeps only the small
+mirrors that the editor itself needs, such as the native ABI header.
+
+`sdk/README.md` documents the published SDK shape and the authoring workflow in
+more detail.
+
+## Language support plugins
+
+Python and Java support should be shipped as separate process plugins. They are
+not first-class core runtimes in the editor itself.
+
+- The Python support plugin should expose a narrow bridge API for loading
+  Python entry points, surfacing plugin metadata, and forwarding commands and
+  hooks through JSON-RPC.
+- The Java support plugin should follow the same pattern, but use the JOSM
+  plugin model as its compatibility target.
+
+For Java, the bridge should expand compatibility in layers:
+
+1. read package metadata and icon information first
+2. discover plugin classes and declared capabilities next
+3. map commands, hooks, and actions after the package can be identified
+4. widen the supported JOSM surface gradually instead of trying to load every
+   JAR as a generic plugin on day one
+
+When Java support is installed, a `.jar` package can be treated as a plugin
+package source in the installer UI. The bridge still owns the actual runtime
+loading logic.
+
 ## Process bridge
 
 ```json5
