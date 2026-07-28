@@ -57,4 +57,27 @@ public class TileRenderLayoutTests {
 
         Assert.Equal(10.4, snapped, precision: 10);
     }
+
+    [Fact]
+    public void GetViewportCoverage_MergesOverlappingPlacements() {
+        var coverage = TileRenderLayout.GetViewportCoverage(
+            [
+                new TilePlacement(0, 0, 100, 100),
+                new TilePlacement(50, 0, 100, 100)
+            ],
+            viewportWidth: 200,
+            viewportHeight: 100);
+
+        Assert.Equal(0.75, coverage, precision: 10);
+    }
+
+    [Fact]
+    public void GetViewportCoverage_ReportsPartialViewportCoverage() {
+        var coverage = TileRenderLayout.GetViewportCoverage(
+            [new TilePlacement(100, 100, 256, 256)],
+            viewportWidth: 1024,
+            viewportHeight: 768);
+
+        Assert.InRange(coverage, 0.08, 0.09);
+    }
 }

@@ -95,7 +95,7 @@ public static class TileRenderLayout {
         var xEdges = clipped
             .SelectMany(static rect => new[] { rect.Left, rect.Right })
             .Distinct()
-            .Order()
+            .OrderBy(static edge => edge)
             .ToArray();
         var coveredArea = 0.0;
 
