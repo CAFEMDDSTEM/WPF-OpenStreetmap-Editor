@@ -6,6 +6,8 @@ public readonly record struct FeaturePlacement(MapFeature Feature, int Index, Ma
 
 public readonly record struct FeatureHiddenState(MapFeature Feature, bool IsHidden);
 
+public sealed record MapDirtyState(IReadOnlyDictionary<MapDataLayer, bool> Layers);
+
 public sealed class MapEditDataset {
     public MapEditDataset(MapDocument? document = null) {
         Document = document;
@@ -82,13 +84,14 @@ public sealed class MapEditDataset {
             }
             group.Key.InvalidateSpatialIndex();
         }
-        MarkContentChanged(markDirty);
+        Document.InvalidateSpatialIndex();
+        MarkLayersChanged(placements.Select(static placement => placement.Layer), markDirty);
         return placements;
     }
 
     public void RestoreFeatures(IEnumerable<FeaturePlacement> placements, bool markDirty = true) {
         var document = EnsureDocument();
-        var restored = false;
+        var restoredLayers = new HashSet<MapDataLayer>();
         foreach (var placement in placements.OrderBy(static placement => placement.Index)) {
             if (document.FindDataLayer(placement.Feature) is not null) continue;
 
@@ -96,16 +99,19 @@ public sealed class MapEditDataset {
             var index = Math.Clamp(placement.Index, 0, layer.Features.Count);
             layer.Features.Insert(index, placement.Feature);
             layer.InvalidateSpatialIndex();
-            restored = true;
+            restoredLayers.Add(layer);
         }
-        if (restored) MarkContentChanged(markDirty);
+        if (restoredLayers.Count > 0) {
+            document.InvalidateSpatialIndex();
+            MarkLayersChanged(restoredLayers, markDirty);
+        }
     }
 
     public bool SetFeatureHidden(MapFeature feature, bool isHidden, bool markDirty = false) {
         if (!Contains(feature) || feature.IsHidden == isHidden) return false;
 
         feature.IsHidden = isHidden;
-        MarkContentChanged(markDirty);
+        MarkContentChanged(feature, markDirty);
         return true;
     }
 
@@ -146,31 +152,65 @@ public sealed class MapEditDataset {
         return true;
     }
 
-    public void RestoreDirty(bool isDirty) {
-        if (Document is not null) Document.IsDirty = isDirty;
+    public MapDirtyState CaptureDirtyState() {
+        var states = Document?.DataLayers.ToDictionary(
+            static layer => layer,
+            static layer => layer.IsDirty) ?? [];
+        return new MapDirtyState(states);
+    }
+
+    public void RestoreDirty(MapDirtyState? state) {
+        if (state is null) return;
+
+        foreach (var item in state.Layers) item.Key.IsDirty = item.Value;
     }
 
     public void MarkContentChanged(bool markDirty = true) {
         if (Document is null) return;
 
         Document.MarkContentChanged();
-        if (markDirty) Document.IsDirty = true;
+        if (markDirty) Document.ActiveDataLayer.IsDirty = true;
+    }
+
+    public void MarkContentChanged(MapFeature feature, bool markDirty = true) {
+        if (Document is null) return;
+
+        var layer = Document.FindDataLayer(feature);
+        Document.MarkContentChanged();
+        if (markDirty && layer is not null) layer.IsDirty = true;
+    }
+
+    public void MarkContentChanged(IEnumerable<MapFeature> features, bool markDirty = true) {
+        if (Document is null) return;
+
+        var layers = features.Select(Document.FindDataLayer);
+        MarkLayersChanged(layers, markDirty);
     }
 
     private void MarkGeometryChanged(MapFeature feature, bool markDirty) {
         feature.InvalidateGeometry();
         if (Document is null) return;
 
-        Document.FindDataLayer(feature)?.InvalidateSpatialIndex();
+        var layer = Document.FindDataLayer(feature);
+        layer?.InvalidateSpatialIndex();
         Document.InvalidateSpatialIndex();
         Document.MarkContentChanged();
-        if (markDirty) Document.IsDirty = true;
+        if (markDirty && layer is not null) layer.IsDirty = true;
     }
 
     private static void MarkFeatureSetChanged(MapDocument document, MapDataLayer layer, bool markDirty) {
         layer.InvalidateSpatialIndex();
         document.InvalidateSpatialIndex();
         document.MarkContentChanged();
-        if (markDirty) document.IsDirty = true;
+        if (markDirty) layer.IsDirty = true;
+    }
+
+    private void MarkLayersChanged(IEnumerable<MapDataLayer?> layers, bool markDirty) {
+        if (Document is null) return;
+
+        Document.MarkContentChanged();
+        if (!markDirty) return;
+
+        foreach (var layer in layers.OfType<MapDataLayer>().Distinct()) layer.IsDirty = true;
     }
 }

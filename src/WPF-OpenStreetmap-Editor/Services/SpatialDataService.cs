@@ -67,26 +67,7 @@ public static class SpatialDataService {
         CancellationToken ct) {
         return Task.Run(() => {
             ct.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-            switch (format) {
-                case SpatialFileFormat.GeoJson:
-                    GeoJsonSpatialFormat.Write(document, fullPath, ct);
-                    break;
-                case SpatialFileFormat.OsmXml:
-                    OsmSpatialFormat.WriteXml(document, fullPath, ct);
-                    break;
-                case SpatialFileFormat.Gpx:
-                    XmlSpatialFormats.WriteGpx(document, fullPath, ct);
-                    break;
-                case SpatialFileFormat.Kml:
-                    XmlSpatialFormats.WriteKml(document, fullPath, ct);
-                    break;
-                case SpatialFileFormat.Gml:
-                    XmlSpatialFormats.WriteGml(document, fullPath, ct);
-                    break;
-                default:
-                    throw new NotSupportedException("PBF、Shapefile 和 KMZ 当前只支持导入；请另存为 GeoJSON、OSM、GPX、KML 或 GML。");
-            }
+            AtomicFile.Write(fullPath, temporaryPath => WriteFormat(document, temporaryPath, format, ct));
 
             if (markSaved) {
                 document.SourcePath = fullPath;
@@ -100,8 +81,34 @@ public static class SpatialDataService {
     public static Task WriteSnapshotAsync(MapDocument document, string path, CancellationToken ct = default) {
         var fullPath = Path.GetFullPath(path);
         var format = DetectFormat(fullPath);
-        var snapshot = format == SpatialFileFormat.OsmXml ? document.CreateOsmProjection() : document;
+        var snapshot = document.CreateSnapshot();
         return WriteAsync(snapshot, fullPath, format, markSaved: false, ct);
+    }
+
+    private static void WriteFormat(
+        MapDocument document,
+        string path,
+        SpatialFileFormat format,
+        CancellationToken ct) {
+        switch (format) {
+            case SpatialFileFormat.GeoJson:
+                GeoJsonSpatialFormat.Write(document, path, ct);
+                break;
+            case SpatialFileFormat.OsmXml:
+                OsmSpatialFormat.WriteXml(document, path, ct);
+                break;
+            case SpatialFileFormat.Gpx:
+                XmlSpatialFormats.WriteGpx(document, path, ct);
+                break;
+            case SpatialFileFormat.Kml:
+                XmlSpatialFormats.WriteKml(document, path, ct);
+                break;
+            case SpatialFileFormat.Gml:
+                XmlSpatialFormats.WriteGml(document, path, ct);
+                break;
+            default:
+                throw new NotSupportedException("PBF、Shapefile 和 KMZ 当前只支持导入；请另存为 GeoJSON、OSM、GPX、KML 或 GML。");
+        }
     }
 
     public static SpatialFileFormat DetectFormat(string path) {

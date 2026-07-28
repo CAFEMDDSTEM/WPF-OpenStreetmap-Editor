@@ -13,6 +13,32 @@ public readonly record struct TileRange(int StartX, int EndX, int StartY, int En
 
 /// <summary>瓦片布局计算：位置偏移、可视范围、像素对齐</summary>
 public static class TileRenderLayout {
+    public static IEnumerable<(int X, int Y, double Distance)> EnumerateRequestsByDistance(
+        TileRange range,
+        double centerPixelX,
+        double centerPixelY) {
+        List<(int X, int Y, double Distance)> requests = [];
+        for (var tileY = range.StartY; tileY <= range.EndY; tileY++) {
+            for (var tileX = range.StartX; tileX <= range.EndX; tileX++) {
+                var tileCenterX = (tileX + 0.5) * GeoConverter.TileSize;
+                var tileCenterY = (tileY + 0.5) * GeoConverter.TileSize;
+                var distanceX = tileCenterX - centerPixelX;
+                var distanceY = tileCenterY - centerPixelY;
+                requests.Add((tileX, tileY, distanceX * distanceX + distanceY * distanceY));
+            }
+        }
+
+        return requests.OrderBy(static request => request.Distance);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Contains(TileRange range, int tileX, int tileY) {
+        return tileX >= range.StartX &&
+            tileX <= range.EndX &&
+            tileY >= range.StartY &&
+            tileY <= range.EndY;
+    }
+
     /// <summary>计算单个瓦片的 Canvas 位置（相对于视口中心像素）</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TilePlacement GetTilePlacement(

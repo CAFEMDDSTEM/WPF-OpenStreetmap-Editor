@@ -151,12 +151,64 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task WriteSnapshotAsync_GeoJsonUsesDetachedDocumentSnapshot() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "autosave.geojson");
+        try {
+            var document = new MapDocument { IsDirty = true };
+            var feature = new MapFeature {
+                Id = "point-1",
+                GeometryType = MapGeometryType.Point,
+                Parts = [[new GeoPoint(10, 20)]]
+            };
+            document.Features.Add(feature);
+
+            var writeTask = SpatialDataService.WriteSnapshotAsync(document, path);
+            feature.Parts[0][0] = new GeoPoint(30, 40);
+            document.Features.Add(new MapFeature {
+                Id = "point-2",
+                GeometryType = MapGeometryType.Point,
+                Parts = [[new GeoPoint(50, 60)]]
+            });
+            await writeTask;
+
+            var loaded = await SpatialDataService.ImportAsync(path);
+            var savedFeature = Assert.Single(loaded.Features);
+            Assert.Equal("point-1", savedFeature.Id);
+            Assert.Equal(new GeoPoint(10, 20), savedFeature.Parts[0][0]);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
     public void DocumentBackupService_CreatesKeepBackupPathWithTrailingTilde() {
         var path = Path.Combine("C:\\maps", "survey.osm");
 
         var backupPath = DocumentBackupService.CreateKeepBackupPath(path);
 
         Assert.EndsWith("survey.osm~", backupPath, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DocumentBackupService_UsesDistinctAutosaveNamesForDataLayers() {
+        var document = new MapDocument {
+            Name = "survey.geojson",
+            SourceFormat = SpatialFileFormat.GeoJson
+        };
+        var firstLayer = document.ActiveDataLayer;
+        var secondLayer = new MapDataLayer {
+            Name = "survey.geojson",
+            SourceFormat = SpatialFileFormat.GeoJson
+        };
+        document.AddDataLayer(secondLayer);
+
+        document.ActiveDataLayer = firstLayer;
+        var firstPath = DocumentBackupService.CreateAutosavePath(document, 1);
+        document.ActiveDataLayer = secondLayer;
+        var secondPath = DocumentBackupService.CreateAutosavePath(document, 1);
+
+        Assert.NotEqual(firstPath, secondPath);
     }
 
     [Fact]

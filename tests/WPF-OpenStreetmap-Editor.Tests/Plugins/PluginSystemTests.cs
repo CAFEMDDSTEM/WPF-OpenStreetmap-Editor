@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Compression;
+using System.Text;
 using WPF_OpenStreetmap_Editor.Plugins;
 
 namespace WPF_OpenStreetmap_Editor.Tests.Plugins;
@@ -113,6 +114,38 @@ public class PluginSystemTests {
 
         Assert.False(candidate.RequiresCodeExecutionConsent);
         Assert.Equal("org.example.executable", result.Manifest.Id);
+    }
+
+    [Fact]
+    public void Installer_UsesSandboxedTransportForPythonProcessWithoutNativeConsent() {
+        using var source = new TestDirectory();
+        using var destination = new TestDirectory();
+        source.WriteFile("bridge.py", "# not executed by this test");
+        var manifestPath = source.WriteManifest(ExecutableManifest("process", "bridge.py"));
+        var installer = CreateInstaller(destination.Path);
+
+        var candidate = installer.Inspect(manifestPath);
+        var result = installer.Install(manifestPath, allowCodeExecution: false);
+        var transport = PluginHost.CreateTransport(
+            result.Manifest,
+            result.InstallDirectory,
+            PluginKind.Process);
+
+        Assert.False(candidate.RequiresCodeExecutionConsent);
+        var processTransport = Assert.IsType<ProcessPluginTransport>(transport);
+        Assert.True(processTransport.UsesPythonInterpreter);
+    }
+
+    [Fact]
+    public async Task ProcessTransport_RejectsRpcLinesBeyondConfiguredLimit() {
+        const int maximumLineBytes = 16;
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(new string('x', maximumLineBytes + 1)));
+        var reader = new ProcessPluginTransport.BoundedUtf8LineReader(stream, maximumLineBytes);
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            reader.ReadLineAsync(CancellationToken.None));
+
+        Assert.Contains("cannot exceed", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -448,6 +481,64 @@ public class PluginSystemTests {
 
         var action = Assert.Single(result.Actions);
         Assert.Equal("isolated", action.Arguments.GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public async Task PluginHost_SandboxedPythonProcessCannotReadFileOutsidePackage() {
+        using var source = new TestDirectory();
+        using var destination = new TestDirectory();
+        var outsideSecretPath = destination.WriteFile("outside-python-secret.txt", "must-not-be-readable");
+        source.WriteFile("bridge.py", """
+            import json
+            import pathlib
+            import sys
+
+            outside_path = pathlib.Path(sys.argv[1])
+            for line in sys.stdin:
+                request = json.loads(line)
+                actions = []
+                if request["method"] == "hook":
+                    try:
+                        message = "leaked" if outside_path.is_file() else "isolated"
+                    except OSError:
+                        message = "isolated"
+                    actions = [{"type": "showMessage", "arguments": {"message": message}}]
+                print(json.dumps({"jsonrpc": "2.0", "id": request["id"], "result": {"actions": actions}}), flush=True)
+            """);
+        var manifestPath = source.WriteManifest($$"""
+            {
+              schemaVersion: 1,
+              id: 'org.example.python-sandbox-test',
+              name: 'Python sandbox test bridge',
+              version: '1.0.0',
+              icon: 'icon.png',
+              descriptionFile: 'description.md',
+              kind: 'process',
+              hooks: ['mainWindow.loaded'],
+              runtime: {
+                entry: 'bridge.py',
+                arguments: ['{{outsideSecretPath.Replace(@"\", @"\\")}}'],
+                hostActions: ['showMessage'],
+                timeoutMilliseconds: 5000,
+              },
+            }
+            """);
+        var pluginsDirectory = Path.Combine(destination.Path, "Plugins");
+        var statePath = Path.Combine(destination.Path, "state.json");
+        var installer = new PluginInstaller(
+            pluginsDirectory,
+            new PluginManifestReader(),
+            new PluginTrustStore(statePath));
+        installer.Install(manifestPath, allowCodeExecution: false);
+        await using var host = new PluginHost(pluginsDirectory, statePath);
+
+        await host.ReloadAsync();
+        var result = await host.PublishAsync(PluginHooks.MainWindowLoaded);
+
+        var plugin = Assert.Single(host.Plugins, plugin => plugin.Id == "org.example.python-sandbox-test");
+        Assert.True(plugin.Status == PluginLoadStatus.Loaded, plugin.Error);
+        var action = Assert.Single(result);
+        Assert.Equal("isolated", action.Action.Arguments.GetProperty("message").GetString());
     }
 
     [Fact]

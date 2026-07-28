@@ -46,17 +46,7 @@ public sealed class PluginTrustStore {
     }
 
     private void Save(PluginTrustState state) {
-        var directory = Path.GetDirectoryName(_statePath)!;
-        Directory.CreateDirectory(directory);
-        var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(_statePath)}.{Guid.NewGuid():N}.tmp");
-        try {
-            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(state, JsonOptions));
-            File.Move(temporaryPath, _statePath, overwrite: true);
-        } finally {
-            if (File.Exists(temporaryPath)) {
-                File.Delete(temporaryPath);
-            }
-        }
+        AtomicFile.WriteAllText(_statePath, JsonSerializer.Serialize(state, JsonOptions));
     }
 
     private sealed class PluginTrustState {

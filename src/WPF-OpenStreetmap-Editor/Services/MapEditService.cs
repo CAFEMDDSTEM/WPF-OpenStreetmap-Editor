@@ -69,9 +69,10 @@ public static class MapEditService {
         var radians = angleDegrees * Math.PI / 180.0;
         var sin = Math.Sin(radians);
         var cos = Math.Cos(radians);
+        var frame = LocalMetricFrame.Create(center);
         return parts
             .Select(part => part
-                .Select(point => RotatePoint(point, center, sin, cos))
+                .Select(point => RotatePoint(point, frame, sin, cos))
                 .ToList())
             .ToList();
     }
@@ -229,9 +230,13 @@ public static class MapEditService {
         var partList = parts.Select(static part => part.ToList()).ToList();
         if (partList.Count == 0) return [];
 
-        var angle = GetDominantOrthogonalAngle(partList);
+        var points = partList.SelectMany(static part => part).ToList();
+        if (points.Count == 0) return partList;
+
+        var frame = LocalMetricFrame.Create(GetCenter(points));
+        var angle = GetDominantOrthogonalAngle(partList, frame);
         return partList
-            .Select(part => OrthogonalizePart(part, angle))
+            .Select(part => OrthogonalizePart(part, angle, frame))
             .ToList();
     }
 
@@ -296,21 +301,23 @@ public static class MapEditService {
         return (-northMeters / length, eastMeters / length);
     }
 
-    private static GeoPoint RotatePoint(GeoPoint point, GeoPoint center, double sin, double cos) {
-        var x = point.Longitude - center.Longitude;
-        var y = point.Latitude - center.Latitude;
-        return new GeoPoint(
-            Math.Clamp(center.Longitude + x * cos - y * sin, -180.0, 180.0),
-            GeoConverter.ClampLatitude(center.Latitude + x * sin + y * cos));
+    private static GeoPoint RotatePoint(GeoPoint point, LocalMetricFrame frame, double sin, double cos) {
+        var local = frame.Project(point);
+        return frame.Unproject(new OrthogonalPoint(
+            local.X * cos - local.Y * sin,
+            local.X * sin + local.Y * cos));
     }
 
-    private static double GetDominantOrthogonalAngle(IEnumerable<IReadOnlyList<GeoPoint>> parts) {
+    private static double GetDominantOrthogonalAngle(
+        IEnumerable<IReadOnlyList<GeoPoint>> parts,
+        LocalMetricFrame frame) {
         var x = 0.0;
         var y = 0.0;
         foreach (var part in parts) {
             for (var i = 1; i < part.Count; i++) {
-                var dx = part[i].Longitude - part[i - 1].Longitude;
-                var dy = part[i].Latitude - part[i - 1].Latitude;
+                var delta = frame.GetDelta(part[i - 1], part[i]);
+                var dx = delta.X;
+                var dy = delta.Y;
                 var length = Math.Sqrt(dx * dx + dy * dy);
                 if (length <= double.Epsilon) continue;
 
@@ -324,17 +331,20 @@ public static class MapEditService {
         return NormalizeOrthogonalAngle(Math.Atan2(y, x) / 4.0);
     }
 
-    private static List<GeoPoint> OrthogonalizePart(IReadOnlyList<GeoPoint> part, double angleRadians) {
+    private static List<GeoPoint> OrthogonalizePart(
+        IReadOnlyList<GeoPoint> part,
+        double angleRadians,
+        LocalMetricFrame frame) {
         if (part.Count < 2) return part.ToList();
 
         var isClosed = part.Count > 2 && part[0] == part[^1];
         var vertexCount = isClosed ? part.Count - 1 : part.Count;
         if (vertexCount < (isClosed ? 3 : 2)) return part.ToList();
 
-        var origin = GetCenter(part.Take(vertexCount));
+        var origin = frame.Project(GetCenter(part.Take(vertexCount)));
         var localPoints = part
             .Take(vertexCount)
-            .Select(point => ToLocal(point, origin, angleRadians))
+            .Select(point => ToLocal(frame.Project(point), origin, angleRadians))
             .ToList();
         var segmentCount = isClosed ? vertexCount : vertexCount - 1;
         var segments = Enumerable
@@ -347,7 +357,7 @@ public static class MapEditService {
             var localPoint = isClosed
                 ? GetOrthogonalizedClosedVertex(localPoints, segments, i)
                 : GetOrthogonalizedOpenVertex(localPoints, segments, i);
-            orthogonalized.Add(FromLocal(localPoint, origin, angleRadians));
+            orthogonalized.Add(frame.Unproject(FromLocal(localPoint, origin, angleRadians)));
         }
 
         if (isClosed) orthogonalized.Add(orthogonalized[0]);
@@ -415,20 +425,26 @@ public static class MapEditService {
         return new OrthogonalPoint((incoming.Value + outgoing.Value) / 2.0, fallback.Y);
     }
 
-    private static OrthogonalPoint ToLocal(GeoPoint point, GeoPoint origin, double angleRadians) {
-        var x = point.Longitude - origin.Longitude;
-        var y = point.Latitude - origin.Latitude;
+    private static OrthogonalPoint ToLocal(
+        OrthogonalPoint point,
+        OrthogonalPoint origin,
+        double angleRadians) {
+        var x = point.X - origin.X;
+        var y = point.Y - origin.Y;
         var sin = Math.Sin(angleRadians);
         var cos = Math.Cos(angleRadians);
         return new OrthogonalPoint(x * cos + y * sin, -x * sin + y * cos);
     }
 
-    private static GeoPoint FromLocal(OrthogonalPoint point, GeoPoint origin, double angleRadians) {
+    private static OrthogonalPoint FromLocal(
+        OrthogonalPoint point,
+        OrthogonalPoint origin,
+        double angleRadians) {
         var sin = Math.Sin(angleRadians);
         var cos = Math.Cos(angleRadians);
-        return new GeoPoint(
-            Math.Clamp(origin.Longitude + point.X * cos - point.Y * sin, -180.0, 180.0),
-            GeoConverter.ClampLatitude(origin.Latitude + point.X * sin + point.Y * cos));
+        return new OrthogonalPoint(
+            origin.X + point.X * cos - point.Y * sin,
+            origin.Y + point.X * sin + point.Y * cos);
     }
 
     private static double NormalizeOrthogonalAngle(double radians) {
@@ -440,4 +456,37 @@ public static class MapEditService {
     private readonly record struct OrthogonalPoint(double X, double Y);
 
     private readonly record struct OrthogonalSegment(bool IsHorizontal, double Value);
+
+    private readonly record struct LocalMetricFrame(
+        GeoPoint Origin,
+        double MetersPerDegreeLongitude,
+        double MetersPerDegreeLatitude) {
+        public static LocalMetricFrame Create(GeoPoint origin) {
+            var latitudeRadians = GeoConverter.ClampLatitude(origin.Latitude) * Math.PI / 180.0;
+            var metersPerDegreeLatitude = EarthRadiusMeters * Math.PI / 180.0;
+            var metersPerDegreeLongitude = metersPerDegreeLatitude * Math.Cos(latitudeRadians);
+            return new LocalMetricFrame(origin, metersPerDegreeLongitude, metersPerDegreeLatitude);
+        }
+
+        public OrthogonalPoint Project(GeoPoint point) {
+            return new OrthogonalPoint(
+                (point.Longitude - Origin.Longitude) * MetersPerDegreeLongitude,
+                (point.Latitude - Origin.Latitude) * MetersPerDegreeLatitude);
+        }
+
+        public GeoPoint Unproject(OrthogonalPoint point) {
+            var longitudeOffset = Math.Abs(MetersPerDegreeLongitude) <= double.Epsilon
+                ? 0
+                : point.X / MetersPerDegreeLongitude;
+            return new GeoPoint(
+                Math.Clamp(Origin.Longitude + longitudeOffset, -180.0, 180.0),
+                GeoConverter.ClampLatitude(Origin.Latitude + point.Y / MetersPerDegreeLatitude));
+        }
+
+        public OrthogonalPoint GetDelta(GeoPoint start, GeoPoint end) {
+            return new OrthogonalPoint(
+                (end.Longitude - start.Longitude) * MetersPerDegreeLongitude,
+                (end.Latitude - start.Latitude) * MetersPerDegreeLatitude);
+        }
+    }
 }

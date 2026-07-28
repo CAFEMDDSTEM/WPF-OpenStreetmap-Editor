@@ -1,6 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:String x:Key="Common.SaveFailed">无法保存更改：{0}</sys:String>
+    <sys:String x:Key="Common.UnknownError">未知错误</sys:String>
     <sys:String x:Key="Language.System">使用系统设置</sys:String>
     <sys:String x:Key="Language.English">英语</sys:String>
     <sys:String x:Key="Language.SimplifiedChinese">简体中文</sys:String>

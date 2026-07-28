@@ -10,7 +10,8 @@ internal sealed class ProcessPluginTransport(
     IReadOnlyList<string> arguments,
     string packageDirectory,
     string pluginId,
-    int memoryLimitMegabytes) : IPluginTransport {
+    int memoryLimitMegabytes,
+    bool usePythonInterpreter = false) : IPluginTransport {
     private const int MaximumRpcLineBytes = 1024 * 1024;
     private readonly SemaphoreSlim _requestLock = new(1, 1);
     private SandboxedPluginProcess? _sandbox;
@@ -18,18 +19,23 @@ internal sealed class ProcessPluginTransport(
     private Task? _standardErrorTask;
 
     public string? EffectivePackageDirectory => _sandbox?.PackageDirectory;
+    internal bool UsesPythonInterpreter => usePythonInterpreter;
 
     public Task StartAsync(CancellationToken ct) {
         if (_sandbox is not null) return Task.CompletedTask;
         ct.ThrowIfCancellationRequested();
 
         try {
+            var interpreterPath = usePythonInterpreter
+                ? PythonInterpreterLocator.Find()
+                : null;
             _sandbox = WindowsPluginSandbox.Start(
                 entryPath,
                 arguments,
                 packageDirectory,
                 pluginId,
-                memoryLimitMegabytes);
+                memoryLimitMegabytes,
+                interpreterPath);
             _standardOutput = new BoundedUtf8LineReader(_sandbox.StandardOutput, MaximumRpcLineBytes);
             _standardErrorTask = DrainStandardErrorAsync(_sandbox.StandardError, _sandbox.Process);
             return Task.CompletedTask;
@@ -159,7 +165,7 @@ internal sealed class ProcessPluginTransport(
         }
     }
 
-    private sealed class BoundedUtf8LineReader(Stream stream, int maximumLineBytes) {
+    internal sealed class BoundedUtf8LineReader(Stream stream, int maximumLineBytes) {
         private static readonly UTF8Encoding Utf8 = new(false, true);
         private readonly byte[] _readBuffer = new byte[4096];
         private readonly byte[] _lineBuffer = new byte[maximumLineBytes];

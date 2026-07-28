@@ -179,6 +179,21 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void RotateParts_UsesRealWorldAxesAtHighLatitude() {
+        var center = new GeoPoint(12, 70);
+        var feature = new MapFeature {
+            GeometryType = MapGeometryType.LineString,
+            Parts = [[center, new GeoPoint(12.001, 70)]]
+        };
+
+        var rotated = MapEditService.RotateParts(feature, center, 90);
+        var rotatedEndpoint = rotated[0][1];
+
+        Assert.Equal(center.Longitude, rotatedEndpoint.Longitude, 10);
+        Assert.Equal(center.Latitude + 0.001 * Math.Cos(70 * Math.PI / 180.0), rotatedEndpoint.Latitude, 10);
+    }
+
+    [Fact]
     public void MoveParts_OffsetsGeometry() {
         var feature = new MapFeature {
             GeometryType = MapGeometryType.LineString,
@@ -262,6 +277,30 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void RemoveFeaturesCommand_ExecuteAndUndoInvalidateDocumentBounds() {
+        var document = new MapDocument();
+        var near = new MapFeature {
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(1, 1)]]
+        };
+        var far = new MapFeature {
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(20, 20)]]
+        };
+        document.Features.AddRange([near, far]);
+        document.MarkClean();
+        var stack = new EditCommandStack(new MapEditDataset(document));
+        Assert.Equal(20, document.Bounds.MaxLongitude);
+
+        Assert.True(stack.Execute(new RemoveFeaturesCommand([far])));
+
+        Assert.Equal(1, document.Bounds.MaxLongitude);
+
+        Assert.True(stack.Undo());
+        Assert.Equal(20, document.Bounds.MaxLongitude);
+    }
+
+    [Fact]
     public void ExtrudeSegmentByMeters_OffsetsSegmentEastByRealDistance() {
         var parts = new List<List<GeoPoint>> {
             new() {
@@ -317,8 +356,31 @@ public class MapEditServiceTests {
 
         Assert.Equal(ring[0], ring[^1]);
         Assert.False(feature.Parts[0].SequenceEqual(ring));
+        var referenceLatitude = feature.Parts.SelectMany(static part => part).Average(static point => point.Latitude);
         for (var i = 0; i < ring.Count - 1; i++) {
-            AssertCornerIsRightAngle(ring, i);
+            AssertCornerIsRightAngle(ring, i, referenceLatitude);
+        }
+    }
+
+    [Fact]
+    public void OrthogonalizeParts_MakesRealWorldCornersRightAnglesAtHighLatitude() {
+        var feature = new MapFeature {
+            GeometryType = MapGeometryType.Polygon,
+            Parts = [[
+                new GeoPoint(10, 70),
+                new GeoPoint(10.0027, 70.00003),
+                new GeoPoint(10.00262, 70.00048),
+                new GeoPoint(9.99995, 70.00044),
+                new GeoPoint(10, 70)
+            ]]
+        };
+
+        var ring = Assert.Single(MapEditService.OrthogonalizeParts(feature.Parts));
+
+        Assert.Equal(ring[0], ring[^1]);
+        var referenceLatitude = feature.Parts.SelectMany(static part => part).Average(static point => point.Latitude);
+        for (var i = 0; i < ring.Count - 1; i++) {
+            AssertCornerIsRightAngle(ring, i, referenceLatitude);
         }
     }
 
@@ -450,17 +512,23 @@ public class MapEditServiceTests {
             feature.Parts.Select(static part => (IReadOnlyList<GeoPoint>)part.ToList()).ToList());
     }
 
-    private static void AssertCornerIsRightAngle(IReadOnlyList<GeoPoint> ring, int pointIndex) {
+    private static void AssertCornerIsRightAngle(
+        IReadOnlyList<GeoPoint> ring,
+        int pointIndex,
+        double referenceLatitude) {
         var vertexCount = ring.Count - 1;
+        var longitudeScale = Math.Cos(referenceLatitude * Math.PI / 180.0);
         var previous = ring[(pointIndex + vertexCount - 1) % vertexCount];
         var current = ring[pointIndex];
         var next = ring[(pointIndex + 1) % vertexCount];
-        var firstX = previous.Longitude - current.Longitude;
+        var firstX = (previous.Longitude - current.Longitude) * longitudeScale;
         var firstY = previous.Latitude - current.Latitude;
-        var secondX = next.Longitude - current.Longitude;
+        var secondX = (next.Longitude - current.Longitude) * longitudeScale;
         var secondY = next.Latitude - current.Latitude;
         var dotProduct = firstX * secondX + firstY * secondY;
+        var firstLength = Math.Sqrt(firstX * firstX + firstY * firstY);
+        var secondLength = Math.Sqrt(secondX * secondX + secondY * secondY);
 
-        Assert.Equal(0, dotProduct, 10);
+        Assert.InRange(Math.Abs(dotProduct / (firstLength * secondLength)), 0, 1e-10);
     }
 }

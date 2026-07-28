@@ -86,8 +86,7 @@ public static class WindowStartupService {
 
     public static void Save(WindowState lastWindowState) {
         var state = new WindowStartupState { WasFullScreen = lastWindowState == WindowState.Maximized };
-        Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.WindowStateFile)!);
-        File.WriteAllText(AppPaths.WindowStateFile, JsonSerializer.Serialize(state, JsonOptions));
+        AtomicFile.WriteAllText(AppPaths.WindowStateFile, JsonSerializer.Serialize(state, JsonOptions));
     }
 
     internal static bool IsFullScreenArgument(string arg) {

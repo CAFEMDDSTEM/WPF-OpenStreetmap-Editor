@@ -66,7 +66,8 @@ internal static partial class WindowsPluginSandbox {
         IReadOnlyList<string> arguments,
         string packageDirectory,
         string pluginId,
-        int memoryLimitMegabytes) {
+        int memoryLimitMegabytes,
+        string? interpreterPath = null) {
         if (!OperatingSystem.IsWindows()) {
             throw new PlatformNotSupportedException("Process plugins require Windows AppContainer isolation.");
         }
@@ -76,10 +77,16 @@ internal static partial class WindowsPluginSandbox {
         try {
             var relativeEntry = Path.GetRelativePath(Path.GetFullPath(packageDirectory), Path.GetFullPath(entryPath));
             var sandboxEntryPath = Path.Combine(sessionDirectory, relativeEntry);
+            var executablePath = interpreterPath is null
+                ? sandboxEntryPath
+                : PythonInterpreterLocator.StageRuntime(interpreterPath, sessionDirectory);
+            IReadOnlyList<string> processArguments = interpreterPath is null
+                ? arguments
+                : ["-E", "-s", "-u", "-X", "utf8", sandboxEntryPath, .. arguments];
             return StartProcess(
                 profile.Sid,
-                sandboxEntryPath,
-                arguments,
+                executablePath,
+                processArguments,
                 sessionDirectory,
                 memoryLimitMegabytes);
         } catch {

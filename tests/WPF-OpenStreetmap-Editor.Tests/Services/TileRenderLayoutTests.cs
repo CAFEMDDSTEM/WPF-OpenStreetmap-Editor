@@ -4,6 +4,30 @@ namespace WPF_OpenStreetmap_Editor.Tests.Services;
 
 public class TileRenderLayoutTests {
     [Fact]
+    public void EnumerateRequestsByDistance_OrdersTilesFromViewportCenter() {
+        var range = new TileRange(0, 2, 0, 0);
+
+        var requests = TileRenderLayout.EnumerateRequestsByDistance(
+            range,
+            centerPixelX: GeoConverter.TileSize * 1.5,
+            centerPixelY: GeoConverter.TileSize * 0.5).ToList();
+
+        Assert.Equal([1, 0, 2], requests.Select(static request => request.X));
+        Assert.Equal(0, requests[0].Distance);
+    }
+
+    [Theory]
+    [InlineData(2, 4, true)]
+    [InlineData(5, 4, true)]
+    [InlineData(1, 4, false)]
+    [InlineData(2, 7, false)]
+    public void Contains_IncludesRangeBoundaries(int tileX, int tileY, bool expected) {
+        var range = new TileRange(2, 5, 3, 6);
+
+        Assert.Equal(expected, TileRenderLayout.Contains(range, tileX, tileY));
+    }
+
+    [Fact]
     public void GetTilePlacement_AdjacentTilesShareExactEdges() {
         var first = TileRenderLayout.GetTilePlacement(3, 4, 123.37, 456.61, 1023.5, 767.25);
         var right = TileRenderLayout.GetTilePlacement(4, 4, 123.37, 456.61, 1023.5, 767.25);

@@ -315,12 +315,19 @@ public static class AppSettingsService {
         }
     }
 
-    public static void Save(AppSettings settings) {
+    public static bool Save(AppSettings settings) {
+        return Save(settings, out _);
+    }
+
+    public static bool Save(AppSettings settings, out Exception? error) {
         try {
-            Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.SettingsFile)!);
-            File.WriteAllText(AppPaths.SettingsFile, JsonSerializer.Serialize(settings, JsonOptions));
+            AtomicFile.WriteAllText(AppPaths.SettingsFile, JsonSerializer.Serialize(settings, JsonOptions));
+            error = null;
+            return true;
         } catch (Exception ex) {
             Logger.Error("Failed to save settings", ex);
+            error = ex;
+            return false;
         }
     }
 
@@ -542,7 +549,7 @@ public static class AppSettingsService {
 
     private static void TryRemovePersistedAccessTokens(string path, string json) {
         try {
-            File.WriteAllText(path, RemovePersistedAccessTokens(json));
+            AtomicFile.WriteAllText(path, RemovePersistedAccessTokens(json));
         } catch (Exception ex) {
             Logger.Error("Failed to remove a legacy access token from settings", ex);
         }

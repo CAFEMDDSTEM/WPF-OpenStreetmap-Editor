@@ -5,7 +5,7 @@ namespace WPF_OpenStreetmap_Editor.Services;
 public sealed class AddFeatureCommand : IEditCommand {
     private readonly MapFeature _feature;
     private int? _index;
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public AddFeatureCommand(MapFeature feature, int? index = null) {
         _feature = feature;
@@ -16,14 +16,14 @@ public sealed class AddFeatureCommand : IEditCommand {
 
     public bool Execute(MapEditDataset dataset) {
         var document = dataset.EnsureDocument();
-        _wasDirty = document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         return dataset.AddFeature(_feature, _index);
     }
 
     public void Undo(MapEditDataset dataset) {
         _index = dataset.IndexOf(_feature);
         dataset.RemoveFeature(_feature);
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 }
 
@@ -31,7 +31,7 @@ public sealed class AddFeaturesCommand : IEditCommand {
     private readonly IReadOnlyList<MapFeature> _features;
     private readonly int? _index;
     private IReadOnlyList<FeaturePlacement> _placements = [];
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public AddFeaturesCommand(IEnumerable<MapFeature> features, int? index = null) {
         _features = features.ToList();
@@ -42,7 +42,7 @@ public sealed class AddFeaturesCommand : IEditCommand {
 
     public bool Execute(MapEditDataset dataset) {
         var document = dataset.EnsureDocument();
-        _wasDirty = document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
 
         var placements = _placements.Count == _features.Count
             ? _placements
@@ -59,13 +59,13 @@ public sealed class AddFeaturesCommand : IEditCommand {
         _placements = added;
         if (_placements.Count > 0) return true;
 
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
         return false;
     }
 
     public void Undo(MapEditDataset dataset) {
         dataset.RemoveFeatures(_placements.Select(static placement => placement.Feature));
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 
     private IReadOnlyList<FeaturePlacement> CreatePlacements(int documentFeatureCount) {
@@ -81,7 +81,7 @@ public sealed class AddFeaturesCommand : IEditCommand {
 public sealed class RemoveFeaturesCommand : IEditCommand {
     private readonly IReadOnlyList<MapFeature> _features;
     private IReadOnlyList<FeaturePlacement> _placements = [];
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public RemoveFeaturesCommand(IEnumerable<MapFeature> features) {
         _features = features.ToList();
@@ -92,14 +92,14 @@ public sealed class RemoveFeaturesCommand : IEditCommand {
     public bool Execute(MapEditDataset dataset) {
         if (dataset.Document is null) return false;
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _placements = dataset.RemoveFeatures(_features);
         return _placements.Count > 0;
     }
 
     public void Undo(MapEditDataset dataset) {
         dataset.RestoreFeatures(_placements);
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 }
 
@@ -107,7 +107,7 @@ public sealed class SetFeatureHiddenCommand : IEditCommand {
     private readonly IReadOnlyList<MapFeature> _features;
     private readonly bool _isHidden;
     private IReadOnlyList<FeatureHiddenState> _previousStates = [];
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public SetFeatureHiddenCommand(IEnumerable<MapFeature> features, bool isHidden) {
         _features = features.ToList();
@@ -119,7 +119,7 @@ public sealed class SetFeatureHiddenCommand : IEditCommand {
     public bool Execute(MapEditDataset dataset) {
         if (dataset.Document is null) return false;
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _previousStates = _features
             .Distinct()
             .Where(feature => dataset.Contains(feature) && feature.IsHidden != _isHidden)
@@ -130,7 +130,7 @@ public sealed class SetFeatureHiddenCommand : IEditCommand {
         foreach (var state in _previousStates) {
             dataset.SetFeatureHidden(state.Feature, _isHidden);
         }
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
         return true;
     }
 
@@ -138,7 +138,7 @@ public sealed class SetFeatureHiddenCommand : IEditCommand {
         foreach (var state in _previousStates) {
             dataset.SetFeatureHidden(state.Feature, state.IsHidden);
         }
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 }
 
@@ -147,7 +147,7 @@ public sealed class SetFeatureAttributesCommand : IEditCommand {
     private readonly Dictionary<string, string?> _attributes;
     private readonly bool _replaceAll;
     private Dictionary<string, string>? _previousAttributes;
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public SetFeatureAttributesCommand(MapFeature feature, IReadOnlyDictionary<string, string> attributes)
         : this(
@@ -184,10 +184,10 @@ public sealed class SetFeatureAttributesCommand : IEditCommand {
             return false;
         }
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _previousAttributes = new Dictionary<string, string>(_feature.Attributes, StringComparer.Ordinal);
         ApplyAttributes(_feature, _attributes, _replaceAll);
-        dataset.MarkContentChanged();
+        dataset.MarkContentChanged(_feature);
         return true;
     }
 
@@ -195,8 +195,8 @@ public sealed class SetFeatureAttributesCommand : IEditCommand {
         if (_previousAttributes is null) return;
 
         ReplaceAttributes(_feature, _previousAttributes);
-        dataset.MarkContentChanged();
-        dataset.RestoreDirty(_wasDirty);
+        dataset.MarkContentChanged(_feature);
+        dataset.RestoreDirty(_dirtyState);
     }
 
     private bool HasChanges() {
@@ -256,7 +256,7 @@ public sealed class SetFeatureOsmMetadataCommand : IEditCommand {
     private readonly MapFeature _feature;
     private readonly OsmFeatureMetadata? _metadata;
     private OsmFeatureMetadata? _previousMetadata;
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public SetFeatureOsmMetadataCommand(MapFeature feature, OsmFeatureMetadata? metadata) {
         _feature = feature;
@@ -270,17 +270,17 @@ public sealed class SetFeatureOsmMetadataCommand : IEditCommand {
             return false;
         }
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _previousMetadata = _feature.Osm?.Clone();
         _feature.Osm = _metadata?.Clone();
-        dataset.MarkContentChanged();
+        dataset.MarkContentChanged(_feature);
         return true;
     }
 
     public void Undo(MapEditDataset dataset) {
         _feature.Osm = _previousMetadata?.Clone();
-        dataset.MarkContentChanged();
-        dataset.RestoreDirty(_wasDirty);
+        dataset.MarkContentChanged(_feature);
+        dataset.RestoreDirty(_dirtyState);
     }
 
     private static bool MetadataEqual(OsmFeatureMetadata? left, OsmFeatureMetadata? right) {
@@ -297,7 +297,7 @@ public sealed record FeaturePartsSnapshot(MapFeature Feature, IReadOnlyList<IRea
 public sealed class SetFeaturePartsCommand : IEditCommand {
     private readonly IReadOnlyList<FeaturePartsSnapshot> _beforeStates;
     private readonly IReadOnlyList<FeaturePartsSnapshot> _afterStates;
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public SetFeaturePartsCommand(
         IEnumerable<FeaturePartsSnapshot> beforeStates,
@@ -311,15 +311,15 @@ public sealed class SetFeaturePartsCommand : IEditCommand {
     public bool Execute(MapEditDataset dataset) {
         if (dataset.Document is null || !HasGeometryChange(dataset)) return false;
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         Apply(dataset, _afterStates);
-        dataset.RestoreDirty(true);
+        dataset.MarkContentChanged(_afterStates.Select(static state => state.Feature));
         return true;
     }
 
     public void Undo(MapEditDataset dataset) {
         Apply(dataset, _beforeStates);
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 
     private bool HasGeometryChange(MapEditDataset dataset) {
@@ -372,7 +372,7 @@ public sealed class AppendFeaturePointCommand : IEditCommand {
     private int? _featureIndex;
     private int? _pointIndex;
     private bool _addedFeature;
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public AppendFeaturePointCommand(
         MapFeature feature,
@@ -391,7 +391,7 @@ public sealed class AppendFeaturePointCommand : IEditCommand {
 
     public bool Execute(MapEditDataset dataset) {
         var document = dataset.EnsureDocument();
-        _wasDirty = document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _addedFeature = false;
 
         var existingIndex = dataset.IndexOf(_feature);
@@ -406,7 +406,7 @@ public sealed class AppendFeaturePointCommand : IEditCommand {
         if (_pointIndex.HasValue) return true;
 
         if (_addedFeature) dataset.RemoveFeature(_feature);
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
         return false;
     }
 
@@ -419,6 +419,6 @@ public sealed class AppendFeaturePointCommand : IEditCommand {
             _featureIndex = dataset.IndexOf(_feature);
             dataset.RemoveFeature(_feature);
         }
-        dataset.RestoreDirty(_wasDirty);
+        dataset.RestoreDirty(_dirtyState);
     }
 }

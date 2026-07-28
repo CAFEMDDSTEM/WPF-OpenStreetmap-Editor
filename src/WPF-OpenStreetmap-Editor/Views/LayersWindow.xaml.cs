@@ -22,15 +22,18 @@ public partial class LayersWindow : Window {
             return;
         }
 
-        LayersListBox.Items.Add($"[{type}] {url}");
+        var item = $"[{type}] {url}";
+        LayersListBox.Items.Add(item);
         LayerUrlTextBox.Clear();
-        SaveLayersToFile();
+        if (!SaveLayersToFile()) LayersListBox.Items.Remove(item);
     }
 
     private void RemoveLayer_Click(object sender, RoutedEventArgs e) {
         if (LayersListBox.SelectedItem is not null) {
-            LayersListBox.Items.Remove(LayersListBox.SelectedItem);
-            SaveLayersToFile();
+            var selectedItem = LayersListBox.SelectedItem;
+            var selectedIndex = LayersListBox.SelectedIndex;
+            LayersListBox.Items.Remove(selectedItem);
+            if (!SaveLayersToFile()) LayersListBox.Items.Insert(selectedIndex, selectedItem);
         }
     }
 
@@ -70,8 +73,11 @@ public partial class LayersWindow : Window {
             LayersListBox.Items.Add(it);
     }
 
-    private void SaveLayersToFile() {
+    private bool SaveLayersToFile() {
         var items = LayersListBox.Items.Cast<object>().Select(i => i.ToString() ?? "").Where(s => !string.IsNullOrEmpty(s));
-        LayerService.SaveLayers(items);
+        if (LayerService.SaveLayers(items, out var error)) return true;
+
+        PersistenceErrorPresenter.Show(this, error);
+        return false;
     }
 }

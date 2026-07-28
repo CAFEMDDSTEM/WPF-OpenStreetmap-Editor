@@ -348,6 +348,40 @@ public class OsmChangeSerializerTests {
     }
 
     [Fact]
+    public void Build_UsesOnlyActiveDataLayerAndItsOsmHistory() {
+        var document = new MapDocument();
+        var firstLayer = document.ActiveDataLayer;
+        var firstFeature = InitializeOsmNodeLayer(firstLayer, "first", 1, new GeoPoint(1, 1));
+        document.MarkClean();
+
+        var secondLayer = new MapDataLayer { Name = "second.osm" };
+        var secondFeature = InitializeOsmNodeLayer(secondLayer, "second", 2, new GeoPoint(2, 2));
+        document.AddDataLayer(secondLayer);
+        document.ActiveDataLayer = secondLayer;
+        document.MarkClean();
+
+        firstFeature.Parts[0][0] = new GeoPoint(1.1, 1.1);
+        secondFeature.Parts[0][0] = new GeoPoint(2.2, 2.2);
+
+        var projection = document.CreateSnapshot();
+        Assert.Equal(secondLayer.Id, projection.ActiveDataLayer.Id);
+        Assert.Contains("first", projection.DataLayers.Single(layer => layer.Id == firstLayer.Id).OriginalFeatures.Keys);
+        Assert.Contains("second", projection.DataLayers.Single(layer => layer.Id == secondLayer.Id).OriginalFeatures.Keys);
+
+        document.ActiveDataLayer = firstLayer;
+        var firstResult = OsmChangeSerializer.Build(document, 99);
+        document.ActiveDataLayer = secondLayer;
+        var secondResult = OsmChangeSerializer.Build(document, 99);
+
+        Assert.Equal(1, firstResult.ModifyCount);
+        Assert.Contains(1, firstResult.Dataset.Nodes.Keys);
+        Assert.DoesNotContain(2, firstResult.Dataset.Nodes.Keys);
+        Assert.Equal(1, secondResult.ModifyCount);
+        Assert.Contains(2, secondResult.Dataset.Nodes.Keys);
+        Assert.DoesNotContain(1, secondResult.Dataset.Nodes.Keys);
+    }
+
+    [Fact]
     public void Build_RejectsMultipartFeatures() {
         var document = new MapDocument();
         document.Features.Add(new MapFeature {
@@ -359,5 +393,26 @@ public class OsmChangeSerializerTests {
         });
 
         Assert.Throws<InvalidDataException>(() => OsmChangeSerializer.Build(document, 1));
+    }
+
+    private static MapFeature InitializeOsmNodeLayer(
+        MapDataLayer layer,
+        string featureId,
+        long osmId,
+        GeoPoint point) {
+        layer.Osm = new OsmDataset();
+        layer.Osm.Nodes[osmId] = new OsmNode { Id = osmId, Version = 1, Point = point };
+        var feature = new MapFeature {
+            Id = featureId,
+            GeometryType = MapGeometryType.Point,
+            Parts = [[point]],
+            Osm = new OsmFeatureMetadata {
+                PrimitiveType = OsmPrimitiveType.Node,
+                Id = osmId,
+                Version = 1
+            }
+        };
+        layer.Features.Add(feature);
+        return feature;
     }
 }

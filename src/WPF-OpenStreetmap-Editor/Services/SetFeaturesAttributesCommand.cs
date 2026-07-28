@@ -6,7 +6,7 @@ public sealed class SetFeaturesAttributesCommand : IEditCommand {
     private readonly IReadOnlyList<MapFeature> _features;
     private readonly Dictionary<string, string> _attributes;
     private IReadOnlyList<FeatureAttributeState> _previousStates = [];
-    private bool _wasDirty;
+    private MapDirtyState? _dirtyState;
 
     public SetFeaturesAttributesCommand(
         IEnumerable<MapFeature> features,
@@ -20,7 +20,7 @@ public sealed class SetFeaturesAttributesCommand : IEditCommand {
     public bool Execute(MapEditDataset dataset) {
         if (dataset.Document is null || _attributes.Count == 0) return false;
 
-        _wasDirty = dataset.Document.IsDirty;
+        _dirtyState = dataset.CaptureDirtyState();
         _previousStates = _features
             .Where(dataset.Contains)
             .Where(HasChanges)
@@ -35,7 +35,7 @@ public sealed class SetFeaturesAttributesCommand : IEditCommand {
                 state.Feature.Attributes[attribute.Key] = attribute.Value;
             }
         }
-        dataset.MarkContentChanged();
+        dataset.MarkContentChanged(_previousStates.Select(static state => state.Feature));
         return true;
     }
 
@@ -48,8 +48,8 @@ public sealed class SetFeaturesAttributesCommand : IEditCommand {
         }
 
         if (_previousStates.Count == 0) return;
-        dataset.MarkContentChanged();
-        dataset.RestoreDirty(_wasDirty);
+        dataset.MarkContentChanged(_previousStates.Select(static state => state.Feature));
+        dataset.RestoreDirty(_dirtyState);
     }
 
     private bool HasChanges(MapFeature feature) {

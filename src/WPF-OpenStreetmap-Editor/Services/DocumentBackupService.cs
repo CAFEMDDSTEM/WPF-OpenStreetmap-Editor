@@ -21,13 +21,30 @@ public static class DocumentBackupService {
         return path;
     }
 
+    public static async Task<IReadOnlyList<string>> SaveDirtyAutosavesAsync(
+        MapDocument document,
+        int filesPerLayer,
+        CancellationToken ct = default) {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var snapshots = document.DataLayers
+            .Where(static layer => layer.IsDirty)
+            .Select(layer => document.CreateSnapshot(layer))
+            .Select(snapshot => (Snapshot: snapshot, Path: CreateAutosavePath(snapshot, filesPerLayer)))
+            .ToList();
+        foreach (var item in snapshots) {
+            await SpatialDataService.WriteSnapshotAsync(item.Snapshot, item.Path, ct).ConfigureAwait(false);
+        }
+        return snapshots.Select(static item => item.Path).ToList();
+    }
+
     public static Task<string?> SaveKeepBackupAsync(string destinationPath, CancellationToken ct = default) {
         ct.ThrowIfCancellationRequested();
         if (!File.Exists(destinationPath)) return Task.FromResult<string?>(null);
 
         var backupPath = CreateKeepBackupPath(destinationPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
-        File.Copy(destinationPath, backupPath, overwrite: true);
+        AtomicFile.Write(backupPath, temporaryPath =>
+            File.Copy(destinationPath, temporaryPath, overwrite: false));
         return Task.FromResult<string?>(backupPath);
     }
 
@@ -57,8 +74,12 @@ public static class DocumentBackupService {
         }
 
         var extension = GetAutosaveExtension(document);
+        var layerIdentifier = SanitizeFileName(document.ActiveDataLayer.Id);
+        var layerSuffix = document.DataLayers.Count > 1
+            ? $"-{layerIdentifier[..Math.Min(8, layerIdentifier.Length)]}"
+            : "";
         var slotSuffix = slot <= 0 ? "" : $"-{slot + 1}";
-        return $"{SanitizeFileName(baseName)}{slotSuffix}.autosave{extension}";
+        return $"{SanitizeFileName(baseName)}{layerSuffix}{slotSuffix}.autosave{extension}";
     }
 
     private static string GetAutosaveExtension(MapDocument document) {

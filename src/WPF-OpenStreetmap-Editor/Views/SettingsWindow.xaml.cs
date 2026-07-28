@@ -166,7 +166,7 @@ public partial class SettingsWindow : Window {
         if (_selectedSource is not null && !SaveCurrentSourceFields()) return;
 
         var source = new TileSourcePreset {
-            Name = CreateUniqueSourceName(L.GetString("Settings.NewSource")),
+            Name = TileSourceNameService.CreateUniqueName(_sources, L.GetString("Settings.NewSource")),
             Source = "xyz:https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             MapMaxZoom = GeoConverter.MaxZoom,
             ImageMaxZoom = GeoConverter.MaxZoom,
@@ -282,8 +282,8 @@ public partial class SettingsWindow : Window {
 
         var displaySelectedId = (DisplayAlignmentProjectionComboBox.SelectedItem as ProjectionDefinition)?.Id ?? ProjectionService.Wgs84Id;
         var displayCustomWkt = CustomDisplayAlignmentProjectionWktTextBox.Text.Trim();
-        if (!TryReadDouble(DisplayAlignmentOffsetXTextBox.Text, out var displayOffsetX) ||
-            !TryReadDouble(DisplayAlignmentOffsetYTextBox.Text, out var displayOffsetY)) {
+        if (!SettingsFieldParser.TryParseDouble(DisplayAlignmentOffsetXTextBox.Text, out var displayOffsetX) ||
+            !SettingsFieldParser.TryParseDouble(DisplayAlignmentOffsetYTextBox.Text, out var displayOffsetY)) {
             MessageBox.Show(L.GetString("Settings.DisplayAlignmentOffsetRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
@@ -330,20 +330,11 @@ public partial class SettingsWindow : Window {
             _workingSettings.TilePerformanceMode = TilePerformanceMode.Responsive;
         }
 
-        if (!int.TryParse(TileCacheDaysTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var days) &&
-            !int.TryParse(TileCacheDaysTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out days)) {
-            MessageBox.Show(
-                L.Format(
-                    "Settings.TileCacheDaysRange",
-                    AppSettings.MinTileCacheMaxAgeDays,
-                    AppSettings.MaxTileCacheMaxAgeDays),
-                L.GetString("Settings.Title"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return false;
-        }
-
-        if (days < AppSettings.MinTileCacheMaxAgeDays || days > AppSettings.MaxTileCacheMaxAgeDays) {
+        if (!SettingsFieldParser.TryParseIntegerInRange(
+                TileCacheDaysTextBox.Text,
+                AppSettings.MinTileCacheMaxAgeDays,
+                AppSettings.MaxTileCacheMaxAgeDays,
+                out var days)) {
             MessageBox.Show(
                 L.Format(
                     "Settings.TileCacheDaysRange",
@@ -368,7 +359,7 @@ public partial class SettingsWindow : Window {
     }
 
     private bool SaveBackupFields() {
-        if (!TryReadIntInRange(
+        if (!SettingsFieldParser.TryParseIntegerInRange(
                 AutosaveIntervalSecondsTextBox.Text,
                 AppSettings.MinAutosaveIntervalSeconds,
                 AppSettings.MaxAutosaveIntervalSeconds,
@@ -384,7 +375,7 @@ public partial class SettingsWindow : Window {
             return false;
         }
 
-        if (!TryReadIntInRange(
+        if (!SettingsFieldParser.TryParseIntegerInRange(
                 AutosaveFilesPerLayerTextBox.Text,
                 AppSettings.MinAutosaveFilesPerLayer,
                 AppSettings.MaxAutosaveFilesPerLayer,
@@ -429,13 +420,12 @@ public partial class SettingsWindow : Window {
     }
 
     private bool SaveGpsFields() {
-        if (!int.TryParse(GpsLineMinimumDistanceTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var minimumDistance) &&
-            !int.TryParse(GpsLineMinimumDistanceTextBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out minimumDistance)) {
+        if (!SettingsFieldParser.TryParseInteger(GpsLineMinimumDistanceTextBox.Text, out var minimumDistance)) {
             MessageBox.Show(L.GetString("Settings.GpsLineMinimumDistanceRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
-        if (!TryReadDouble(GpsTrackDrawingWidthTextBox.Text, out var drawingWidth)) {
+        if (!SettingsFieldParser.TryParseDouble(GpsTrackDrawingWidthTextBox.Text, out var drawingWidth)) {
             MessageBox.Show(L.GetString("Settings.GpsTrackDrawingWidthRequired"), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
@@ -538,8 +528,8 @@ public partial class SettingsWindow : Window {
             return false;
         }
 
-        if (!TryReadZoom(MapMaxZoomTextBox.Text, out var mapMaxZoom) ||
-            !TryReadZoom(ImageMaxZoomTextBox.Text, out var imageMaxZoom)) {
+        if (!SettingsFieldParser.TryParseZoom(MapMaxZoomTextBox.Text, out var mapMaxZoom) ||
+            !SettingsFieldParser.TryParseZoom(ImageMaxZoomTextBox.Text, out var imageMaxZoom)) {
             MessageBox.Show(L.Format("Settings.ZoomRangeRequired", GeoConverter.MinZoom, GeoConverter.MaxZoom), L.GetString("Settings.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
@@ -551,8 +541,8 @@ public partial class SettingsWindow : Window {
         _selectedSource.AccessToken = AccessTokenPasswordBox.Password.Trim();
         _selectedSource.AttributionText = AttributionTextBox.Text.Trim();
         _selectedSource.AttributionUrl = AttributionUrlTextBox.Text.Trim();
-        _selectedSource.NoTileEtags = SplitSignatures(NoTileEtagsTextBox.Text);
-        _selectedSource.NoTileMd5s = SplitSignatures(NoTileMd5sTextBox.Text);
+        _selectedSource.NoTileEtags = SettingsFieldParser.ParseSignatures(NoTileEtagsTextBox.Text);
+        _selectedSource.NoTileMd5s = SettingsFieldParser.ParseSignatures(NoTileMd5sTextBox.Text);
         _selectedSource.IsVisible = VisibleCheckBox.IsChecked == true;
         _selectedSource.IsKnownSource = KnownSourceCheckBox.IsChecked == true;
         SourcesListBox.Items.Refresh();
@@ -573,58 +563,6 @@ public partial class SettingsWindow : Window {
             L.GetString("Common.Warning"),
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
-    }
-
-    private string CreateUniqueSourceName(string baseName) {
-        if (_sources.All(source => source.Name != baseName)) return baseName;
-
-        for (var i = 2; i < 1000; i++) {
-            var candidate = $"{baseName} {i}";
-            if (_sources.All(source => source.Name != candidate)) return candidate;
-        }
-
-        return $"{baseName} {DateTime.Now:HHmmss}";
-    }
-
-    private static bool TryReadZoom(string text, out int zoom) {
-        if (int.TryParse(text.Trim(), out zoom)) {
-            zoom = Math.Clamp(zoom, GeoConverter.MinZoom, GeoConverter.MaxZoom);
-            return true;
-        }
-
-        zoom = GeoConverter.MaxZoom;
-        return false;
-    }
-
-    private static bool TryReadDouble(string text, out double value) {
-        return double.TryParse(
-                text.Trim(),
-                NumberStyles.Float,
-                CultureInfo.CurrentCulture,
-                out value) ||
-            double.TryParse(
-                text.Trim(),
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out value);
-    }
-
-    private static bool TryReadIntInRange(string text, int min, int max, out int value) {
-        if ((!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out value) &&
-                !int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value)) ||
-            value < min ||
-            value > max) {
-            value = min;
-            return false;
-        }
-
-        return true;
-    }
-
-    private static List<string> SplitSignatures(string text) {
-        return text
-            .Split(["\r\n", "\n", "\r", ",", ";"], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .ToList();
     }
 
     private void LoadLanguages(string selectedLanguageId) {

@@ -59,6 +59,7 @@ public partial class MainWindow : Window {
             _segmentExtrude = null;
             _keyboardEditCommand = "";
             Editor.ReplaceDocument(value);
+            SynchronizeActiveDataLayer();
             _featureClipboard = [];
             _previousSingleSelectedFeature = null;
             _clipboardPasteCount = 0;
@@ -97,6 +98,7 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _aiTagCts;
     private IReadOnlyList<AiTagSuggestionItem> _aiTagSuggestions = [];
     private AppSettings _settings = AppSettingsService.Load();
+    private readonly AppSettingsSaveController _settingsWriter = new();
     private bool _isAutosaving;
     private MapDisplayTransform _displayTransform = MapDisplayTransform.Identity;
     private MapImageLayer? _activeImageLayer;
@@ -275,7 +277,7 @@ public partial class MainWindow : Window {
         }
 
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshRenderedLayerFromStack(layer);
     }
 
@@ -308,7 +310,7 @@ public partial class MainWindow : Window {
         _activeImageLayer.Source = _activeSource.Source;
         _settings.ActiveSourceName = _activeSource.Name;
         _settings.MapMaxZoom = _activeSource.MapMaxZoom;
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         UpdateSourceSummary(_activeSource.MapMaxZoom, _activeSource.ImageMaxZoom);
 
         _ = LoadMapSourcesAsync(layers);
@@ -360,7 +362,7 @@ public partial class MainWindow : Window {
             newTileLayers = [];
             DisposeTileLayers(oldTileLayers);
             UpdateAttribution();
-            AppSettingsService.Save(_settings);
+            _settingsWriter.Save(_settings, this);
 
             var activeContext = _tileLayers.FirstOrDefault();
             if (activeContext is not null) {
@@ -501,7 +503,7 @@ public partial class MainWindow : Window {
             imageZoom,
             RenderTileBuffer);
         var pendingRequests = new Queue<(int X, int Y)>(
-            EnumerateTileRequests(tileRange, sourceCenterPixelX, sourceCenterPixelY)
+            TileRenderLayout.EnumerateRequestsByDistance(tileRange, sourceCenterPixelX, sourceCenterPixelY)
                 .Select(static request => (request.X, request.Y)));
         var requestedTileCount = pendingRequests.Count;
         var tileItems = new List<TileRenderItem>();
@@ -703,8 +705,8 @@ public partial class MainWindow : Window {
             PrefetchTileBuffer);
 
         var requests = new Queue<(int X, int Y)>(
-            EnumerateTileRequests(prefetchRange, centerPixelX, centerPixelY)
-                .Where(tile => !ContainsTile(renderRange, tile.X, tile.Y))
+            TileRenderLayout.EnumerateRequestsByDistance(prefetchRange, centerPixelX, centerPixelY)
+                .Where(tile => !TileRenderLayout.Contains(renderRange, tile.X, tile.Y))
                 .Take(MaxPrefetchTiles)
                 .Select(static tile => (tile.X, tile.Y)));
         if (requests.Count == 0) return;
@@ -729,31 +731,6 @@ public partial class MainWindow : Window {
                     .ConfigureAwait(false);
             }
         }
-    }
-
-    private static IEnumerable<(int X, int Y, double Distance)> EnumerateTileRequests(
-        TileRange range,
-        double centerPixelX,
-        double centerPixelY) {
-        List<(int X, int Y, double Distance)> requests = [];
-        for (var tileY = range.StartY; tileY <= range.EndY; tileY++) {
-            for (var tileX = range.StartX; tileX <= range.EndX; tileX++) {
-                var tileCenterX = (tileX + 0.5) * GeoConverter.TileSize;
-                var tileCenterY = (tileY + 0.5) * GeoConverter.TileSize;
-                var distanceX = tileCenterX - centerPixelX;
-                var distanceY = tileCenterY - centerPixelY;
-                requests.Add((tileX, tileY, distanceX * distanceX + distanceY * distanceY));
-            }
-        }
-
-        return requests.OrderBy(static request => request.Distance);
-    }
-
-    private static bool ContainsTile(TileRange range, int tileX, int tileY) {
-        return tileX >= range.StartX &&
-            tileX <= range.EndX &&
-            tileY >= range.StartY &&
-            tileY <= range.EndY;
     }
 
     private void BeginStagingLayer(MapLayer layer) {
@@ -880,7 +857,8 @@ public partial class MainWindow : Window {
         if (!PrepareDocumentForWrite()) return;
         if (_document is null) return;
 
-        var path = CreateSiblingExportPath(_document, ".gpx") ?? ChooseExportPath(_document, "GPX|*.gpx", ".gpx");
+        var path = DocumentExportPathService.CreateSiblingPath(_document, ".gpx") ??
+            ChooseExportPath(_document, "GPX|*.gpx", ".gpx");
         if (string.IsNullOrWhiteSpace(path) || !ConfirmOverwriteExport(path)) return;
 
         await WriteDocumentSnapshotAsync(path);
@@ -890,7 +868,7 @@ public partial class MainWindow : Window {
         if (!PrepareDocumentForWrite()) return;
         if (_document is null) return;
 
-        var path = CreateParentExportPath(_document);
+        var path = DocumentExportPathService.CreateParentPath(_document);
         if (string.IsNullOrWhiteSpace(path)) {
             path = ChooseSavePath(_document);
         }
@@ -956,11 +934,10 @@ public partial class MainWindow : Window {
     }
 
     private string? ChooseSavePath(MapDocument document) {
-        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath ?? document.Name);
         var dialog = new SaveFileDialog {
             Title = L.GetString("Main.SaveDialogTitle"),
             Filter = SpatialDataService.SaveFileFilter,
-            FileName = string.IsNullOrWhiteSpace(baseName) ? "map.geojson" : $"{baseName}.geojson",
+            FileName = DocumentExportPathService.CreateDefaultFileName(document, ".geojson"),
             AddExtension = true,
             DefaultExt = ".geojson",
             OverwritePrompt = true
@@ -968,35 +945,11 @@ public partial class MainWindow : Window {
         return dialog.ShowDialog(this) == true ? dialog.FileName : null;
     }
 
-    private static string? CreateSiblingExportPath(MapDocument document, string extension) {
-        if (string.IsNullOrWhiteSpace(document.SourcePath)) return null;
-
-        var directory = Path.GetDirectoryName(Path.GetFullPath(document.SourcePath));
-        if (string.IsNullOrWhiteSpace(directory)) return null;
-
-        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath);
-        if (string.IsNullOrWhiteSpace(baseName)) baseName = Path.GetFileNameWithoutExtension(document.Name);
-        if (string.IsNullOrWhiteSpace(baseName)) baseName = "map";
-        return Path.Combine(directory, $"{baseName}{extension}");
-    }
-
-    private static string? CreateParentExportPath(MapDocument document) {
-        if (string.IsNullOrWhiteSpace(document.SourcePath)) return null;
-
-        var sourcePath = Path.GetFullPath(document.SourcePath);
-        var directory = Path.GetDirectoryName(sourcePath);
-        if (string.IsNullOrWhiteSpace(directory)) return null;
-
-        var parent = Directory.GetParent(directory);
-        return parent is null ? null : Path.Combine(parent.FullName, Path.GetFileName(sourcePath));
-    }
-
     private string? ChooseExportPath(MapDocument document, string filter, string defaultExtension) {
-        var baseName = Path.GetFileNameWithoutExtension(document.SourcePath ?? document.Name);
         var dialog = new SaveFileDialog {
             Title = L.GetString("Main.SaveDialogTitle"),
             Filter = filter,
-            FileName = string.IsNullOrWhiteSpace(baseName) ? $"map{defaultExtension}" : $"{baseName}{defaultExtension}",
+            FileName = DocumentExportPathService.CreateDefaultFileName(document, defaultExtension),
             AddExtension = true,
             DefaultExt = defaultExtension,
             OverwritePrompt = true
@@ -1064,12 +1017,12 @@ public partial class MainWindow : Window {
         _autosaveCts?.Cancel();
         _autosaveCts = new CancellationTokenSource();
         try {
-            var path = await DocumentBackupService.SaveAutosaveAsync(
+            var paths = await DocumentBackupService.SaveDirtyAutosavesAsync(
                 _document,
                 _settings.AutosaveFilesPerLayer,
                 _autosaveCts.Token);
-            if (_settings.NotifyOnEverySave) {
-                DocumentStatusTextBlock.Text = L.Format("Main.Status.Autosaved", Path.GetFileName(path));
+            if (_settings.NotifyOnEverySave && paths.Count > 0) {
+                DocumentStatusTextBlock.Text = L.Format("Main.Status.Autosaved", Path.GetFileName(paths[^1]));
             }
         } catch (OperationCanceledException) {
         } catch (Exception ex) {
@@ -1102,10 +1055,16 @@ public partial class MainWindow : Window {
         var win = new Views.SettingsWindow(_settings, initialSection) { Owner = this };
         if (win.ShowDialog() != true) return;
 
-        _settings = win.ResultSettings;
-        AppSettingsService.EnsureDefaults(_settings);
+        var settings = win.ResultSettings;
+        AppSettingsService.EnsureDefaults(settings);
+        if (!_settingsWriter.Save(settings, this)) {
+            ThemeService.ApplyTheme(_settings.ThemeId);
+            LocalizationService.Instance.ApplyLanguage(_settings.LanguageId);
+            return;
+        }
+
+        _settings = settings;
         _displayTransform = CreateDisplayTransform(_settings);
-        AppSettingsService.Save(_settings);
         ThemeService.ApplyTheme(_settings.ThemeId);
         LocalizationService.Instance.ApplyLanguage(_settings.LanguageId);
         ApplyTileCacheSettings(forceDiskMaintenance: true);
@@ -1448,7 +1407,7 @@ public partial class MainWindow : Window {
         if (_isUpdatingLayerDetails || LayerListBox.SelectedItem is not MapImageLayer layer) return;
 
         layer.IsVisible = SelectedLayerVisibilityCheckBox.IsChecked == true;
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         if (layer.Kind == MapLayerKind.Data) {
             UpdateVectorLayer();
             RefreshLayerList(layer);
@@ -1467,7 +1426,7 @@ public partial class MainWindow : Window {
         if (Math.Abs(layer.Opacity - opacity) < 0.0001) return;
 
         layer.Opacity = opacity;
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         if (layer.Kind == MapLayerKind.Data) {
             UpdateVectorLayer();
             return;
@@ -1517,7 +1476,7 @@ public partial class MainWindow : Window {
         if (!AppSettingsService.MoveImageLayer(_settings, layer, insertIndex)) return;
 
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshRenderedLayerFromStack(layer);
         e.Handled = true;
     }
@@ -1530,7 +1489,8 @@ public partial class MainWindow : Window {
         }
 
         _settings.ActiveLayerId = layer.Id;
-        AppSettingsService.Save(_settings);
+        SynchronizeActiveDataLayer();
+        _settingsWriter.Save(_settings, this);
         RefreshLayerList(layer);
     }
 
@@ -1538,7 +1498,7 @@ public partial class MainWindow : Window {
         if (sender is not Button { DataContext: MapImageLayer layer }) return;
 
         layer.IsVisible = !layer.IsVisible;
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshRenderedLayerFromStack(layer);
     }
 
@@ -1550,7 +1510,7 @@ public partial class MainWindow : Window {
             _settings.ImageLayers.LastOrDefault()?.Id ??
             "";
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshRenderedLayerFromStack(_settings.GetActiveLayer());
     }
 
@@ -3708,8 +3668,16 @@ public partial class MainWindow : Window {
     }
 
     private MapImageLayer? GetVectorDataLayer() {
-        return _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data && layer.IsPrimary) ??
+        return _document is null
+            ? _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data)
+            : MapDataLayerSelectionService.FindMapLayer(_document.ActiveDataLayer, _settings.ImageLayers) ??
             _settings.ImageLayers.FirstOrDefault(static layer => layer.Kind == MapLayerKind.Data);
+    }
+
+    private void SynchronizeActiveDataLayer() {
+        if (_document is null) return;
+
+        MapDataLayerSelectionService.SelectPrimaryDataLayer(_document, _settings.ImageLayers);
     }
 
     private void UpdateDocumentUi() {
@@ -3962,6 +3930,7 @@ public partial class MainWindow : Window {
 
     private void RefreshRenderedLayerFromStack(MapImageLayer? selectedLayer = null) {
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);
+        SynchronizeActiveDataLayer();
         var rasterLayers = LayerRenderPlanner.GetLayersToRender(_settings.ImageLayers);
         RefreshLayerList(selectedLayer ?? _settings.GetActiveLayer());
         LoadImageLayers(rasterLayers);
@@ -3970,7 +3939,7 @@ public partial class MainWindow : Window {
     private void ReorderImageryLayers() {
         if (!AppSettingsService.RotateRasterLayerOrder(_settings)) return;
 
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshRenderedLayerFromStack(_settings.GetActiveLayer());
     }
 
@@ -4076,7 +4045,7 @@ public partial class MainWindow : Window {
         if (existing is not null) return existing;
 
         var source = new TileSourcePreset {
-            Name = CreateUniqueSourceName(baseName),
+            Name = TileSourceNameService.CreateUniqueName(_settings.TileSources, baseName),
             Source = sourceUrl,
             MapMaxZoom = GeoConverter.MaxZoom,
             ImageMaxZoom = GeoConverter.MaxZoom,
@@ -4085,7 +4054,7 @@ public partial class MainWindow : Window {
         };
         ShowSourceSafetyWarning(source);
         _settings.TileSources.Add(source);
-        AppSettingsService.Save(_settings);
+        _settingsWriter.Save(_settings, this);
         RefreshImageryMenu();
         return source;
     }
@@ -4099,17 +4068,6 @@ public partial class MainWindow : Window {
             L.GetString("Common.Warning"),
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
-    }
-
-    private string CreateUniqueSourceName(string baseName) {
-        if (_settings.TileSources.All(source => source.Name != baseName)) return baseName;
-
-        for (var i = 2; i < 1000; i++) {
-            var candidate = $"{baseName} {i}";
-            if (_settings.TileSources.All(source => source.Name != candidate)) return candidate;
-        }
-
-        return $"{baseName} {DateTime.Now:HHmmss}";
     }
 
     private static string NormalizeLayerSource(string type, string url) {

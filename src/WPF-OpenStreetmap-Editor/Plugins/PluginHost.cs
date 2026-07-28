@@ -222,26 +222,32 @@ public sealed class PluginHost : IAsyncDisposable {
             return new AddonPluginRuntime(manifest);
         }
 
-        var runtime = manifest.Runtime!;
-        var entryPath = PluginManifestReader.ResolvePackagePath(packageDirectory, runtime.Entry);
-        IPluginTransport transport = kind switch {
-            PluginKind.Native => new NativePluginTransport(entryPath, manifest.Id),
-            PluginKind.Process when string.Equals(
-                Path.GetExtension(entryPath),
-                ".py",
-                StringComparison.OrdinalIgnoreCase) => new PythonScriptPluginTransport(
-                    entryPath,
-                    runtime.Arguments,
-                    packageDirectory,
-                    manifest.Id),
-            _ => new ProcessPluginTransport(
-                entryPath,
-                runtime.Arguments,
-                packageDirectory,
-                manifest.Id,
-                runtime.MemoryLimitMegabytes)
-        };
+        var transport = CreateTransport(manifest, packageDirectory, kind);
         return new PluginRpcRuntime(manifest, transport);
+    }
+
+    internal static IPluginTransport CreateTransport(
+        PluginManifest manifest,
+        string packageDirectory,
+        PluginKind kind) {
+        var runtime = manifest.Runtime ??
+            throw new PluginManifestException($"{kind} plugins require runtime.entry.");
+        var entryPath = PluginManifestReader.ResolvePackagePath(packageDirectory, runtime.Entry);
+        if (kind == PluginKind.Native) {
+            return new NativePluginTransport(entryPath, manifest.Id);
+        }
+
+        var usePythonInterpreter = string.Equals(
+            Path.GetExtension(entryPath),
+            ".py",
+            StringComparison.OrdinalIgnoreCase);
+        return new ProcessPluginTransport(
+            entryPath,
+            runtime.Arguments,
+            packageDirectory,
+            manifest.Id,
+            runtime.MemoryLimitMegabytes,
+            usePythonInterpreter);
     }
 
     private static PluginRuntimeContext CreateRuntimeContext(PluginManifest manifest, string packageDirectory) {

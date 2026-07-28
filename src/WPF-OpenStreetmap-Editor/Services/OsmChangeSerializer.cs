@@ -25,7 +25,7 @@ public static class OsmChangeSerializer {
         ArgumentNullException.ThrowIfNull(document);
         foreach (var feature in document.Features) ValidateFeature(feature);
 
-        var projection = document.CreateOsmProjection();
+        var projection = document.CreateSnapshot();
         var current = OsmDocumentSync.Synchronize(projection);
         var original = GetOriginalDataset(document);
         var create = new XElement("create");

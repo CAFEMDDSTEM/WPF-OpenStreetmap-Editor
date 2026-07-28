@@ -128,10 +128,10 @@ public sealed class OsmAccountStore {
     }
 
     private void SaveMetadata(IReadOnlyList<OsmAccount> accounts) {
-        Directory.CreateDirectory(Path.GetDirectoryName(_metadataPath)!);
-        var temporaryPath = _metadataPath + ".tmp";
-        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(accounts, JsonOptions), new UTF8Encoding(false));
-        File.Move(temporaryPath, _metadataPath, overwrite: true);
+        AtomicFile.WriteAllText(
+            _metadataPath,
+            JsonSerializer.Serialize(accounts, JsonOptions),
+            new UTF8Encoding(false));
     }
 
     private static void EnsureSingleActive(List<OsmAccount> accounts) {

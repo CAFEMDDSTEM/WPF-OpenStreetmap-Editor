@@ -28,7 +28,9 @@ public partial class WelcomeWindow : Window {
 
     protected override void OnClosing(CancelEventArgs e) {
         _settings.ShowThirdPartyIcons = ThirdPartyIconsCheckBox.IsChecked == true;
-        AppSettingsService.Save(_settings);
+        if (!AppSettingsService.Save(_settings, out var error)) {
+            PersistenceErrorPresenter.Show(this, error);
+        }
         base.OnClosing(e);
     }
 

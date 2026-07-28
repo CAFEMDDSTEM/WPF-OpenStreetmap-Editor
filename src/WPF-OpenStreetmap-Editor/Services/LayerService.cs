@@ -22,13 +22,20 @@ public static class LayerService {
         }
     }
 
-    public static void SaveLayers(IEnumerable<string> layers) {
+    public static bool SaveLayers(IEnumerable<string> layers) {
+        return SaveLayers(layers, out _);
+    }
+
+    public static bool SaveLayers(IEnumerable<string> layers, out Exception? error) {
         try {
             var json = JsonSerializer.Serialize(layers.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.LayersFile)!);
-            File.WriteAllText(AppPaths.LayersFile, json, Encoding.UTF8);
+            AtomicFile.WriteAllText(AppPaths.LayersFile, json, Encoding.UTF8);
+            error = null;
+            return true;
         } catch (Exception ex) {
             Logger.Error("Failed to save layers", ex);
+            error = ex;
+            return false;
         }
     }
 }
