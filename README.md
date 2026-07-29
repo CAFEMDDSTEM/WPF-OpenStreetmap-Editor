@@ -146,6 +146,14 @@ The application writes runtime data under `%LOCALAPPDATA%\WPF-OpenStreetmap-Edit
 - `window_state.json` for the saved window position and size
 - `tile_requests.log` and `startup.log` for diagnostics
 
+## Contact
+
+If you have questions, suggestions, or want to discuss WOSM development, you can join the community:
+
+* QQ Group: 1091805906
+
+* Discord: https://discord.gg/xJRG5uAET
+
 ## Documentation
 
 Contributor and maintenance documentation lives in [docs/README.md](docs/README.md):
