@@ -131,6 +131,14 @@ Die Anwendung schreibt Laufzeitdaten unter `%LOCALAPPDATA%\WPF-OpenStreetmap-Edi
 - `window_state.json` für gespeicherte Fensterposition und -größe
 - `tile_requests.log` und `startup.log` für Diagnoseprotokolle
 
+## Kontakt
+
+Wenn Sie Fragen, Vorschläge oder Interesse an der Mitarbeit an WOSM haben, können Sie der Community beitreten:
+
+* QQ-Gruppe: 1091805906
+* Discord-Gruppe: https://discord.gg/xJRG5uAET
+
+
 ## Dokumentation
 
 Dokumentation für Mitwirkende und Wartung liegt in [docs/README.de.md](docs/README.de.md):
