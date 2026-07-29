@@ -131,6 +131,14 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 - `window_state.json`：已儲存的視窗位置和大小
 - `tile_requests.log` 和 `startup.log`：診斷記錄
 
+## 聯絡方式
+
+如果你有關於 WOSM 的問題、建議，或者希望參與專案開發，可以加入社群交流：
+
+* QQ 群：1091805906
+* Discord 群組：https://discord.gg/xJRG5uAET
+
+
 ## 文件
 
 貢獻和維護文件位於 [docs/README.zh-TW.md](docs/README.zh-TW.md)：
