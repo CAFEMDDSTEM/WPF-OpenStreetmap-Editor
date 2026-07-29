@@ -65,7 +65,11 @@ public sealed class TileImageLoader {
                 TaskScheduler.Default);
         }
 
-        return await sharedTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try {
+            return await sharedTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+        } catch (OperationCanceledException) {
+            return null;
+        }
     }
 
     private async Task<BitmapSource?> LoadAndCacheAsync(
