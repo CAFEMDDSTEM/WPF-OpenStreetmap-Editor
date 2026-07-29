@@ -89,13 +89,18 @@ public partial class OsmDownloadWindow : Window {
                     MaxDegreeOfParallelism = TileWorkerCount
                 },
                 async (request, token) => {
-                    var source = await TileImageLoader.Shared.LoadAsync(
-                        _tileService,
-                        renderZoom,
-                        request.X,
-                        request.Y,
-                        accessToken: null,
-                        token).ConfigureAwait(false);
+                    System.Windows.Media.Imaging.BitmapSource? source;
+                    try {
+                        source = await TileImageLoader.Shared.LoadAsync(
+                            _tileService,
+                            renderZoom,
+                            request.X,
+                            request.Y,
+                            accessToken: null,
+                            token).ConfigureAwait(false);
+                    } catch (OperationCanceledException) {
+                        return;
+                    }
                     if (source is null || token.IsCancellationRequested) return;
                     var placement = TileRenderLayout.GetTilePlacement(
                         request.X,

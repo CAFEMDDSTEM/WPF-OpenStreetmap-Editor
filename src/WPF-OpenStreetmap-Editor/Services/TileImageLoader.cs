@@ -67,8 +67,8 @@ public sealed class TileImageLoader {
 
         try {
             return await sharedTask.WaitAsync(cancellationToken).ConfigureAwait(false);
-        } catch (OperationCanceledException) {
-            return null;
+        } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            throw new OperationCanceledException(cancellationToken);
         }
     }
 
