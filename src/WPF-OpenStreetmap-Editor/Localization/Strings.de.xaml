@@ -25,6 +25,7 @@
     <sys:String x:Key="Language.TraditionalChinese">Chinesisch (traditionell)</sys:String>
     <sys:String x:Key="Language.Japanese">Japanisch</sys:String>
     <sys:String x:Key="Language.German">Deutsch</sys:String>
+    <sys:String x:Key="Language.Russian">Russisch</sys:String>
 
     <sys:String x:Key="Main.Menu.File">Datei</sys:String>
     <sys:String x:Key="Main.Menu.New">Neu</sys:String>

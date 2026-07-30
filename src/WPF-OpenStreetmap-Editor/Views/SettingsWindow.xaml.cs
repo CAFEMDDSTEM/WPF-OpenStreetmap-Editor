@@ -575,7 +575,8 @@ public partial class SettingsWindow : Window {
                 new LanguageOption("zh-Hans", L.GetString("Language.SimplifiedChinese")),
                 new LanguageOption("zh-Hant", L.GetString("Language.TraditionalChinese")),
                 new LanguageOption("ja", L.GetString("Language.Japanese")),
-                new LanguageOption("de", L.GetString("Language.German"))
+                new LanguageOption("de", L.GetString("Language.German")),
+                new LanguageOption("ru", L.GetString("Language.Russian"))
             };
             LanguageComboBox.ItemsSource = languages;
             LanguageComboBox.SelectedItem = languages.First(language => language.Id == selectedId);

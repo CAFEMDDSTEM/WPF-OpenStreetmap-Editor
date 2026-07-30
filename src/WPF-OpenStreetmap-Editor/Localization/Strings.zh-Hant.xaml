@@ -9,6 +9,7 @@
     <sys:String x:Key="Language.TraditionalChinese">繁體中文</sys:String>
     <sys:String x:Key="Language.Japanese">日文</sys:String>
     <sys:String x:Key="Language.German">德文</sys:String>
+    <sys:String x:Key="Language.Russian">俄文</sys:String>
     <sys:String x:Key="Common.Add">新增</sys:String>
     <sys:String x:Key="Common.Cancel">取消</sys:String>
     <sys:String x:Key="Common.Close">關閉</sys:String>

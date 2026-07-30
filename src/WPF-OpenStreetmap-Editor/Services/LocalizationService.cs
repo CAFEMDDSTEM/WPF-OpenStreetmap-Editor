@@ -27,7 +27,9 @@ public sealed class LocalizationService : INotifyPropertyChanged {
             ["ja"] = "ja",
             ["ja-JP"] = "ja",
             ["de"] = "de",
-            ["de-DE"] = "de"
+            ["de-DE"] = "de",
+            ["ru"] = "ru",
+            ["ru-RU"] = "ru"
         };
     private static readonly IReadOnlyDictionary<string, string> HeadlessEnglishStrings =
         new Dictionary<string, string>(StringComparer.Ordinal) {
@@ -172,7 +174,8 @@ public sealed class LocalizationService : INotifyPropertyChanged {
         new("zh-Hans", "简体中文"),
         new("zh-Hant", "繁體中文"),
         new("ja", "日本語"),
-        new("de", "Deutsch")
+        new("de", "Deutsch"),
+        new("ru", "Русский")
     ];
 
     public string LanguageId => _languageId;
@@ -249,6 +252,7 @@ public sealed class LocalizationService : INotifyPropertyChanged {
 
         if (name.StartsWith("ja", StringComparison.OrdinalIgnoreCase)) return "ja";
         if (name.StartsWith("de", StringComparison.OrdinalIgnoreCase)) return "de";
+        if (name.StartsWith("ru", StringComparison.OrdinalIgnoreCase)) return "ru";
         return "en";
     }
 

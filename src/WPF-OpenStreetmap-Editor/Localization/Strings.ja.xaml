@@ -25,6 +25,7 @@
     <sys:String x:Key="Language.TraditionalChinese">繁体字中国語</sys:String>
     <sys:String x:Key="Language.Japanese">日本語</sys:String>
     <sys:String x:Key="Language.German">ドイツ語</sys:String>
+    <sys:String x:Key="Language.Russian">ロシア語</sys:String>
 
     <sys:String x:Key="Main.Menu.File">ファイル</sys:String>
     <sys:String x:Key="Main.Menu.New">新規</sys:String>
