@@ -47,7 +47,9 @@ public static class OsmAuthenticationMethodDisplay {
 
 public sealed record OsmAuthorizationRequest(
     string ClientId,
+    string ClientSecret,
     string RedirectUri,
+    int Port,
     IReadOnlyList<string> Scopes);
 
 public sealed record OsmAuthorizationResult(

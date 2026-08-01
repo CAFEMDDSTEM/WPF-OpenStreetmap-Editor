@@ -12,6 +12,10 @@ public sealed class OsmAccount {
     public OsmAuthenticationMethod AuthenticationMethod { get; set; } = OsmAuthenticationMethod.OAuth2;
     public string UserName { get; set; } = "";
     public bool IsActive { get; set; }
+    public string OAuthClientId { get; set; } = OAuth20Service.DefaultClientId;
+    public string OAuthClientSecret { get; set; } = "";
+    public string OAuthRedirectUri { get; set; } = OAuth20Service.DefaultRedirectUri;
+    public int OAuthPort { get; set; } = OAuth20Service.DefaultPort;
 }
 
 public interface ICredentialStore {
@@ -110,6 +114,15 @@ public sealed class OsmAccountStore {
         if (!Uri.TryCreate(account.ApiBaseUrl, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))) {
             throw new InvalidDataException("OSM API 地址必须使用 HTTPS；本机测试地址可以使用 HTTP。");
+        }
+        if (account.AuthenticationMethod == OsmAuthenticationMethod.OAuth2) {
+            if (account.OAuthPort is < 1 or > 65535) {
+                throw new InvalidDataException("OAuth 本地端口必须在 1-65535 之间。");
+            }
+            if (!string.IsNullOrWhiteSpace(account.OAuthRedirectUri) &&
+                (!Uri.TryCreate(account.OAuthRedirectUri, UriKind.Absolute, out var redirectUri) || !redirectUri.IsLoopback)) {
+                throw new InvalidDataException("OAuth 重定向地址必须是本机回环地址。");
+            }
         }
     }
 

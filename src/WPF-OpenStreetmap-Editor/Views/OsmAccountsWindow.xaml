@@ -74,7 +74,86 @@
                        Text="{services:Loc Osm.Accounts.Password}"
                        Margin="0,0,8,0"
                        VerticalAlignment="Center" />
-            <PasswordBox x:Name="CredentialPasswordBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" />
+            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4">
+                <PasswordBox x:Name="CredentialPasswordBox" />
+                <StackPanel x:Name="OAuthPanel" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="AuthorizeButton"
+                                Content="{services:Loc Osm.Accounts.AuthorizeNow}"
+                                Click="Authorize_Click"
+                                MinWidth="120" />
+                        <Button x:Name="CancelAuthorizationButton"
+                                Content="{services:Loc Common.Cancel}"
+                                Click="CancelAuthorization_Click"
+                                Margin="6,0,0,0"
+                                Visibility="Collapsed" />
+                        <TextBlock x:Name="OAuthStatusTextBlock"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="420" />
+                    </StackPanel>
+                    <Expander x:Name="OAuthAdvancedExpander"
+                              Header="{services:Loc Osm.Accounts.AdvancedSettings}"
+                              Margin="0,8,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock Text="{services:Loc Osm.Accounts.OAuthHint}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource Theme.MutedTextBrush}"
+                                       Margin="0,0,0,8" />
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{services:Loc Osm.Accounts.ClientId}" Margin="0,0,8,8" VerticalAlignment="Center" />
+                                <TextBox x:Name="OAuthClientIdTextBox" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" Margin="0,0,0,8" />
+
+                                <CheckBox x:Name="HasClientSecretCheckBox"
+                                          Grid.Row="1"
+                                          Grid.Column="1"
+                                          Grid.ColumnSpan="4"
+                                          Content="{services:Loc Osm.Accounts.ClientSecretToggle}"
+                                          Checked="HasClientSecretCheckBox_Changed"
+                                          Unchecked="HasClientSecretCheckBox_Changed"
+                                          Margin="0,0,0,8"
+                                          VerticalAlignment="Center" />
+
+                                <TextBlock x:Name="ClientSecretLabelTextBlock"
+                                           Grid.Row="2"
+                                           Grid.Column="0"
+                                           Text="{services:Loc Osm.Accounts.ClientSecret}"
+                                           Margin="0,0,8,8"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed" />
+                                <PasswordBox x:Name="OAuthClientSecretBox"
+                                             Grid.Row="2"
+                                             Grid.Column="1"
+                                             Grid.ColumnSpan="4"
+                                             Margin="0,0,0,8"
+                                             Visibility="Collapsed" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{services:Loc Osm.Accounts.RedirectUri}" Margin="0,0,8,8" VerticalAlignment="Center" />
+                                <TextBox x:Name="OAuthRedirectUriTextBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="4" Margin="0,0,0,8" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{services:Loc Osm.Accounts.LocalPort}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                <TextBox x:Name="OAuthPortTextBox" Grid.Row="4" Grid.Column="1" Margin="0,0,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="2" Margin="0,12,0,0">
