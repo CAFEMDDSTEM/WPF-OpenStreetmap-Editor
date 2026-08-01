@@ -27,7 +27,7 @@ public sealed class OAuth20Service : IOsmAuthorizationLoginService {
     internal static readonly TimeSpan CallbackTimeout = TimeSpan.FromMinutes(2);
 
     public static readonly IReadOnlyList<string> DefaultScopes = [
-        "read_prefs", "write_prefs", "write_api", "read_gpx", "write_gpx", "write_notes", "openid"
+        "read_prefs", "write_prefs", "write_api", "read_gpx", "write_gpx", "write_notes"
     ];
 
     private readonly HttpClient _httpClient;
