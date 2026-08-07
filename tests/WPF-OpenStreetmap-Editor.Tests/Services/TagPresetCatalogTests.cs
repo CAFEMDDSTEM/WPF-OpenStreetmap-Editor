@@ -7,8 +7,10 @@ public class TagPresetCatalogTests {
     [Fact]
     public void All_CoversEveryPlannedCategoryWithUniqueIds() {
         var categories = TagPresetCatalog.All.Select(static preset => preset.Category).Distinct();
+        var expected = Enum.GetValues<TagPresetCategory>()
+            .Where(static category => category != TagPresetCategory.Custom);
 
-        Assert.Equal(Enum.GetValues<TagPresetCategory>().Order(), categories.Order());
+        Assert.Equal(expected.Order(), categories.Order());
         Assert.Equal(TagPresetCatalog.All.Count, TagPresetCatalog.All.Select(static preset => preset.Id).Distinct().Count());
     }
 

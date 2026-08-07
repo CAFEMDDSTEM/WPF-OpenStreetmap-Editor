@@ -99,6 +99,7 @@ public partial class MainWindow : Window {
     private IReadOnlyList<AiTagSuggestionItem> _aiTagSuggestions = [];
     private AppSettings _settings = AppSettingsService.Load();
     private readonly AppSettingsSaveController _settingsWriter = new();
+    private readonly PresetService _presets = PresetService.Instance;
     private bool _isAutosaving;
     private MapDisplayTransform _displayTransform = MapDisplayTransform.Identity;
     private MapImageLayer? _activeImageLayer;
@@ -191,6 +192,7 @@ public partial class MainWindow : Window {
         UpdateVectorLayer();
         RefreshPluginMenus();
         RefreshPluginToolbar();
+        RebuildPresetToolbar();
         try {
             _nonTextInputImeGuard ??= NonTextInputImeGuard.Attach(this);
         } catch (Exception ex) {
@@ -2246,26 +2248,229 @@ public partial class MainWindow : Window {
         if (PresetComboBox.SelectedItem is not TagPreset preset) {
             PresetSummaryTextBlock.Text = "";
             ApplyPresetButton.IsEnabled = false;
+            PinPresetButton.IsEnabled = false;
             return;
         }
 
         PresetSummaryTextBlock.Text = preset.Tags.Count == 0
             ? L.GetString("Main.Presets.NoFixedTags")
             : string.Join("  ", preset.Tags.Select(static tag => $"{tag.Key}={tag.Value}"));
-        ApplyPresetButton.IsEnabled = preset.Tags.Count > 0 &&
-            Selection.Features.Any(feature => TagPresetCatalog.SupportsGeometry(preset, feature.GeometryType));
+        ApplyPresetButton.IsEnabled = true;
+        PinPresetButton.IsEnabled = true;
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e) {
-        if (PresetComboBox.SelectedItem is not TagPreset preset || preset.Tags.Count == 0) return;
+        if (PresetComboBox.SelectedItem is not TagPreset preset) return;
+        ApplyPresetToSelection(preset);
+    }
+
+    private void ApplyPresetToSelection(TagPreset preset) {
+        if (preset.Tags.Count == 0) {
+            MessageBox.Show(
+                L.GetString("Main.Presets.NoFixedTags"),
+                L.GetString("Main.Presets.MismatchTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+        if (Selection.Count == 0) {
+            MessageBox.Show(
+                L.GetString("Main.Presets.SelectFeatureFirst"),
+                L.GetString("Main.Presets.MismatchTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
         var targets = Selection.Features
             .Where(feature => TagPresetCatalog.SupportsGeometry(preset, feature.GeometryType))
             .ToList();
-        if (targets.Count == 0 || !Editor.Execute(new SetFeaturesAttributesCommand(targets, preset.Tags))) return;
+        if (targets.Count == 0) {
+            ShowPresetGeometryMismatch(preset);
+            return;
+        }
+        if (!Editor.Execute(new SetFeaturesAttributesCommand(targets, preset.Tags))) return;
 
         RefreshFeatureList();
         UpdateVectorLayer();
         UpdateDocumentUi();
+    }
+
+    private void ShowPresetGeometryMismatch(TagPreset preset) {
+        MessageBox.Show(
+            L.Format(
+                "Main.Presets.MismatchMessage",
+                preset.DisplayName,
+                DescribeGeometries(preset.Geometries),
+                DescribeSelectionGeometries()),
+            L.GetString("Main.Presets.MismatchTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+    }
+
+    private static string DescribeGeometries(TagPresetGeometry geometries) {
+        var labels = new List<string>();
+        if ((geometries & TagPresetGeometry.Point) != 0) {
+            labels.Add(L.GetString("Main.Presets.GeometryPoint"));
+        }
+        if ((geometries & TagPresetGeometry.Line) != 0) {
+            labels.Add(L.GetString("Main.Presets.GeometryLine"));
+        }
+        if ((geometries & TagPresetGeometry.Area) != 0) {
+            labels.Add(L.GetString("Main.Presets.GeometryArea"));
+        }
+        return labels.Count == 0
+            ? L.GetString("Main.Presets.GeometryNone")
+            : string.Join(", ", labels);
+    }
+
+    private string DescribeSelectionGeometries() {
+        var groups = Selection.Features
+            .GroupBy(static feature => feature.GeometryType)
+            .OrderBy(static group => group.Key)
+            .Select(group => $"{GeometryTypeLabel(group.Key)} ({group.Count()})");
+        return string.Join(", ", groups);
+    }
+
+    private static string GeometryTypeLabel(MapGeometryType type) {
+        return type switch {
+            MapGeometryType.Point => L.GetString("Main.Presets.GeometryPoint"),
+            MapGeometryType.LineString => L.GetString("Main.Presets.GeometryLine"),
+            _ => L.GetString("Main.Presets.GeometryArea")
+        };
+    }
+
+    private void PinPresetToToolbar_Click(object sender, RoutedEventArgs e) {
+        if (PresetComboBox.SelectedItem is not TagPreset preset) return;
+        PinPreset(preset);
+    }
+
+    private void PinPreset(TagPreset preset) {
+        if (_settings.PresetToolbarButtons.Any(button => button.PresetId == preset.Id)) {
+            RebuildPresetToolbar();
+            return;
+        }
+
+        _settings.PresetToolbarButtons.Add(new PresetToolbarButton {
+            PresetId = preset.Id,
+            Label = preset.Name,
+            Icon = preset.Icon
+        });
+        _settingsWriter.Save(_settings, this);
+        RebuildPresetToolbar();
+    }
+
+    private void PresetToolbarSetup_Click(object sender, RoutedEventArgs e) {
+        var window = new Views.PresetToolbarSetupWindow(_settings.PresetToolbarButtons, _presets) { Owner = this };
+        if (window.ShowDialog() != true || !window.Changed) return;
+
+        _settings.PresetToolbarButtons = window.Result;
+        _settingsWriter.Save(_settings, this);
+        RebuildPresetToolbar();
+    }
+
+    private void RebuildPresetToolbar() {
+        if (PresetToolbarPanel is null || PresetToolbarSeparator is null) return;
+        PresetToolbarPanel.Children.Clear();
+
+        var actions = PresetToolbarService.Resolve(_settings.PresetToolbarButtons, _presets);
+        var hasActions = actions.Count > 0;
+        PresetToolbarPanel.Visibility = hasActions ? Visibility.Visible : Visibility.Collapsed;
+        PresetToolbarSeparator.Visibility = hasActions ? Visibility.Visible : Visibility.Collapsed;
+        if (!hasActions) return;
+
+        foreach (var action in actions) {
+            PresetToolbarPanel.Children.Add(CreatePresetToolbarButton(action));
+        }
+    }
+
+    private Button CreatePresetToolbarButton(PresetToolbarAction action) {
+        var displayLabel = PresetDisplayLabel(action);
+        var button = new Button {
+            Width = 34,
+            Height = 34,
+            Margin = new Thickness(2),
+            Padding = new Thickness(0),
+            ToolTip = action.Kind == PresetToolbarActionKind.Group
+                ? L.Format("PresetToolbar.GroupTooltip", displayLabel, action.GroupPresets.Count)
+                : L.Format("PresetToolbar.ItemTooltip", displayLabel),
+            Tag = action
+        };
+        button.SetValue(AutomationProperties.NameProperty, displayLabel);
+        var content = new StackPanel {
+            Orientation = Orientation.Vertical,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var iconKind = PresetIconCatalog.Resolve(action.Icon, action.Label);
+        if (iconKind is not null && Enum.TryParse<PackIconLucideKind>(iconKind, out var kind)) {
+            content.Children.Add(new PackIconLucide {
+                Kind = kind,
+                Width = 18,
+                Height = 18,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+        } else {
+            content.Children.Add(new TextBlock {
+                Text = GetShortLabel(displayLabel),
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+        }
+        button.Content = content;
+        button.Click += PresetToolbarButton_Click;
+        button.ContextMenu = CreatePresetToolbarContextMenu(action);
+        return button;
+    }
+
+    private ContextMenu CreatePresetToolbarContextMenu(PresetToolbarAction action) {
+        var menu = new ContextMenu();
+        if (action.Kind == PresetToolbarActionKind.Group) {
+            var header = new MenuItem {
+                Header = PresetDisplayLabel(action),
+                IsEnabled = false
+            };
+            menu.Items.Add(header);
+            menu.Items.Add(new Separator());
+            foreach (var preset in action.GroupPresets) {
+                var item = new MenuItem { Header = preset.DisplayName, Tag = preset };
+                item.Click += (_, _) => ApplyPresetToSelection(preset);
+                menu.Items.Add(item);
+            }
+        } else {
+            var remove = new MenuItem { Header = L.GetString("PresetToolbar.RemoveFromToolbar") };
+            remove.Click += (_, _) => RemoveToolbarButton(action.ButtonId);
+            menu.Items.Add(remove);
+        }
+        return menu;
+    }
+
+    private void PresetToolbarButton_Click(object sender, RoutedEventArgs e) {
+        if (sender is not Button { Tag: PresetToolbarAction action }) return;
+        if (action.Kind == PresetToolbarActionKind.Single) {
+            if (action.Preset is not null) ApplyPresetToSelection(action.Preset);
+            return;
+        }
+
+        var button = (Button)sender;
+        var menu = CreatePresetToolbarContextMenu(action);
+        menu.PlacementTarget = button;
+        menu.IsOpen = true;
+    }
+
+    private void RemoveToolbarButton(string buttonId) {
+        var removed = _settings.PresetToolbarButtons.RemoveAll(button => button.Id == buttonId);
+        if (removed == 0) return;
+        _settingsWriter.Save(_settings, this);
+        RebuildPresetToolbar();
+    }
+
+    private static string PresetDisplayLabel(PresetToolbarAction action) {
+        return action.Preset?.DisplayName ?? action.Group?.DisplayName ?? action.Label;
+    }
+
+    private static string GetShortLabel(string label) {
+        if (label.Length <= 3) return label;
+        return label[..3];
     }
 
     private void FeatureSearchTextBox_TextChanged(object sender, TextChangedEventArgs e) {
@@ -2722,6 +2927,122 @@ public partial class MainWindow : Window {
         RefreshFeatureList();
         UpdateVectorLayer();
         UpdateDocumentUi();
+    }
+
+    private void EditRelationSelected_Click(object sender, RoutedEventArgs e) => EditRelationSelectedFeatures();
+
+    private void CreateRelationFromSelection_Click(object sender, RoutedEventArgs e) => CreateRelationFromSelection();
+
+    private void EditRelationSelectedFeatures() {
+        CommitPendingModes();
+        if (_document is null) return;
+
+        var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
+        if (selectedFeatures.Count == 0) return;
+        if (selectedFeatures.Count > 1) {
+            MessageBox.Show(
+                L.GetString("Main.EditRelationSelectOne"),
+                L.GetString("Osm.Relation.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var feature = selectedFeatures[0];
+        if (feature.Osm?.PrimitiveType != OsmPrimitiveType.Relation) {
+            MessageBox.Show(
+                L.GetString("Main.EditRelationNotRelation"),
+                L.GetString("Osm.Relation.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (!EnsureSyncedDocument()) return;
+        if (!_document!.Osm!.Relations.TryGetValue(feature.Osm.Id, out var relation)) return;
+
+        var window = new Views.RelationEditorWindow(_document, relation, relation.Members) { Owner = this };
+        if (window.ShowDialog() != true) return;
+        if (!Editor.Execute(new SetRelationMembersCommand(feature, window.Members))) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void CreateRelationFromSelection() {
+        CommitPendingModes();
+        if (_document is null) return;
+
+        var selectedFeatures = GetSelectedFeaturesInDocumentOrder();
+        if (selectedFeatures.Count == 0) {
+            MessageBox.Show(
+                L.GetString("Main.CreateRelationSelectFeatures"),
+                L.GetString("Osm.Relation.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (!EnsureSyncedDocument()) return;
+
+        var initialMembers = selectedFeatures
+            .Where(feature => feature.Osm is not null)
+            .Select(feature => new OsmRelationMember(
+                RelationEditService.ToMemberType(feature.Osm!.PrimitiveType) ?? OsmRelationMemberType.Way,
+                feature.Osm.Id,
+                ""))
+            .ToList();
+        if (initialMembers.Count == 0) {
+            MessageBox.Show(
+                L.GetString("Main.CreateRelationNoOsm"),
+                L.GetString("Osm.Relation.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new Views.RelationEditorWindow(
+            _document,
+            relation: null,
+            initialMembers,
+            selectedFeatures) { Owner = this };
+        if (window.ShowDialog() != true) return;
+
+        var tags = new Dictionary<string, string>(StringComparer.Ordinal) {
+            ["type"] = "multipolygon"
+        };
+        var command = new CreateRelationCommand(window.Members, tags);
+        if (!Editor.Execute(command)) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+        if (command.CreatedFeature is not null) {
+            SetSelectedFeatures([command.CreatedFeature]);
+        }
+    }
+
+    private void CommitPendingModes() {
+        if (_featureRotation is not null) CommitFeatureRotation();
+        if (_featureMove is not null) CommitFeatureMove();
+        if (_vertexMove is not null) CommitVertexMove();
+        if (_segmentExtrude is not null) CommitSegmentExtrude();
+        if (Editor.HasDraftLine) FinishDraftLine();
+    }
+
+    private bool EnsureSyncedDocument() {
+        try {
+            OsmDocumentSync.Synchronize(_document!);
+            return true;
+        } catch (Exception ex) {
+            MessageBox.Show(
+                ex.Message,
+                L.GetString("Osm.Relation.Title"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
     }
 
     private void OrthogonalizeSelectedFeatures() {
@@ -3879,6 +4200,8 @@ public partial class MainWindow : Window {
         UpdateDocumentUi();
         UpdateSourceSummary();
         RefreshLayerList(LayerListBox.SelectedItem as MapImageLayer ?? _settings.GetActiveLayer());
+        RefreshPresetList();
+        RebuildPresetToolbar();
     }
 
     private bool ConfirmDiscardChanges(string message) {

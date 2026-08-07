@@ -1,5 +1,7 @@
 namespace WPF_OpenStreetmap_Editor.Models;
 
+using WPF_OpenStreetmap_Editor.Services;
+
 [Flags]
 public enum TagPresetGeometry {
     None = 0,
@@ -19,7 +21,8 @@ public enum TagPresetCategory {
     Shop,
     LandUse,
     Natural,
-    PublicTransport
+    PublicTransport,
+    Custom
 }
 
 public enum TagPresetFieldKind {
@@ -50,4 +53,38 @@ public sealed record TagPreset(
     TagPresetGeometry Geometries,
     IReadOnlyDictionary<string, string> Tags,
     IReadOnlyList<TagPresetField> Fields,
-    IReadOnlyList<string> SearchTerms);
+    IReadOnlyList<string> SearchTerms,
+    string? Icon = null,
+    string? NameContext = null) {
+    /// <summary>The localized display name for the current UI language, falling back to the English name.</summary>
+    public string DisplayName => PresetNameLocalizer.GetName(Name, NameContext);
+}
+
+public sealed record TagPresetGroup(
+    string Key,
+    string Name,
+    string? Icon,
+    IReadOnlyList<TagPresetGroup> Groups,
+    IReadOnlyList<TagPreset> Items,
+    string? NameContext = null) {
+    /// <summary>The localized display name for the current UI language, falling back to the English name.</summary>
+    public string DisplayName => PresetNameLocalizer.GetName(Name, NameContext);
+}
+
+public sealed class PresetToolbarButton {
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string? PresetId { get; set; }
+    public string? GroupKey { get; set; }
+    public string Label { get; set; } = "";
+    public string? Icon { get; set; }
+
+    public PresetToolbarButton Clone() {
+        return new PresetToolbarButton {
+            Id = Id,
+            PresetId = PresetId,
+            GroupKey = GroupKey,
+            Label = Label,
+            Icon = Icon
+        };
+    }
+}

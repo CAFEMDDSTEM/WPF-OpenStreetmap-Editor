@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using WPF_OpenStreetmap_Editor.Models;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
@@ -87,6 +88,7 @@ public sealed class AppSettings {
     public WorkbenchLayoutSettings WorkbenchLayout { get; set; } = new();
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
+    public List<PresetToolbarButton> PresetToolbarButtons { get; set; } = [];
 
     public TileSourcePreset GetActiveSource() {
         return TileSources.FirstOrDefault(source => source.Name == ActiveSourceName) ??
@@ -141,7 +143,8 @@ public sealed class AppSettings {
             NotifyOnEverySave = NotifyOnEverySave,
             WorkbenchLayout = WorkbenchLayout.Clone(),
             TileSources = [.. TileSources.Select(static source => source.Clone())],
-            ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())]
+            ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())],
+            PresetToolbarButtons = [.. PresetToolbarButtons.Select(static button => button.Clone())]
         };
     }
 }
@@ -350,6 +353,13 @@ public static class AppSettingsService {
     }
 
     public static void EnsureDefaults(AppSettings settings) {
+        settings.PresetToolbarButtons ??= [];
+        foreach (var button in settings.PresetToolbarButtons) {
+            if (string.IsNullOrWhiteSpace(button.Id)) {
+                button.Id = Guid.NewGuid().ToString("N");
+            }
+        }
+
         settings.WorkbenchLayout ??= new WorkbenchLayoutSettings();
         if (!double.IsFinite(settings.WorkbenchLayout.RightPanelWidth)) {
             settings.WorkbenchLayout.RightPanelWidth = WorkbenchLayoutSettings.DefaultRightPanelWidth;

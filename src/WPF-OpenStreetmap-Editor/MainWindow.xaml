@@ -50,6 +50,8 @@
                 <MenuItem Header="{services:Loc Main.Menu.PasteTags}" InputGestureText="Ctrl+Shift+V" Click="PasteTags_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.DuplicateSelected}" InputGestureText="Ctrl+D" Click="DuplicateSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.EditRelation}" Click="EditRelationSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.CreateRelation}" Click="CreateRelationFromSelection_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.FindFeatures}" InputGestureText="Ctrl+F" Click="FindFeatures_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.RotateSelected}" InputGestureText="R" Click="RotateSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.MoveSelected}" InputGestureText="M" Click="MoveSelected_Click" />
@@ -66,12 +68,14 @@
             <MenuItem Header="{services:Loc Main.Menu.Selection}">
                 <MenuItem Header="{services:Loc Main.Menu.FindFeatures}" InputGestureText="Ctrl+F" Click="FindFeatures_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.EditTags}" InputGestureText="Ctrl+T" Click="EditTagsSelected_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.EditRelation}" Click="EditRelationSelected_Click" />
                 <Separator />
                 <MenuItem Header="{services:Loc Main.Menu.HideSelected}" InputGestureText="H" Click="HideSelected_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.ShowAll}" Click="ShowAllFeatures_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Presets}">
                 <MenuItem Header="{services:Loc Main.Presets.ShowPanel}" Click="ShowPresets_Click" />
+                <MenuItem Header="{services:Loc Main.Menu.PresetToolbar}" Click="PresetToolbarSetup_Click" />
             </MenuItem>
             <MenuItem x:Name="ImageryMenuItem" Header="{services:Loc Main.Menu.Imagery}">
                 <MenuItem Header="{services:Loc Main.Menu.ImageryOptions}" Click="ImagerySettings_Click" />
@@ -127,6 +131,9 @@
                 <Button Width="34" Height="34" Margin="2" Padding="0" Click="EditTagsSelected_Click" ToolTip="{services:Loc Main.Menu.EditTags}" AutomationProperties.Name="{services:Loc Main.Menu.EditTags}">
                     <iconPacks:PackIconLucide Kind="Tags" Width="18" Height="18" />
                 </Button>
+                <Button Width="34" Height="34" Margin="2" Padding="0" Click="CreateRelationFromSelection_Click" ToolTip="{services:Loc Main.Tooltip.CreateRelation}" AutomationProperties.Name="{services:Loc Main.Tooltip.CreateRelation}">
+                    <iconPacks:PackIconLucide Kind="GitFork" Width="18" Height="18" />
+                </Button>
                 <Button Width="34" Height="34" Margin="2" Padding="0" Click="DeleteSelected_Click" ToolTip="{services:Loc Main.Menu.DeleteSelected}" AutomationProperties.Name="{services:Loc Main.Menu.DeleteSelected}">
                     <iconPacks:PackIconLucide Kind="Trash2" Width="18" Height="18" />
                 </Button>
@@ -138,6 +145,15 @@
                     <iconPacks:PackIconLucide Kind="Upload" Width="18" Height="18" />
                 </Button>
                 <StackPanel x:Name="PluginToolbarPanel"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center" />
+                <Separator x:Name="PresetToolbarSeparator"
+                           Width="1"
+                           Height="24"
+                           Margin="6,0"
+                           Background="{DynamicResource Theme.BorderBrush}"
+                           Visibility="Collapsed" />
+                <StackPanel x:Name="PresetToolbarPanel"
                             Orientation="Horizontal"
                             VerticalAlignment="Center" />
             </StackPanel>
@@ -468,20 +484,27 @@
                                          TextChanged="PresetSearchTextBox_TextChanged" />
                                 <ComboBox x:Name="PresetComboBox"
                                           Margin="0,6,0,0"
-                                          DisplayMemberPath="Name"
+                                          DisplayMemberPath="DisplayName"
                                           SelectionChanged="PresetComboBox_SelectionChanged" />
                                 <TextBlock x:Name="PresetSummaryTextBlock"
                                            Margin="0,6,0,0"
                                            TextWrapping="Wrap"
                                            FontFamily="Consolas"
                                            Foreground="{DynamicResource Theme.MutedTextBrush}" />
-                                <Button x:Name="ApplyPresetButton"
-                                        Margin="0,6,0,0"
-                                        Padding="10,2"
-                                        HorizontalAlignment="Right"
-                                        Content="{services:Loc Main.Presets.Apply}"
-                                        IsEnabled="False"
-                                        Click="ApplyPreset_Click" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                    <Button x:Name="ApplyPresetButton"
+                                            Padding="10,2"
+                                            Content="{services:Loc Main.Presets.Apply}"
+                                            IsEnabled="False"
+                                            Click="ApplyPreset_Click" />
+                                    <Button x:Name="PinPresetButton"
+                                            Margin="8,0,0,0"
+                                            Padding="10,2"
+                                            Content="{services:Loc Main.Presets.PinToToolbar}"
+                                            ToolTip="{services:Loc Main.Presets.PinToToolbarTooltip}"
+                                            IsEnabled="False"
+                                            Click="PinPresetToToolbar_Click" />
+                                </StackPanel>
                             </StackPanel>
                         </Expander>
                         <Expander x:Name="AiTagAssistantExpander"

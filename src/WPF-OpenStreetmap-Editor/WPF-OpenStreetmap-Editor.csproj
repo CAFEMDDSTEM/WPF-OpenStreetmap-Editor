@@ -16,6 +16,23 @@
 
   <ItemGroup>
     <Resource Include="Assets\StartupMap.jpg" />
+    <EmbeddedResource Include="Assets\defaultpresets.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.defaultpresets.xml" />
+    <EmbeddedResource Include="Assets\PresetNames.de.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.PresetNames.de.xml"
+                      WithCulture="false" />
+    <EmbeddedResource Include="Assets\PresetNames.ja.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.PresetNames.ja.xml"
+                      WithCulture="false" />
+    <EmbeddedResource Include="Assets\PresetNames.ru.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.PresetNames.ru.xml"
+                      WithCulture="false" />
+    <EmbeddedResource Include="Assets\PresetNames.zh-Hans.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.PresetNames.zh-Hans.xml"
+                      WithCulture="false" />
+    <EmbeddedResource Include="Assets\PresetNames.zh-Hant.xml"
+                      LogicalName="WPF_OpenStreetmap_Editor.Assets.PresetNames.zh-Hant.xml"
+                      WithCulture="false" />
     <EmbeddedResource Include="..\..\LICENSE.txt"
                       LogicalName="WPF_OpenStreetmap_Editor.LICENSE.txt" />
     <EmbeddedResource Include="Themes\BuiltIn\**\*.*" />

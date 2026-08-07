@@ -1,0 +1,969 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<PresetNames lang="de">
+  <Entry Name="Abandoned Rail" Context="" Value="Strecke aufgegeben" />
+  <Entry Name="Access Restrictions" Context="" Value="Zutrittsbeschränkungen" />
+  <Entry Name="Accommodation" Context="" Value="Unterkunft" />
+  <Entry Name="Accountant" Context="office" Value="Buchhalter" />
+  <Entry Name="Address" Context="" Value="Adresse" />
+  <Entry Name="Address Interpolation" Context="" Value="Adressinterpolation" />
+  <Entry Name="Adit" Context="" Value="Stollenzugang" />
+  <Entry Name="Administrative" Context="" Value="Innerstaatlich" />
+  <Entry Name="Adult gaming centre" Context="" Value="Spielautomatenhalle" />
+  <Entry Name="Advanced stop line" Context="" Value="Vorgezogene Aufstellfläche" />
+  <Entry Name="Advertising agency" Context="office" Value="Werbeagentur" />
+  <Entry Name="Advertising Column" Context="" Value="Litfaßsäule" />
+  <Entry Name="Advertising Totem" Context="" Value="Werbetotem" />
+  <Entry Name="Aerialway" Context="" Value="Seilbahn" />
+  <Entry Name="Airfield" Context="" Value="Flugplatz" />
+  <Entry Name="Airport" Context="" Value="Flughafen" />
+  <Entry Name="Airport Ground" Context="" Value="Flugplatz" />
+  <Entry Name="Alcohol" Context="" Value="Spirituosen" />
+  <Entry Name="Allotments" Context="" Value="Schrebergärten" />
+  <Entry Name="Alpine Hut" Context="" Value="Bewirtschaftete Alpenhütte" />
+  <Entry Name="Ambulance Station" Context="" Value="Rettungswache" />
+  <Entry Name="American Football" Context="" Value="American Football" />
+  <Entry Name="Amusement arcade" Context="" Value="Spielhalle" />
+  <Entry Name="Amusement/Theme Park" Context="" Value="Freizeit-/Themenpark" />
+  <Entry Name="Animal" Context="" Value="Tier" />
+  <Entry Name="Animal boarding" Context="" Value="Tierpension" />
+  <Entry Name="Animal breeding" Context="" Value="Tierzucht" />
+  <Entry Name="Animal enclosure" Context="" Value="Tiergehege" />
+  <Entry Name="Animal shelter" Context="" Value="Tierheim" />
+  <Entry Name="Animal watering place" Context="" Value="Tiertränke" />
+  <Entry Name="Annotation" Context="" Value="Anmerkung" />
+  <Entry Name="Antenna" Context="" Value="Antenne" />
+  <Entry Name="Antiques" Context="" Value="Antiquitäten" />
+  <Entry Name="Apartment" Context="" Value="Ferienwohnung" />
+  <Entry Name="Apron" Context="" Value="Vorfeld" />
+  <Entry Name="Aquaculture" Context="" Value="Aquakultur" />
+  <Entry Name="Arcade" Context="" Value="Arkade" />
+  <Entry Name="Archaeological Site" Context="" Value="Ausgrabungsstelle" />
+  <Entry Name="Archery" Context="" Value="Bogenschießen" />
+  <Entry Name="Architect" Context="office" Value="Architekt" />
+  <Entry Name="Arête" Context="" Value="Gebirgsgrat" />
+  <Entry Name="Art" Context="" Value="Kunst" />
+  <Entry Name="Arts Centre" Context="" Value="Kunstzentrum" />
+  <Entry Name="Artwork" Context="" Value="Kunstwerk (im öffentlichen Raum)" />
+  <Entry Name="Assembly Point" Context="" Value="Sammelplatz" />
+  <Entry Name="Assisted Living" Context="" Value="Betreutes Wohnen" />
+  <Entry Name="Associated Street" Context="" Value="Zugehörige Straße" />
+  <Entry Name="Association" Context="office" Value="Verein" />
+  <Entry Name="Attraction" Context="" Value="Attraktion" />
+  <Entry Name="Audio Guide" Context="" Value="Audioführung" />
+  <Entry Name="Australian Football" Context="" Value="Australian Football" />
+  <Entry Name="Automated Defibrillator" Context="" Value="Automatisierter Defibrillator" />
+  <Entry Name="Automated Teller Machine" Context="" Value="Geldautomat" />
+  <Entry Name="Avalanche Protection" Context="" Value="Lawinenschutz" />
+  <Entry Name="Avalanche Protector" Context="" Value="Lawinenschutz" />
+  <Entry Name="Baby Hatch/Safe Haven" Context="" Value="Babyklappe" />
+  <Entry Name="Bag" Context="" Value="Taschen" />
+  <Entry Name="Bakery" Context="" Value="Bäckerei" />
+  <Entry Name="Bandstand" Context="" Value="Musikpavillon" />
+  <Entry Name="Bank" Context="" Value="Bank" />
+  <Entry Name="Bar" Context="" Value="Bar" />
+  <Entry Name="Bare Rock" Context="" Value="Nackter Fels" />
+  <Entry Name="Barracks" Context="" Value="Kasernen" />
+  <Entry Name="Barriers" Context="" Value="Barrieren" />
+  <Entry Name="Baseball" Context="" Value="Baseball" />
+  <Entry Name="Basin" Context="" Value="Wasserbecken" />
+  <Entry Name="Basketball" Context="" Value="Basketball" />
+  <Entry Name="Battlefield" Context="" Value="Schlachtfeld" />
+  <Entry Name="Bay" Context="" Value="Meeresbucht" />
+  <Entry Name="Beach" Context="" Value="Strand" />
+  <Entry Name="Beach Resort" Context="" Value="Bewirtschafteter Strandbereich" />
+  <Entry Name="Beach Volleyball" Context="" Value="Beachvolleyball" />
+  <Entry Name="Beacon" Context="airmark" Value="Flugnavigationsfunkfeuer" />
+  <Entry Name="Beacon" Context="man_made" Value="Bake" />
+  <Entry Name="Beauty" Context="" Value="Schönheitssalon" />
+  <Entry Name="Bed" Context="" Value="Betten/Matratzen" />
+  <Entry Name="Beekeeper" Context="" Value="Imker" />
+  <Entry Name="Beer Garden" Context="" Value="Biergarten" />
+  <Entry Name="Bench" Context="" Value="Sitzbank" />
+  <Entry Name="Beverages" Context="" Value="Getränke" />
+  <Entry Name="Bicycle" Context="" Value="Fahrrad" />
+  <Entry Name="Bicycle Road" Context="" Value="Fahrradstraße" />
+  <Entry Name="Bicycle Route" Context="" Value="Fahrradroute" />
+  <Entry Name="Bicycle Wash" Context="" Value="Fahrradwaschanlage" />
+  <Entry Name="Big Communication Tower" Context="" Value="Großer Kommunikationsturm" />
+  <Entry Name="Bike Dealer" Context="" Value="Fahrradladen" />
+  <Entry Name="Billboard" Context="" Value="Plakatwand" />
+  <Entry Name="Billiards" Context="" Value="Billard" />
+  <Entry Name="Biofuel Power Generator" Context="" Value="Biokraftstoff-Stromerzeuger" />
+  <Entry Name="Biofuel Power Plant" Context="" Value="Biokraftstoff-Kraftwerk" />
+  <Entry Name="Biogas Power Generator" Context="" Value="Biogas-Stromerzeuger" />
+  <Entry Name="Biogas Power Plant" Context="" Value="Biogaskraftwerk" />
+  <Entry Name="Biomass Power Generator" Context="" Value="Biomasse-Stromerzeuger" />
+  <Entry Name="Biomass Power Plant" Context="" Value="Biomassekraftwerk" />
+  <Entry Name="Bird Hide" Context="" Value="Vogelbeobachtungsturm" />
+  <Entry Name="Blacksmith" Context="" Value="Schmied" />
+  <Entry Name="Bleachers" Context="" Value="unüberdachte Tribüne" />
+  <Entry Name="Block" Context="" Value="Steinblock" />
+  <Entry Name="Boatyard" Context="" Value="Bootswerft" />
+  <Entry Name="Bollard" Context="" Value="Poller" />
+  <Entry Name="Book Store" Context="" Value="Buchhandlung" />
+  <Entry Name="Bookmaker" Context="" Value="Buchmacher (Wettbüro)" />
+  <Entry Name="Border Control" Context="" Value="Grenzkontolle" />
+  <Entry Name="Boule" Context="" Value="Boule" />
+  <Entry Name="Boundaries" Context="" Value="Grenzen" />
+  <Entry Name="Boundary" Context="" Value="Grenze" />
+  <Entry Name="Boundary Marker" Context="" Value="Grenzstein" />
+  <Entry Name="Boundary Stone" Context="" Value="Grenzstein" />
+  <Entry Name="Boutique" Context="" Value="Boutique" />
+  <Entry Name="Breakwater" Context="" Value="Wellenbrecher" />
+  <Entry Name="Brewery" Context="" Value="Brauerei" />
+  <Entry Name="Bridge" Context="" Value="Brücke" />
+  <Entry Name="Bridge outline" Context="" Value="Brückenumriss" />
+  <Entry Name="Bridge Support" Context="" Value="Brückentragwerk / Pfeiler" />
+  <Entry Name="Bridges" Context="" Value="Brücken" />
+  <Entry Name="Brothel" Context="" Value="Bordell" />
+  <Entry Name="Brownfield" Context="" Value="Baulücke" />
+  <Entry Name="Buddhist Temple" Context="" Value="Buddhistischer Tempel" />
+  <Entry Name="Buffer Stop" Context="" Value="Prellbock" />
+  <Entry Name="Building" Context="" Value="Gebäude" />
+  <Entry Name="Building construction" Context="" Value="Gebäudebaustelle" />
+  <Entry Name="Building part" Context="" Value="Gebäudeteil" />
+  <Entry Name="Building Passage" Context="" Value="Gebäudedurchfahrt" />
+  <Entry Name="Bump" Context="" Value="Bodenwelle (kurz)" />
+  <Entry Name="Bump Gate" Context="" Value="Fahrzeuggatter" />
+  <Entry Name="Bunker" Context="" Value="Bunker" />
+  <Entry Name="Bunker" Context="golf" Value="Bunker" />
+  <Entry Name="Bunker Silo" Context="" Value="Fahrsilo" />
+  <Entry Name="Bus Guideway" Context="" Value="Spurbus" />
+  <Entry Name="Bus Platform" Context="" Value="Bussteig" />
+  <Entry Name="Bus Station" Context="" Value="Busbahnhof" />
+  <Entry Name="Bus Stop" Context="" Value="Bushaltestelle" />
+  <Entry Name="Bus Trap" Context="" Value="Busschleuse" />
+  <Entry Name="Busway" Context="" Value="Bus Rapid Transit" />
+  <Entry Name="Butcher" Context="" Value="Fleischer" />
+  <Entry Name="Cable barrier" Context="" Value="Drahtseilabsperrung" />
+  <Entry Name="Cable Car" Context="" Value="Kabinenbahn" />
+  <Entry Name="Cable marker" Context="" Value="Cable marker" />
+  <Entry Name="Cafe" Context="" Value="Café" />
+  <Entry Name="Cairn" Context="" Value="Steinhügel" />
+  <Entry Name="Camp pitch" Context="" Value="Stellplatz" />
+  <Entry Name="Campsite" Context="" Value="Campingplatz" />
+  <Entry Name="Canadian Football" Context="" Value="Canadian Football" />
+  <Entry Name="Canal" Context="" Value="Kanal" />
+  <Entry Name="Canoeing/Kayaking" Context="" Value="Kanufahren/Kajakfahren" />
+  <Entry Name="Cape" Context="" Value="Kap" />
+  <Entry Name="Car" Context="" Value="Auto" />
+  <Entry Name="Car Dealer" Context="" Value="Autohändler" />
+  <Entry Name="Caravan Site/RV Park" Context="" Value="Campingplatz/Wohnmobil-Stellplatz" />
+  <Entry Name="Carpenter" Context="" Value="Zimmermann" />
+  <Entry Name="Carpet" Context="" Value="Teppich" />
+  <Entry Name="Cash" Context="" Value="Geld" />
+  <Entry Name="Casino" Context="" Value="Spielbank" />
+  <Entry Name="Castle" Context="" Value="Burg/Schloss" />
+  <Entry Name="Catenary mast" Context="" Value="Oberleitungsmast" />
+  <Entry Name="Caterer" Context="" Value="Catering" />
+  <Entry Name="Cattle Grid" Context="" Value="Viehgitter" />
+  <Entry Name="Cave Entrance" Context="" Value="Höhleneingang" />
+  <Entry Name="Cemetery" Context="" Value="Friedhof" />
+  <Entry Name="Cemetery sector" Context="" Value="Friedhofsbereich" />
+  <Entry Name="Chain" Context="" Value="Kette" />
+  <Entry Name="Chair Lift" Context="" Value="Sessellift" />
+  <Entry Name="Chalet" Context="" Value="Ferienhaus" />
+  <Entry Name="Changing table" Context="" Value="Wickeltisch" />
+  <Entry Name="Charcoal pile" Context="" Value="Kohlemeiler" />
+  <Entry Name="Charging Station" Context="" Value="Elektrotankstelle" />
+  <Entry Name="Charity" Context="" Value="Wohltätigkeit" />
+  <Entry Name="Cheese" Context="" Value="Käse" />
+  <Entry Name="Chemist" Context="" Value="Drogerie" />
+  <Entry Name="Chess" Context="" Value="Schach" />
+  <Entry Name="Chicane" Context="" Value="Schikane" />
+  <Entry Name="Chimney" Context="" Value="Schornstein" />
+  <Entry Name="Chocolate" Context="" Value="Schokolade" />
+  <Entry Name="Choker" Context="" Value="Fahrbahnverengung" />
+  <Entry Name="Church" Context="" Value="Kirche" />
+  <Entry Name="Circular junction" Context="" Value="Kreisförmige Kreuzung" />
+  <Entry Name="City" Context="" Value="Großstadt" />
+  <Entry Name="City Block" Context="" Value="Häuserblock" />
+  <Entry Name="City gate" Context="" Value="Stadttor" />
+  <Entry Name="City Limit Sign" Context="" Value="Ortstafelschild" />
+  <Entry Name="City Wall" Context="" Value="Stadtmauer" />
+  <Entry Name="Citywalls" Context="" Value="Stadtmauern" />
+  <Entry Name="Cliff" Context="" Value="Klippe" />
+  <Entry Name="Climbing" Context="" Value="Klettern" />
+  <Entry Name="Climbing route" Context="" Value="Kletterroute" />
+  <Entry Name="Climbing route bottom" Context="" Value="Einstieg" />
+  <Entry Name="Climbing route top" Context="" Value="Ausstieg" />
+  <Entry Name="Climbing site" Context="" Value="Klettergebiet" />
+  <Entry Name="Clinic" Context="" Value="Klinik" />
+  <Entry Name="Clock" Context="" Value="Uhr" />
+  <Entry Name="Clothes" Context="" Value="Kleidung" />
+  <Entry Name="Club" Context="" Value="Verein" />
+  <Entry Name="Coal Power Generator" Context="" Value="Kohle-Stromerzeuger" />
+  <Entry Name="Coal Power Plant" Context="" Value="Kohlekraftwerk" />
+  <Entry Name="Coastline" Context="" Value="Küstenlinie" />
+  <Entry Name="Coffee" Context="" Value="Kaffee" />
+  <Entry Name="College" Context="" Value="Hochschule" />
+  <Entry Name="Colonnade" Context="" Value="Kolonnade" />
+  <Entry Name="Combined Foot- and Cycleway" Context="" Value="Gemeinsamer Geh- und Radweg" />
+  <Entry Name="Commercial" Context="" Value="Gewerbegebiet" />
+  <Entry Name="Community Centre" Context="" Value="Stadthalle/Bürgerhaus" />
+  <Entry Name="Compressed Air" Context="" Value="Druckluft" />
+  <Entry Name="Computer" Context="" Value="Computer" />
+  <Entry Name="Confectionery" Context="" Value="Süßwarengeschäft" />
+  <Entry Name="Connection" Context="power" Value="Verbindung" />
+  <Entry Name="Connection Point" Context="" Value="Kabelverzweigung" />
+  <Entry Name="Construction" Context="" Value="Baustelle" />
+  <Entry Name="Construction Area" Context="" Value="Baustelle" />
+  <Entry Name="Contact (Common Schema)" Context="" Value="Kontakt (verbreitetes Schema)" />
+  <Entry Name="Contact (Schema with 'contact:*' Prefix)" Context="" Value="Contact (Schema with 'contact:*' Prefix)" />
+  <Entry Name="Continent" Context="" Value="Kontinent" />
+  <Entry Name="Convenience Store" Context="" Value="Tante-Emma-Laden" />
+  <Entry Name="Copy Shop" Context="" Value="Kopierladen" />
+  <Entry Name="Cosmetics" Context="" Value="Kosmetik" />
+  <Entry Name="Country" Context="" Value="Staat" />
+  <Entry Name="County" Context="" Value="Landkreis" />
+  <Entry Name="Courthouse" Context="" Value="Gericht" />
+  <Entry Name="Covered Reservoir" Context="" Value="Überdecktes Speicherbassin" />
+  <Entry Name="Craft" Context="" Value="Handwerk" />
+  <Entry Name="Crane" Context="" Value="Stationärer Kran" />
+  <Entry Name="Cricket" Context="" Value="Kricket" />
+  <Entry Name="Croquet" Context="" Value="Krocket" />
+  <Entry Name="Cross" Context="" Value="Kreuz" />
+  <Entry Name="Crossing" Context="" Value="(Fuß-)Übergang" />
+  <Entry Name="Culture" Context="" Value="Kultur" />
+  <Entry Name="Culvert" Context="" Value="Wasserdurchlass" />
+  <Entry Name="Curling" Context="" Value="Curling" />
+  <Entry Name="Curtain" Context="" Value="Gardinen" />
+  <Entry Name="Cushion" Context="" Value="Bodenwelle (mit Lücken)" />
+  <Entry Name="Cutline" Context="" Value="Schneise" />
+  <Entry Name="Cycle Barrier" Context="" Value="Umlaufgitter" />
+  <Entry Name="Cycle Lane/Track" Context="" Value="Fahrradspur/-fahrbahn" />
+  <Entry Name="Cycling" Context="" Value="Radfahren" />
+  <Entry Name="Dairy" Context="" Value="Milchgeschäft" />
+  <Entry Name="Dam" Context="" Value="Staudamm/Staumauer" />
+  <Entry Name="Dance" Context="" Value="Tanzsaal" />
+  <Entry Name="Dedicated Bridleway" Context="" Value="Ausgewiesener Reitweg" />
+  <Entry Name="Dedicated Cycleway" Context="" Value="Ausgewiesener Radweg" />
+  <Entry Name="Dedicated Footway" Context="" Value="Ausgewiesener Gehweg" />
+  <Entry Name="Deli (Fine Food)" Context="" Value="Feinkost" />
+  <Entry Name="Dentist" Context="" Value="Zahnarzt" />
+  <Entry Name="Department Store" Context="" Value="Warenhaus" />
+  <Entry Name="Description" Context="" Value="Beschreibung" />
+  <Entry Name="Destination Sign" Context="" Value="Zielschild" />
+  <Entry Name="Detour Route" Context="" Value="Umleitungsstrecke" />
+  <Entry Name="Diesel Power Generator" Context="" Value="Diesel-Stromerzeuger" />
+  <Entry Name="Diesel Power Plant" Context="" Value="Dieselkraftwerk" />
+  <Entry Name="Diet" Context="" Value="Diät" />
+  <Entry Name="Dip" Context="" Value="Senke" />
+  <Entry Name="Diplomatic" Context="office" Value="Diplomatische Aufgaben" />
+  <Entry Name="Disused Rail" Context="" Value="Strecke eingestellt" />
+  <Entry Name="Ditch" Context="" Value="Wassergraben" />
+  <Entry Name="Ditch" Context="Barrier" Value="Graben" />
+  <Entry Name="Dive centre" Context="" Value="Tauchzentrum" />
+  <Entry Name="Dock" Context="" Value="Dock" />
+  <Entry Name="Doctor's Office" Context="" Value="Doctor's Office" />
+  <Entry Name="Dog Park" Context="" Value="Hundepark" />
+  <Entry Name="Dog Racing" Context="" Value="Hunderennen" />
+  <Entry Name="Do-It-Yourself Store" Context="" Value="Heimwerkermarkt" />
+  <Entry Name="Doors" Context="" Value="Türen" />
+  <Entry Name="Drag Lift" Context="" Value="Schlepplift" />
+  <Entry Name="Drain" Context="" Value="Abwassergraben" />
+  <Entry Name="Drinking Water" Context="" Value="Trinkwasser" />
+  <Entry Name="Driver Training" Context="" Value="Fahrsicherheitszentrum" />
+  <Entry Name="Driving range" Context="golf" Value="Übungsplatz" />
+  <Entry Name="Driving School" Context="" Value="Fahrschule" />
+  <Entry Name="Dry Cleaning" Context="" Value="Chemische Reinigung" />
+  <Entry Name="Earth Bank" Context="" Value="Erddamm" />
+  <Entry Name="E-cigarette" Context="" Value="E-Zigarette" />
+  <Entry Name="Education" Context="" Value="Bildung" />
+  <Entry Name="Educational institution" Context="office" Value="Bildungseinrichtung" />
+  <Entry Name="Electrician" Context="" Value="Elektriker" />
+  <Entry Name="Electronic" Context="" Value="Elektronik" />
+  <Entry Name="Electronics" Context="" Value="Elektronikgeschäft" />
+  <Entry Name="Electronics Repair" Context="" Value="Elektronikreparatur" />
+  <Entry Name="Elevator" Context="" Value="Aufzug" />
+  <Entry Name="Embankment" Context="" Value="Straßendamm" />
+  <Entry Name="Emergency" Context="" Value="Notfall" />
+  <Entry Name="Emergency Access Point" Context="" Value="Notfallrettungspunkt" />
+  <Entry Name="Emergency Bay" Context="" Value="Notfallbucht" />
+  <Entry Name="Emergency Phone" Context="" Value="Notfalltelefon" />
+  <Entry Name="Emergency ward entrance" Context="" Value="Notaufnahmeneingang" />
+  <Entry Name="Employment agency" Context="office" Value="Arbeitsvermittlung" />
+  <Entry Name="Enforcement" Context="" Value="Verkehrskontrolle" />
+  <Entry Name="Enforcement (average speed)" Context="" Value="Verkehrskontrolle (Durchschnittsgeschwindigkeit)" />
+  <Entry Name="Entrance" Context="" Value="Eingang" />
+  <Entry Name="Entrance (Barrier Opening)" Context="" Value="Eingang (Barrierenöffnung)" />
+  <Entry Name="Equestrian Sport" Context="" Value="Pferdesport" />
+  <Entry Name="Erotic" Context="" Value="Erotikhandel" />
+  <Entry Name="Escape" Context="" Value="Notfallspur" />
+  <Entry Name="Estate agent" Context="office" Value="Immobilienmakler" />
+  <Entry Name="Events Venue" Context="" Value="Veranstaltungsort" />
+  <Entry Name="Fabric" Context="" Value="Textilgeschäft" />
+  <Entry Name="Facilities" Context="" Value="Einrichtungen" />
+  <Entry Name="Fair Trade" Context="" Value="Fairer Handel" />
+  <Entry Name="Fairway" Context="golf" Value="Fairway" />
+  <Entry Name="Farm" Context="" Value="Bauernhof" />
+  <Entry Name="Farm Stand" Context="" Value="Hofladen" />
+  <Entry Name="Farm Store" Context="" Value="Hofladen" />
+  <Entry Name="Farmland" Context="" Value="Ackerland" />
+  <Entry Name="Farmyard" Context="" Value="Bauernhof" />
+  <Entry Name="Fast Food" Context="" Value="Imbiss (Fast Food)" />
+  <Entry Name="Fell" Context="" Value="Fjell" />
+  <Entry Name="Fence" Context="" Value="Zaun" />
+  <Entry Name="Ferry Route" Context="" Value="Fährroute" />
+  <Entry Name="Ferry Terminal" Context="" Value="Fährstelle" />
+  <Entry Name="Field Hockey" Context="" Value="Hockey" />
+  <Entry Name="Financial" Context="office" Value="Finanzen" />
+  <Entry Name="Fire Extinguisher" Context="" Value="Feuerlöscher" />
+  <Entry Name="Fire Hose" Context="" Value="Feuerwehrschlauch" />
+  <Entry Name="Fire Hydrant" Context="" Value="Hydrant" />
+  <Entry Name="Fire Station" Context="" Value="Feuerwache" />
+  <Entry Name="Firepit" Context="" Value="Feuerstelle" />
+  <Entry Name="Fishing" Context="" Value="Angeln" />
+  <Entry Name="Fishing" Context="shop" Value="Angeln" />
+  <Entry Name="Fitness Centre" Context="" Value="Fitnessstudio" />
+  <Entry Name="Fitness Station" Context="" Value="Fitnessstation" />
+  <Entry Name="Fitness Trail" Context="" Value="Fitness-Parcours" />
+  <Entry Name="Fixme" Context="" Value="Korrekturnotiz (fixme)" />
+  <Entry Name="Flagpole" Context="" Value="Fahnenmast" />
+  <Entry Name="Florist" Context="" Value="Blumenladen" />
+  <Entry Name="Flowerbed" Context="" Value="Blumenbeet" />
+  <Entry Name="Flowline" Context="" Value="Strömungslinie" />
+  <Entry Name="Food" Context="" Value="Lebensmittel" />
+  <Entry Name="Food Bank" Context="" Value="Tafel" />
+  <Entry Name="Food Court" Context="" Value="Food-Court" />
+  <Entry Name="Food+Drinks" Context="" Value="Essen &amp; Trinken" />
+  <Entry Name="For the body" Context="" Value="Für den Körper" />
+  <Entry Name="Ford" Context="" Value="Furt" />
+  <Entry Name="Forest" Context="" Value="Wald" />
+  <Entry Name="Fort" Context="" Value="Fort" />
+  <Entry Name="Foundation" Context="office" Value="Stiftung" />
+  <Entry Name="Fountain" Context="" Value="Springbrunnen" />
+  <Entry Name="Frame" Context="" Value="Bilderrahmen" />
+  <Entry Name="Frontal Water hazard" Context="golf" Value="Frontales Wasserhindernis" />
+  <Entry Name="Frozen food" Context="" Value="Tiefgekühle Lebensmittel" />
+  <Entry Name="Fuel" Context="" Value="Tankstelle" />
+  <Entry Name="Full-Height Turnstile" Context="" Value="Drehkreuz in voller Höhe" />
+  <Entry Name="Funeral Directors" Context="" Value="Bestattungsunternehmer" />
+  <Entry Name="Funicular" Context="" Value="Standseilbahn" />
+  <Entry Name="Furniture" Context="" Value="Möbel" />
+  <Entry Name="Gaelic Games" Context="" Value="Gälische Spiele" />
+  <Entry Name="Gallery" Context="" Value="Galerie" />
+  <Entry Name="Gambling" Context="" Value="Glücksspiel" />
+  <Entry Name="Games" Context="" Value="Games" />
+  <Entry Name="Garages" Context="" Value="Garagen" />
+  <Entry Name="Garden" Context="" Value="Garten" />
+  <Entry Name="Garden Centre" Context="" Value="Gartenzentrum" />
+  <Entry Name="Gardener" Context="" Value="Gärtner" />
+  <Entry Name="Gas" Context="" Value="Gas" />
+  <Entry Name="Gas Power Generator" Context="" Value="Gas-Stromerzeuger" />
+  <Entry Name="Gas Power Plant" Context="" Value="Gaskraftwerk" />
+  <Entry Name="Gasoline Power Generator" Context="" Value="Benzin-Stromerzeuger" />
+  <Entry Name="Gasoline Power Plant" Context="" Value="Benzinkraftwerk" />
+  <Entry Name="Gasometer" Context="" Value="Gasometer" />
+  <Entry Name="Gate" Context="" Value="Gatter / Tor" />
+  <Entry Name="Gate" Context="airport" Value="Flugsteig/Gate" />
+  <Entry Name="General Store" Context="" Value="Gemischtwarenhandlung" />
+  <Entry Name="Geography" Context="" Value="Geografie" />
+  <Entry Name="Geothermal Power Generator" Context="" Value="Geothermie-Stromerzeuger" />
+  <Entry Name="Geothermal Power Plant" Context="" Value="Geothermiekraftwerk" />
+  <Entry Name="Gift/Souvenir" Context="" Value="Geschenk/Souvenir" />
+  <Entry Name="Give Way" Context="" Value="Vorfahrt beachten" />
+  <Entry Name="Glacier" Context="" Value="Gletscher" />
+  <Entry Name="Golf" Context="" Value="Golf" />
+  <Entry Name="Golf Course" Context="" Value="Golfanlage" />
+  <Entry Name="Gondola" Context="" Value="Gondelbahn" />
+  <Entry Name="Goods" Context="" Value="Materialseilbahn" />
+  <Entry Name="Goods conveyor" Context="" Value="Materialförderband" />
+  <Entry Name="Government" Context="office" Value="Regierung" />
+  <Entry Name="Grass" Context="" Value="Gras" />
+  <Entry Name="Grassland" Context="" Value="Grasland (unkultiviert)" />
+  <Entry Name="Grave" Context="" Value="Grab" />
+  <Entry Name="Graveyard" Context="" Value="Kleiner Friedhof" />
+  <Entry Name="Green" Context="golf" Value="Grün" />
+  <Entry Name="Greenfield" Context="" Value="Bauland" />
+  <Entry Name="Greengrocer" Context="" Value="Obst- und Gemüseladen" />
+  <Entry Name="Greenhouse Horticulture" Context="" Value="Gewächshäuser" />
+  <Entry Name="Grit Bin" Context="" Value="Splittbehälter" />
+  <Entry Name="Group Home" Context="" Value="Wohngruppe" />
+  <Entry Name="Groyne" Context="" Value="Buhne" />
+  <Entry Name="Guard Rail" Context="" Value="Leitplanke" />
+  <Entry Name="Guest House/Bed &amp; Breakfast" Context="" Value="Pension/Übernachtung mit Frühstück" />
+  <Entry Name="Guidepost" Context="" Value="Wegweiser" />
+  <Entry Name="Gymnastics" Context="" Value="Gymnastik" />
+  <Entry Name="Hackerspace" Context="" Value="Hackerspace" />
+  <Entry Name="Hairdresser/Barber" Context="" Value="Friseur" />
+  <Entry Name="Hamlet" Context="" Value="Weiler" />
+  <Entry Name="Hampshire Gate" Context="" Value="Drahtgatter" />
+  <Entry Name="Handball" Context="" Value="Handball" />
+  <Entry Name="Handicraft" Context="" Value="Handwerkskunst" />
+  <Entry Name="Handrail" Context="" Value="Handlauf" />
+  <Entry Name="Hangar" Context="" Value="Hangar" />
+  <Entry Name="Hardware" Context="" Value="Eisenwaren" />
+  <Entry Name="Hazardous Area" Context="" Value="Gefahrenzone" />
+  <Entry Name="Health" Context="" Value="Gesundheit" />
+  <Entry Name="Heap" Context="" Value="Lagerhaufen (Schüttgut)" />
+  <Entry Name="Hearing Aids" Context="" Value="Hörgeräte" />
+  <Entry Name="Heath" Context="" Value="Heide" />
+  <Entry Name="Hedge" Context="" Value="Hecke" />
+  <Entry Name="Height Restrictor" Context="" Value="Höhenbeschränkung" />
+  <Entry Name="Heliostat" Context="" Value="Heliostat" />
+  <Entry Name="Helipad" Context="" Value="Hubschrauberlandeplatz" />
+  <Entry Name="Herbalist" Context="" Value="Kräuter" />
+  <Entry Name="Hifi" Context="" Value="Hifi" />
+  <Entry Name="Highway milestone" Context="" Value="Straßenkilometerstein" />
+  <Entry Name="Highways" Context="" Value="Straßen" />
+  <Entry Name="Hiking Route" Context="" Value="Wanderroute" />
+  <Entry Name="Hindu Temple" Context="" Value="Hinduistischer Tempel" />
+  <Entry Name="Historic monastery" Context="" Value="Historisches Kloster" />
+  <Entry Name="Historic Places" Context="" Value="Historische Stätten" />
+  <Entry Name="Holding Position" Context="" Value="Halteposition" />
+  <Entry Name="Hole" Context="golf" Value="Loch" />
+  <Entry Name="Home decoration" Context="" Value="Wohnungseinrichtung" />
+  <Entry Name="Horse Racing" Context="" Value="Pferderennen" />
+  <Entry Name="Horse Riding Centre" Context="" Value="Reitanlage" />
+  <Entry Name="Hospital" Context="" Value="Krankenhaus" />
+  <Entry Name="Hostel" Context="" Value="Jugendherberge" />
+  <Entry Name="Hotel" Context="" Value="Hotel" />
+  <Entry Name="Houseware" Context="" Value="Haushaltswaren" />
+  <Entry Name="Hump" Context="" Value="Bodenwelle (lang)" />
+  <Entry Name="Hunting Stand" Context="" Value="Jagdanstand" />
+  <Entry Name="Hvac" Context="" Value="Anlagenbauer (Lüftung/Heizung/Klimatechnik)" />
+  <Entry Name="Hydrant marker" Context="" Value="Hydrant marker" />
+  <Entry Name="Hydro Power Plant" Context="" Value="Wasserkraftwerk" />
+  <Entry Name="Ice cream" Context="" Value="Eis" />
+  <Entry Name="Ice Hockey" Context="" Value="Eishockey" />
+  <Entry Name="Ice Skating" Context="" Value="Eislaufen" />
+  <Entry Name="Industrial" Context="" Value="Industrie" />
+  <Entry Name="Information Board" Context="" Value="Informationstafel" />
+  <Entry Name="Information Office" Context="" Value="Informationsbüro" />
+  <Entry Name="Information Terminal" Context="" Value="Informationsterminal" />
+  <Entry Name="Insulator" Context="" Value="Isolator" />
+  <Entry Name="Insurance" Context="office" Value="Versicherung" />
+  <Entry Name="Interior Decoration" Context="" Value="Innendekoration" />
+  <Entry Name="Internet Access" Context="" Value="Internetzugang" />
+  <Entry Name="Internet Cafe" Context="" Value="Internetcafé" />
+  <Entry Name="Island" Context="" Value="Insel" />
+  <Entry Name="Island" Context="traffic_calming" Value="Verkehrsinsel" />
+  <Entry Name="Islet" Context="" Value="Kleine Insel" />
+  <Entry Name="Isolated Dwelling" Context="" Value="Abgelegene Wohnstätte" />
+  <Entry Name="IT Specialist" Context="office" Value="IT-Spezialist" />
+  <Entry Name="Jersey Barrier" Context="" Value="Betonschutzwand" />
+  <Entry Name="Jewellery" Context="" Value="Schmuck" />
+  <Entry Name="Kart Racing" Context="" Value="Kartrennen" />
+  <Entry Name="Kerb" Context="" Value="Bordstein" />
+  <Entry Name="Key cutter" Context="" Value="Schlüsselmacher" />
+  <Entry Name="Kiln" Context="" Value="Brennofen" />
+  <Entry Name="Kindergarten" Context="" Value="Kindergarten" />
+  <Entry Name="Kiosk" Context="" Value="Kiosk" />
+  <Entry Name="Kissing Gate" Context="" Value="Personengatter" />
+  <Entry Name="Kitchen" Context="" Value="Küchenstudio" />
+  <Entry Name="Laboratory" Context="" Value="Labor" />
+  <Entry Name="Land use" Context="" Value="Landnutzung" />
+  <Entry Name="Landfill" Context="" Value="Deponie" />
+  <Entry Name="Lane Connectivity" Context="" Value="Fahrspurverbindung" />
+  <Entry Name="Language school" Context="" Value="Sprachschule" />
+  <Entry Name="Lateral water hazard" Context="golf" Value="Seitliches Wasserhindernis" />
+  <Entry Name="Laundry" Context="" Value="Waschsalon" />
+  <Entry Name="Lawn Bowling" Context="" Value="Rasenbowling" />
+  <Entry Name="Lawyer" Context="office" Value="Anwalt" />
+  <Entry Name="Leisure" Context="" Value="Freizeit" />
+  <Entry Name="Levee" Context="" Value="Deich" />
+  <Entry Name="Level Crossing" Context="" Value="Bahnübergang" />
+  <Entry Name="Library" Context="" Value="Bibliothek" />
+  <Entry Name="Life Guard" Context="" Value="Rettungsschwimmer" />
+  <Entry Name="Life Ring" Context="" Value="Rettungsring" />
+  <Entry Name="Lift Gate" Context="" Value="Schlagbaum" />
+  <Entry Name="Light Rail" Context="" Value="Stadtbahn" />
+  <Entry Name="Lighthouse" Context="" Value="Leuchtturm" />
+  <Entry Name="Lighting" Context="" Value="Beleuchtung" />
+  <Entry Name="Living Street" Context="" Value="Verkehrsberuhigter Bereich (Spielstraße)" />
+  <Entry Name="Locality" Context="" Value="Unbewohnte Örtlichkeit (Gewann, Flur)" />
+  <Entry Name="Lock Gate" Context="" Value="Schleusentor" />
+  <Entry Name="Locksmith" Context="" Value="Schloss- und Schlüsseldienst" />
+  <Entry Name="Log" Context="" Value="Baumstamm" />
+  <Entry Name="Lottery" Context="" Value="Lotterie" />
+  <Entry Name="Magic Carpet" Context="" Value="Laufband" />
+  <Entry Name="Mall" Context="" Value="Einkaufszentrum" />
+  <Entry Name="Man Made" Context="" Value="Zivilisationsbauten" />
+  <Entry Name="Manhole" Context="" Value="Schachtdeckel" />
+  <Entry Name="Manor" Context="" Value="Herrenhaus" />
+  <Entry Name="Map" Context="" Value="Karte" />
+  <Entry Name="Marina" Context="" Value="Jachthafen" />
+  <Entry Name="Marine Fuel" Context="" Value="Wasserfahrzeugtankstelle" />
+  <Entry Name="Maritime" Context="" Value="Maritim" />
+  <Entry Name="Marker" Context="" Value="Markierung" />
+  <Entry Name="Massage" Context="" Value="Massage" />
+  <Entry Name="Mast" Context="" Value="Mast" />
+  <Entry Name="Meadow" Context="" Value="Wiese" />
+  <Entry Name="Medical Supply" Context="" Value="Sanitätsartikel" />
+  <Entry Name="Memorial" Context="" Value="Gedenkstätte" />
+  <Entry Name="Metal construction" Context="" Value="Metallbauer" />
+  <Entry Name="Milestone" Context="" Value="Meilenstein" />
+  <Entry Name="Military" Context="" Value="Militär" />
+  <Entry Name="Military" Context="preset group" Value="Militär" />
+  <Entry Name="Mine" Context="" Value="Mine" />
+  <Entry Name="Mine shaft" Context="" Value="Minenschacht" />
+  <Entry Name="Mineshaft" Context="" Value="Bergwerksschacht" />
+  <Entry Name="Mini bumps" Context="" Value="runde Teller (&quot;Kölner Teller&quot;)" />
+  <Entry Name="Miniature Golf" Context="" Value="Minigolf" />
+  <Entry Name="Miniature Rail" Context="" Value="Miniatureisenbahn" />
+  <Entry Name="Mini-Roundabout" Context="" Value="Mini-Kreisverkehr" />
+  <Entry Name="Mixed Lift" Context="" Value="Gemischter Lift" />
+  <Entry Name="Mobile Phone" Context="" Value="Mobiltelefon" />
+  <Entry Name="Model Aerodrome" Context="" Value="Modellflugplatz" />
+  <Entry Name="Monastery" Context="" Value="Kloster" />
+  <Entry Name="Money Exchange" Context="" Value="Wechselstube" />
+  <Entry Name="Money transfer" Context="" Value="Geldtransfer" />
+  <Entry Name="Monitoring Station" Context="" Value="Beobachtungs-/Messstation" />
+  <Entry Name="Monorail" Context="" Value="Einschienenbahn" />
+  <Entry Name="Monument" Context="" Value="monumentale Gedenkstätte" />
+  <Entry Name="Mosque" Context="" Value="Moschee" />
+  <Entry Name="Motel" Context="" Value="Motel" />
+  <Entry Name="Motocross" Context="" Value="Motocross" />
+  <Entry Name="Motorcycle" Context="" Value="Motorrad" />
+  <Entry Name="Motorcycle Dealer" Context="" Value="Motorradhändler" />
+  <Entry Name="Motorsport" Context="" Value="Motorsport" />
+  <Entry Name="Motorway" Context="" Value="Autobahn" />
+  <Entry Name="Motorway Junction" Context="" Value="Anschlussstelle" />
+  <Entry Name="Motorway Link" Context="" Value="Autobahnanschluss" />
+  <Entry Name="Mountain Biking Route" Context="" Value="Mountainbikeroute" />
+  <Entry Name="Mountain Pass" Context="" Value="Gebirgspass" />
+  <Entry Name="Movable Bridge" Context="" Value="Bewegliche Brücke" />
+  <Entry Name="Movie Theater/Cinema" Context="" Value="Filmtheater/Kino" />
+  <Entry Name="Mud" Context="" Value="Schlick" />
+  <Entry Name="Multi" Context="" Value="Mehrfachnutzung" />
+  <Entry Name="Multipolygon" Context="" Value="Multipolygon" />
+  <Entry Name="Municipality" Context="" Value="Gemeinde" />
+  <Entry Name="Museum" Context="" Value="Museum" />
+  <Entry Name="Music" Context="" Value="Musik" />
+  <Entry Name="Music school" Context="" Value="Musikschule" />
+  <Entry Name="Musical Instrument" Context="" Value="Musikhaus" />
+  <Entry Name="Name" Context="" Value="Name" />
+  <Entry Name="Named Junction" Context="junction=yes" Value="Benannter Straßenabzweig" />
+  <Entry Name="Narrow Gauge Rail" Context="" Value="Schmalspurbahn" />
+  <Entry Name="National Park" Context="" Value="Nationalpark" />
+  <Entry Name="Nature" Context="" Value="Natur" />
+  <Entry Name="Nature Reserve" Context="" Value="Naturdenkmal &amp; Reservat" />
+  <Entry Name="Navigation aid" Context="" Value="Navigationshilfe" />
+  <Entry Name="Neighbourhood" Context="" Value="Nachbarschaft" />
+  <Entry Name="Newspaper" Context="office" Value="Zeitung" />
+  <Entry Name="Newspaper Stand" Context="" Value="Zeitungskiosk" />
+  <Entry Name="Night Club" Context="" Value="Nachtclub" />
+  <Entry Name="Nine-pin Bowling" Context="" Value="Kegeln" />
+  <Entry Name="Non-governmental organisation (NGO)" Context="office" Value="Nichtregierungsorganisation (NRO)" />
+  <Entry Name="Non-public police facility" Context="" Value="Nichtöffentliche Polizeieinrichtung" />
+  <Entry Name="Notary" Context="office" Value="Notar" />
+  <Entry Name="Note" Context="the tag note=*" Value="Hinweis" />
+  <Entry Name="Nuclear Power Plant" Context="" Value="Kernkraftwerk" />
+  <Entry Name="Nuclear Reactor" Context="" Value="Atomreaktor" />
+  <Entry Name="Nursing Home" Context="" Value="Pflegeheim" />
+  <Entry Name="Nursing Home (Legacy)" Context="" Value="Pflegeheim (Alte Variante)" />
+  <Entry Name="Offices" Context="" Value="Büros" />
+  <Entry Name="Oil Power Generator" Context="" Value="Öl-Stromerzeuger" />
+  <Entry Name="Oil Power Plant" Context="" Value="Ölkraftwerk" />
+  <Entry Name="Optician" Context="" Value="Optiker" />
+  <Entry Name="Orchard" Context="" Value="Obstgarten" />
+  <Entry Name="Organic" Context="" Value="Bioladen" />
+  <Entry Name="Osmotic Power Generator" Context="" Value="Osmose-Stromerzeuger" />
+  <Entry Name="Osmotic Power Plant" Context="" Value="Osmosekraftwerk" />
+  <Entry Name="Other" Context="" Value="Andere" />
+  <Entry Name="Other Information Point" Context="" Value="Anderer Informationspunkt" />
+  <Entry Name="Other Place of Worship" Context="" Value="Andere Andachtsstätte" />
+  <Entry Name="Outdoor" Context="" Value="Camping (Outdoor)" />
+  <Entry Name="Outdoor seating" Context="" Value="Sitzgelegenheiten im Freien" />
+  <Entry Name="Outreach" Context="" Value="Sozialdienst" />
+  <Entry Name="Paint" Context="" Value="Farben" />
+  <Entry Name="Painter" Context="" Value="Maler" />
+  <Entry Name="Palaeontological Site" Context="" Value="Paläontologische Stätte" />
+  <Entry Name="Parcel Locker" Context="" Value="Paketstation" />
+  <Entry Name="Park" Context="" Value="Park" />
+  <Entry Name="Parking" Context="bicycle" Value="Parken" />
+  <Entry Name="Parking" Context="car" Value="Parken" />
+  <Entry Name="Parking" Context="motorcycle" Value="Parken" />
+  <Entry Name="Parking Aisle" Context="" Value="Parkplatzweg" />
+  <Entry Name="Parking Entrance/Exit" Context="" Value="Parkplatz Einfahrt/Ausfahrt" />
+  <Entry Name="Parking Space" Context="" Value="Einzelne Parkfläche" />
+  <Entry Name="Parts" Context="" Value="Ersatzteile" />
+  <Entry Name="Party supplies" Context="" Value="Veranstaltungsbedarf" />
+  <Entry Name="Passageways" Context="" Value="Durchgänge" />
+  <Entry Name="Passing Place" Context="" Value="Ausweichstelle" />
+  <Entry Name="Pastry" Context="" Value="Konditorei" />
+  <Entry Name="Path" Context="" Value="Pfad" />
+  <Entry Name="Pawnbroker" Context="" Value="Pfandleiher" />
+  <Entry Name="Payment Methods" Context="" Value="Zahlungsarten" />
+  <Entry Name="Peak" Context="" Value="Bergspitze" />
+  <Entry Name="Pedestrian" Context="" Value="Fußgängerzone" />
+  <Entry Name="Pedestrian Crossing" Context="" Value="Fußgängerüberweg" />
+  <Entry Name="Pelota" Context="" Value="Pelota" />
+  <Entry Name="Penstock" Context="" Value="Druckleitung" />
+  <Entry Name="Perfumery" Context="" Value="Parfümerie" />
+  <Entry Name="Pet" Context="" Value="Tierhandlung" />
+  <Entry Name="Pet grooming" Context="" Value="Tierpflege" />
+  <Entry Name="Petroleum Well" Context="" Value="Erdölbohrloch" />
+  <Entry Name="Pharmacy" Context="" Value="Apotheke" />
+  <Entry Name="Photo" Context="" Value="Foto" />
+  <Entry Name="Photo booth" Context="" Value="Fotoautomat" />
+  <Entry Name="Photographer" Context="" Value="Fotograf" />
+  <Entry Name="Picnic Site" Context="" Value="Picknickplatz" />
+  <Entry Name="Picnic Table" Context="" Value="Picknicktisch" />
+  <Entry Name="Pier" Context="" Value="Pfeiler" />
+  <Entry Name="Pin" Context="golf" Value="Pin (Zielflagge)" />
+  <Entry Name="Pipeline" Context="" Value="Pipeline" />
+  <Entry Name="Pipeline Substation" Context="" Value="Pipelinestation" />
+  <Entry Name="Pipeline Valve" Context="" Value="Pipelineventil" />
+  <Entry Name="Piste Route" Context="" Value="Pistenroute" />
+  <Entry Name="Pitch" Context="" Value="Spielfeld" />
+  <Entry Name="Place of Worship" Context="" Value="Kirche" />
+  <Entry Name="Places" Context="" Value="Orte" />
+  <Entry Name="Plane Parking Position" Context="" Value="Flugzeug Parkposition" />
+  <Entry Name="Plant Nursery" Context="" Value="Gärtnerei/Pflanzschule/Baumschule" />
+  <Entry Name="Planter" Context="" Value="Pflanzgefäß" />
+  <Entry Name="Platform" Context="" Value="Plattform" />
+  <Entry Name="Playground" Context="" Value="Spielplatz" />
+  <Entry Name="Playground device" Context="" Value="Spielgerät" />
+  <Entry Name="Plumber" Context="" Value="Installateur (Sanitär/Heizung/Klimatechnik)" />
+  <Entry Name="Pole" Context="" Value="Strommast" />
+  <Entry Name="Pole with Substation" Context="" Value="Pole with Substation" />
+  <Entry Name="Pole with Switch" Context="" Value="Mast mit Schalter" />
+  <Entry Name="Pole with Transformer" Context="" Value="Strommast mit Transformator" />
+  <Entry Name="Police" Context="" Value="Polizei" />
+  <Entry Name="Political" Context="" Value="Politisch" />
+  <Entry Name="Political party" Context="office" Value="Politische Partei" />
+  <Entry Name="Pooling" Context="" Value="Autopool" />
+  <Entry Name="Post Box" Context="" Value="Briefkasten" />
+  <Entry Name="Post Office" Context="" Value="Post" />
+  <Entry Name="Postal Code" Context="" Value="Postleitzahl" />
+  <Entry Name="Poster box" Context="" Value="Plakatkasten" />
+  <Entry Name="Pottery" Context="" Value="Töpferei" />
+  <Entry Name="Power" Context="" Value="Energieversorgung" />
+  <Entry Name="Power Bay" Context="" Value="Schaltfeld" />
+  <Entry Name="Power Busbar" Context="" Value="Sammelschiene" />
+  <Entry Name="Power Cable" Context="" Value="Stromkabel" />
+  <Entry Name="Power circuit" Context="" Value="Stromnetz" />
+  <Entry Name="Power Compensator" Context="" Value="Stromkompensator" />
+  <Entry Name="Power Converter" Context="" Value="Spannungsumformer" />
+  <Entry Name="Power Generator" Context="" Value="Stromgenerator" />
+  <Entry Name="Power Line" Context="" Value="Stromleitung" />
+  <Entry Name="Power line section" Context="" Value="Stromleitungsabschnitt" />
+  <Entry Name="Power Plant" Context="" Value="Kraftwerk" />
+  <Entry Name="Power Portal" Context="" Value="Abspannportal" />
+  <Entry Name="Power Street Cabinet" Context="" Value="Stromverteilerkasten" />
+  <Entry Name="Power Substation" Context="" Value="Trafostation" />
+  <Entry Name="Power Switch" Context="" Value="Leistungsschalter" />
+  <Entry Name="Power Switchgear" Context="" Value="Schaltwerk" />
+  <Entry Name="Power Tower" Context="" Value="Hochspannungsmast" />
+  <Entry Name="Power Transformer" Context="" Value="Transformator" />
+  <Entry Name="Preserved" Context="" Value="Museumsbahn" />
+  <Entry Name="Primary" Context="" Value="Bundesstraße" />
+  <Entry Name="Primary Link" Context="" Value="Bundesstraßenanschluss" />
+  <Entry Name="Printed Material" Context="" Value="Druckerzeugnisse" />
+  <Entry Name="Prison" Context="" Value="Gefängnis" />
+  <Entry Name="Private company" Context="office" Value="Privatunternehmen" />
+  <Entry Name="Private Mailbox" Context="" Value="privater Hausbriefkasten" />
+  <Entry Name="Protected Area" Context="" Value="Schutzgebiet" />
+  <Entry Name="Pub" Context="" Value="Kneipe" />
+  <Entry Name="Public bath" Context="" Value="Öffentliches Bad" />
+  <Entry Name="Public Bicycle Repair Station" Context="" Value="Öffentliche Fahrraddienststation" />
+  <Entry Name="Public bookcase" Context="" Value="Öffentlicher Bücherschrank" />
+  <Entry Name="Public Building" Context="" Value="Öffentliches Gebäude" />
+  <Entry Name="Public Grill" Context="" Value="Grill" />
+  <Entry Name="Public Market" Context="" Value="Öffentlicher Markt" />
+  <Entry Name="Public Transport" Context="" Value="Öffentlicher Verkehr" />
+  <Entry Name="Public Transport (Legacy)" Context="" Value="Öffentliche Verkehrsmittel (Veraltet)" />
+  <Entry Name="Public Transport Route (Aerialway)" Context="" Value="Öffentliche Verkehrsroute (Seilbahn)" />
+  <Entry Name="Public Transport Route (Bus)" Context="" Value="Öffentliche Verkehrsroute (Bus)" />
+  <Entry Name="Public Transport Route (Ferry)" Context="" Value="Öffentliche Verkehrsroute (Fähre)" />
+  <Entry Name="Public transport route (Legacy)" Context="" Value="Öffentliche Verkehrsroute (Legacy)" />
+  <Entry Name="Public transport route (Legacy) (Aerialway)" Context="" Value="Öffentliche Verkehrsroute (Legacy) (Seilbahn)" />
+  <Entry Name="Public transport route (Legacy) (Ferry)" Context="" Value="Öffentliche Verkehrsroute (Legacy) (Fähre)" />
+  <Entry Name="Public Transport Route (Rail)" Context="" Value="Öffentliche Verkehrsroute (Schiene)" />
+  <Entry Name="Pump" Context="" Value="Pumpe" />
+  <Entry Name="Pumping station" Context="" Value="Pumpstation" />
+  <Entry Name="Pylon" Context="" Value="Seilbahnstütze" />
+  <Entry Name="Quarry" Context="" Value="Steinbruch" />
+  <Entry Name="Quarter" Context="" Value="Viertel" />
+  <Entry Name="Racetrack" Context="" Value="Rennbahn" />
+  <Entry Name="Raceway" Context="" Value="Rennstrecke" />
+  <Entry Name="Racquetball" Context="" Value="Racquetball" />
+  <Entry Name="Rail" Context="" Value="Eisenbahn" />
+  <Entry Name="Railway" Context="" Value="Gleise" />
+  <Entry Name="Railway construction" Context="" Value="Strecke im Bau" />
+  <Entry Name="Railway crossing" Context="" Value="Gleiskreuzung" />
+  <Entry Name="Railway Halt" Context="" Value="Bahnstation" />
+  <Entry Name="Railway Land" Context="" Value="Eisenbahnfläche" />
+  <Entry Name="Railway milestone" Context="" Value="Eisenbahnkilometerstein" />
+  <Entry Name="Railway Platform" Context="" Value="Bahnsteig" />
+  <Entry Name="Railway Platform Edge" Context="" Value="Bahnsteigkante" />
+  <Entry Name="Railway Route" Context="" Value="Eisenbahnroute" />
+  <Entry Name="Railway Signal" Context="" Value="Eisenbahnsignal" />
+  <Entry Name="Railway Switch" Context="" Value="Weiche" />
+  <Entry Name="Range" Context="" Value="Gebiet" />
+  <Entry Name="Ranger Station" Context="" Value="Ranger-Station" />
+  <Entry Name="RC Car" Context="" Value="RC-Modellauto" />
+  <Entry Name="Recreation Ground" Context="" Value="Erholungsgebiet" />
+  <Entry Name="Recycling Centre" Context="" Value="Recyclingzentrum" />
+  <Entry Name="Recycling Container" Context="" Value="Recycling-Container" />
+  <Entry Name="Reef" Context="" Value="Riff" />
+  <Entry Name="Region" Context="" Value="Region" />
+  <Entry Name="Relations" Context="" Value="Relationen" />
+  <Entry Name="Religion" Context="office" Value="Religion" />
+  <Entry Name="Religious" Context="" Value="Religiös" />
+  <Entry Name="Rental" Context="" Value="Vermietung" />
+  <Entry Name="Repair" Context="" Value="Werkstatt" />
+  <Entry Name="Research" Context="office" Value="Forschung" />
+  <Entry Name="Reservoir" Context="" Value="Speicherbecken" />
+  <Entry Name="Residential" Context="" Value="Ortsstraße" />
+  <Entry Name="Residential Area" Context="" Value="Wohngebiet" />
+  <Entry Name="Residential Building" Context="" Value="Wohngebäude" />
+  <Entry Name="Resort" Context="" Value="Resort" />
+  <Entry Name="Rest Area" Context="" Value="Raststelle" />
+  <Entry Name="Restaurant" Context="" Value="Restaurant" />
+  <Entry Name="Retail" Context="" Value="Einkaufsbereich" />
+  <Entry Name="Retaining Wall" Context="" Value="Stützmauer" />
+  <Entry Name="Ridge" Context="" Value="Höhenrücken" />
+  <Entry Name="Riding Route" Context="" Value="Reitroute" />
+  <Entry Name="River" Context="" Value="Fluss" />
+  <Entry Name="Road (Unknown Type)" Context="" Value="Unbekannter Straßentyp" />
+  <Entry Name="Road Restrictions" Context="" Value="Straßenbeschränkungen" />
+  <Entry Name="Road Route" Context="" Value="Straßenroute" />
+  <Entry Name="Rock" Context="" Value="Felsen" />
+  <Entry Name="Roller Skating" Context="" Value="Inlineskaten" />
+  <Entry Name="Roofer" Context="" Value="Dachdecker" />
+  <Entry Name="Rough" Context="golf" Value="Rough" />
+  <Entry Name="Roundabout" Context="" Value="Kreisverkehr" />
+  <Entry Name="Route marker" Context="" Value="Routenmarkierung" />
+  <Entry Name="Route Master" Context="" Value="Master-Route" />
+  <Entry Name="Route Network" Context="" Value="Netzwerk" />
+  <Entry Name="Route Node Network" Context="" Value="Knotenpunktnetzwerk" />
+  <Entry Name="Routes" Context="" Value="Routen" />
+  <Entry Name="Rowing" Context="" Value="Rudern" />
+  <Entry Name="Rugby League" Context="" Value="Dreizehner-Rugby" />
+  <Entry Name="Rugby Union" Context="" Value="Fünfzehner-Rugby" />
+  <Entry Name="Ruins" Context="" Value="Ruinen" />
+  <Entry Name="Rumble strip" Context="" Value="Holperstreifen" />
+  <Entry Name="Running" Context="" Value="Laufen" />
+  <Entry Name="Running Route" Context="" Value="Laufstrecke" />
+  <Entry Name="Runway" Context="" Value="Start-/Landebahn" />
+  <Entry Name="Saddle" Context="" Value="Sattelpunkt" />
+  <Entry Name="Sally Port" Context="" Value="Durchgangsschleuse" />
+  <Entry Name="Salt Pond" Context="" Value="Salzteich" />
+  <Entry Name="Sand" Context="" Value="Sand" />
+  <Entry Name="Sanitary Dump Station" Context="" Value="Sanitärentsorgungsstation" />
+  <Entry Name="Sauna" Context="" Value="Sauna" />
+  <Entry Name="Sawmill" Context="" Value="Sägewerk" />
+  <Entry Name="School" Context="" Value="Schule" />
+  <Entry Name="Scree" Context="" Value="Hangschutt" />
+  <Entry Name="Scrub" Context="" Value="Buschland" />
+  <Entry Name="Scuba Diving" Context="" Value="Gerätetauchen" />
+  <Entry Name="Scuba diving" Context="" Value="Gerätetauchen" />
+  <Entry Name="Seafood" Context="" Value="Fischhändler" />
+  <Entry Name="Second hand" Context="" Value="Aus zweiter Hand" />
+  <Entry Name="Secondary" Context="" Value="Landesstraße" />
+  <Entry Name="Secondary Link" Context="" Value="Landesstraßenanschluss" />
+  <Entry Name="Security" Context="" Value="Sicherheitsausrüstung" />
+  <Entry Name="Segregated Foot- and Cycleway" Context="" Value="Getrennter Rad- und Gehweg" />
+  <Entry Name="Service" Context="" Value="Zufahrtsstraße" />
+  <Entry Name="Service Building" Context="" Value="Service Building" />
+  <Entry Name="Service Device" Context="" Value="Umsetzer" />
+  <Entry Name="Services" Context="" Value="Raststätte" />
+  <Entry Name="Sharing" Context="" Value="Autotausch / Car Sharing" />
+  <Entry Name="Shelter" Context="" Value="Unterstand" />
+  <Entry Name="Shelter" Context="social_facility" Value="Unterkunft" />
+  <Entry Name="Shieling" Context="" Value="Alm" />
+  <Entry Name="Shingle" Context="" Value="Kies/Geröll" />
+  <Entry Name="Shinto Shrine" Context="" Value="Schintoistischer Schrein" />
+  <Entry Name="Shipping" Context="" Value="Schifffahrt" />
+  <Entry Name="Shoemaker" Context="" Value="Schuhmacher" />
+  <Entry Name="Shoes" Context="shop" Value="Schuhladen" />
+  <Entry Name="Shooting" Context="" Value="Schießen" />
+  <Entry Name="Shops" Context="" Value="Geschäfte" />
+  <Entry Name="Shower" Context="" Value="Dusche" />
+  <Entry Name="Shrub" Context="" Value="Strauch" />
+  <Entry Name="Shrubbery" Context="" Value="Strauchwerk (kultiviert)" />
+  <Entry Name="Silo" Context="" Value="Silo" />
+  <Entry Name="Sinkhole" Context="" Value="Senkloch" />
+  <Entry Name="Siren" Context="" Value="Sirene" />
+  <Entry Name="Site" Context="" Value="Platz" />
+  <Entry Name="Skateboard" Context="" Value="Skateboard" />
+  <Entry Name="Ski Route" Context="" Value="Skiroute" />
+  <Entry Name="Skiing" Context="" Value="Skifahren" />
+  <Entry Name="Slipway" Context="" Value="Slipanlage" />
+  <Entry Name="Soccer" Context="" Value="Fußball" />
+  <Entry Name="Social Centre" Context="" Value="Gemeinschaftszentrum" />
+  <Entry Name="Social Facility" Context="" Value="Sozialeinrichtung" />
+  <Entry Name="Social Networks" Context="" Value="Soziale Netzwerke" />
+  <Entry Name="Solar Power Generator" Context="" Value="Solar-Stromerzeuger" />
+  <Entry Name="Solar Power Plant" Context="" Value="Solarkraftwerk" />
+  <Entry Name="Speed Camera" Context="" Value="Geschwindigkeitsüberwachung" />
+  <Entry Name="Speed Limit Sign" Context="" Value="Höchstgeschwindigkeitszeichen" />
+  <Entry Name="Spikes" Context="" Value="Spikes / Dornen" />
+  <Entry Name="Sport" Context="" Value="Sport" />
+  <Entry Name="Sport (Ball)" Context="" Value="Ballsport" />
+  <Entry Name="Sport Facilities" Context="" Value="Sporteinrichtungen" />
+  <Entry Name="Sports" Context="" Value="Sport" />
+  <Entry Name="Sports Centre" Context="" Value="Sportzentrum" />
+  <Entry Name="Spring" Context="" Value="Quelle" />
+  <Entry Name="Square" Context="" Value="Platz" />
+  <Entry Name="Stadium" Context="" Value="Stadion" />
+  <Entry Name="State" Context="place" Value="Bundesland" />
+  <Entry Name="Station" Context="aerialway" Value="Station" />
+  <Entry Name="Station" Context="railway" Value="Bahnhof" />
+  <Entry Name="Stationery" Context="" Value="Bürobedarf" />
+  <Entry Name="Steps" Context="" Value="Treppe" />
+  <Entry Name="Stile" Context="" Value="Zauntreppe" />
+  <Entry Name="Stone" Context="" Value="Stein (Findling)" />
+  <Entry Name="Stonemason" Context="" Value="Steinmetz" />
+  <Entry Name="Stop" Context="" Value="Stopp-Schild" />
+  <Entry Name="Stop Area" Context="" Value="Haltebereich" />
+  <Entry Name="Stop Position" Context="" Value="Halteposition" />
+  <Entry Name="Storage Rental" Context="" Value="Mietlager" />
+  <Entry Name="Storage Tank" Context="" Value="Speichertank" />
+  <Entry Name="Strait" Context="" Value="Meerenge" />
+  <Entry Name="Stream" Context="" Value="Bach" />
+  <Entry Name="Street" Context="" Value="Straße" />
+  <Entry Name="Street cabinet" Context="" Value="Straßenschrank" />
+  <Entry Name="Street Lamp" Context="" Value="Straßenlampe" />
+  <Entry Name="Streets" Context="" Value="Straßen" />
+  <Entry Name="Strip Club" Context="" Value="Stripclub" />
+  <Entry Name="Studio" Context="" Value="Studio" />
+  <Entry Name="Suburb" Context="" Value="Stadtteil" />
+  <Entry Name="Subway" Context="" Value="U-Bahn" />
+  <Entry Name="Subway Entrance" Context="" Value="U-Bahn-Eingang" />
+  <Entry Name="Suction point" Context="" Value="Saugstelle" />
+  <Entry Name="Supermarket" Context="" Value="Supermarkt" />
+  <Entry Name="Superroute" Context="" Value="Superroute" />
+  <Entry Name="Surveillance Camera" Context="" Value="Überwachungskamera" />
+  <Entry Name="Survey Point" Context="" Value="Vermessungspunkt" />
+  <Entry Name="Swimming" Context="" Value="Schwimmen" />
+  <Entry Name="Swimming Pool" Context="" Value="Schwimmbecken" />
+  <Entry Name="Swimming pool" Context="shop" Value="Schwimmbad" />
+  <Entry Name="Swing Gate" Context="" Value="Schwingtor" />
+  <Entry Name="Synagogue" Context="" Value="Synagoge" />
+  <Entry Name="Table" Context="" Value="Bodenwelle (sehr lang und flach)" />
+  <Entry Name="Table Tennis/Ping-Pong" Context="" Value="Tischtennis/Pingpong" />
+  <Entry Name="Tailings Pond" Context="" Value="Absetzbecken" />
+  <Entry Name="Tailor" Context="" Value="Schneider" />
+  <Entry Name="Tattoo" Context="" Value="Tätowierstudio" />
+  <Entry Name="Tax advisor" Context="office" Value="Steuerberater" />
+  <Entry Name="Taxi" Context="" Value="Taxi" />
+  <Entry Name="Taxiway" Context="" Value="Rollbahn" />
+  <Entry Name="Tea" Context="" Value="Tee" />
+  <Entry Name="Tee" Context="golf" Value="Abschlag" />
+  <Entry Name="Telecom" Context="" Value="Telekom" />
+  <Entry Name="Telecom Street Cabinet" Context="" Value="Kabelkasten" />
+  <Entry Name="Telecommunication" Context="office" Value="Telekommunikation" />
+  <Entry Name="Telephone" Context="" Value="Telefon" />
+  <Entry Name="Telephone Exchange" Context="" Value="Vermittlungsstelle" />
+  <Entry Name="Telescope" Context="" Value="Teleskop" />
+  <Entry Name="Tennis" Context="" Value="Tennis" />
+  <Entry Name="Ten-pin Bowling" Context="" Value="Bowling" />
+  <Entry Name="Terminal" Context="" Value="Terminal" />
+  <Entry Name="Terminal" Context="power" Value="Anschlusspunkt" />
+  <Entry Name="Tertiary" Context="" Value="Kreisstraße" />
+  <Entry Name="Tertiary Link" Context="" Value="Kreisstraßenanschluss" />
+  <Entry Name="Theatre" Context="" Value="Theater" />
+  <Entry Name="Ticket" Context="" Value="Eintrittskarten" />
+  <Entry Name="Ticket Machine" Context="" Value="Fahrausweisautomat" />
+  <Entry Name="Tidal channel" Context="" Value="Wattnebenwasserlauf" />
+  <Entry Name="Tidal Power Plant" Context="" Value="Gezeitenkraftwerk" />
+  <Entry Name="Tidal Water Turbine" Context="" Value="Gezeitenturbine" />
+  <Entry Name="Tiler" Context="" Value="Fliesenleger" />
+  <Entry Name="Tires" Context="" Value="Reifen" />
+  <Entry Name="Tobacco" Context="" Value="Tabak" />
+  <Entry Name="Toilets/Restrooms" Context="" Value="Toiletten" />
+  <Entry Name="Toll Booth" Context="" Value="Mautstation" />
+  <Entry Name="Toll gantry" Context="" Value="Mautbrücke" />
+  <Entry Name="Tomb" Context="" Value="Grabmal" />
+  <Entry Name="Tourism" Context="" Value="Tourismus" />
+  <Entry Name="Tower" Context="" Value="Turm" />
+  <Entry Name="Towers" Context="" Value="Türme" />
+  <Entry Name="Town" Context="" Value="Stadt" />
+  <Entry Name="Town Hall" Context="" Value="Rathaus" />
+  <Entry Name="Toys" Context="" Value="Spielzeug" />
+  <Entry Name="Track" Context="" Value="Feld- oder Waldweg" />
+  <Entry Name="Track and Field Athletics" Context="" Value="Leichtathletik" />
+  <Entry Name="Trade" Context="" Value="Baustoffhandel" />
+  <Entry Name="Traffic Calming" Context="" Value="Verkehrsberuhigung" />
+  <Entry Name="Traffic Hazard" Context="" Value="Verkehrsgefahr" />
+  <Entry Name="Traffic Mirror" Context="" Value="Verkehrsspiegel" />
+  <Entry Name="Traffic Signal" Context="" Value="Ampel" />
+  <Entry Name="Trailhead" Context="" Value="Ausgangspunkt eines Wanderweges" />
+  <Entry Name="Tram" Context="" Value="Straßenbahn" />
+  <Entry Name="Tram Stop" Context="" Value="Straßenbahnhaltestelle" />
+  <Entry Name="Transformer Tower" Context="" Value="Transformatorenturm" />
+  <Entry Name="Transport" Context="" Value="Transport" />
+  <Entry Name="Travel Agency" Context="" Value="Reisebüro" />
+  <Entry Name="Tree" Context="" Value="Baum" />
+  <Entry Name="Tree Row" Context="" Value="Baumreihe" />
+  <Entry Name="Trolley Bay/Cart Corral" Context="" Value="Einkaufswagen" />
+  <Entry Name="Trunk" Context="" Value="Schnellstraße" />
+  <Entry Name="Trunk Link" Context="" Value="Schnellstraßenanschluss" />
+  <Entry Name="Tunnel" Context="" Value="Tunnel" />
+  <Entry Name="Turn Restriction" Context="" Value="Abbiegebeschränkung" />
+  <Entry Name="Turning Circle" Context="" Value="Wendestelle" />
+  <Entry Name="Turning Loop" Context="" Value="Wendeschleife" />
+  <Entry Name="Turning Point" Context="" Value="Wendepunkt" />
+  <Entry Name="Turnstile" Context="" Value="Drehsperre" />
+  <Entry Name="Turntable" Context="" Value="Drehscheibe" />
+  <Entry Name="Unclassified" Context="" Value="Verbindungsstraße" />
+  <Entry Name="University" Context="" Value="Universität" />
+  <Entry Name="Upholsterer" Context="" Value="Polsterer" />
+  <Entry Name="Utility Pole" Context="" Value="Leitungsmast" />
+  <Entry Name="Vacuum Cleaner" Context="" Value="Staubsauger" />
+  <Entry Name="Valley" Context="" Value="Tal" />
+  <Entry Name="Variety Store" Context="" Value="1-Euro-Laden" />
+  <Entry Name="Vehicle Inspection" Context="" Value="Fahrzeuginspektion" />
+  <Entry Name="Vending Machine" Context="" Value="Verkaufsautomat" />
+  <Entry Name="Veterinary" Context="" Value="Tierarzt" />
+  <Entry Name="Video" Context="" Value="Video" />
+  <Entry Name="Video Games" Context="" Value="Videospiele" />
+  <Entry Name="Viewpoint" Context="" Value="Aussichtspunkt" />
+  <Entry Name="Village" Context="" Value="Dorf" />
+  <Entry Name="Village Green" Context="" Value="Dorfanger" />
+  <Entry Name="Vineyard" Context="" Value="Weinberg" />
+  <Entry Name="Volcano" Context="" Value="Vulkan" />
+  <Entry Name="Volleyball" Context="" Value="Volleyball" />
+  <Entry Name="Walking Route" Context="" Value="Wanderweg" />
+  <Entry Name="Wall" Context="" Value="Mauer" />
+  <Entry Name="Wash" Context="" Value="Autowäsche" />
+  <Entry Name="Waste Basket/Trash Can" Context="" Value="Papierkorb/Abfalleimer" />
+  <Entry Name="Waste Disposal/Dumpster" Context="" Value="Abfallentsorgung/Müllcontainer" />
+  <Entry Name="Waste Power Generator" Context="" Value="Abfall-Stromerzeuger" />
+  <Entry Name="Waste Power Plant" Context="" Value="Müllkraftwerk" />
+  <Entry Name="Wastewater Treatment Plant" Context="" Value="Kläranlage" />
+  <Entry Name="Watches" Context="" Value="Uhren" />
+  <Entry Name="Water" Context="" Value="Wasser" />
+  <Entry Name="Water" Context="main group" Value="Wasser" />
+  <Entry Name="Water" Context="natural" Value="Wasser" />
+  <Entry Name="Water" Context="sub group" Value="Wasser" />
+  <Entry Name="Water Park" Context="" Value="Schwimmbad" />
+  <Entry Name="Water Point" Context="" Value="Wasseranschluss" />
+  <Entry Name="Water Slide" Context="" Value="Wasserrutsche" />
+  <Entry Name="Water Tank" Context="" Value="Wassertank" />
+  <Entry Name="Water Tower" Context="" Value="Wasserturm" />
+  <Entry Name="Water Turbine" Context="" Value="Wasserturbine" />
+  <Entry Name="Water Well" Context="" Value="Brunnen" />
+  <Entry Name="Water Works" Context="" Value="Wasserwerk" />
+  <Entry Name="Waterfall" Context="" Value="Wasserfall" />
+  <Entry Name="Watermill" Context="" Value="Wassermühle" />
+  <Entry Name="Waterway" Context="" Value="Gewässer" />
+  <Entry Name="Wave Energy Converter" Context="" Value="Wellenenergiewandler" />
+  <Entry Name="Wave Power Plant" Context="" Value="Wellenkraftwerk" />
+  <Entry Name="Waypoints" Context="" Value="Wegpunkte" />
+  <Entry Name="Ways" Context="" Value="Wege" />
+  <Entry Name="Wayside Cross" Context="" Value="Wegkreuz" />
+  <Entry Name="Wayside Shrine" Context="" Value="Bildstock" />
+  <Entry Name="Weapons" Context="" Value="Waffen" />
+  <Entry Name="Weir" Context="" Value="Wehr" />
+  <Entry Name="Wetland" Context="" Value="Feuchtgebiet" />
+  <Entry Name="Wholesale" Context="" Value="Großhandelsmarkt" />
+  <Entry Name="Wicket Gate" Context="" Value="Schlupfpforte" />
+  <Entry Name="Wilderness Hut" Context="" Value="Unbewirtschaftete Schutzhütte" />
+  <Entry Name="Wind Power Plant" Context="" Value="Windkraftanlage" />
+  <Entry Name="Wind Turbine" Context="" Value="Windturbine" />
+  <Entry Name="Windmill" Context="" Value="Windmühle" />
+  <Entry Name="Window construction" Context="" Value="Fensterbauer" />
+  <Entry Name="Windpump" Context="" Value="Windpumpe" />
+  <Entry Name="Windsock" Context="" Value="Windsack" />
+  <Entry Name="Wine" Context="" Value="Wein" />
+  <Entry Name="Winery" Context="" Value="Weinkellerei" />
+  <Entry Name="Wood" Context="natural" Value="Naturwald" />
+  <Entry Name="Works" Context="" Value="Fabrik" />
+  <Entry Name="Zip line" Context="" Value="Seilbahn" />
+  <Entry Name="Zoo" Context="" Value="Zoo" />
+</PresetNames>

@@ -1,0 +1,969 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<PresetNames lang="ja">
+  <Entry Name="Abandoned Rail" Context="" Value="線路跡" />
+  <Entry Name="Access Restrictions" Context="" Value="アクセス制限" />
+  <Entry Name="Accommodation" Context="" Value="宿泊施設" />
+  <Entry Name="Accountant" Context="office" Value="会計事務所" />
+  <Entry Name="Address" Context="" Value="住所" />
+  <Entry Name="Address Interpolation" Context="" Value="住所の補間" />
+  <Entry Name="Adit" Context="" Value="横坑" />
+  <Entry Name="Administrative" Context="" Value="行政境界" />
+  <Entry Name="Adult gaming centre" Context="" Value="アダルトゲームセンター" />
+  <Entry Name="Advanced stop line" Context="" Value="Advanced stop line" />
+  <Entry Name="Advertising agency" Context="office" Value="広告代理店" />
+  <Entry Name="Advertising Column" Context="" Value="広告枠" />
+  <Entry Name="Advertising Totem" Context="" Value="Advertising Totem" />
+  <Entry Name="Aerialway" Context="" Value="索道" />
+  <Entry Name="Airfield" Context="" Value="航空基地" />
+  <Entry Name="Airport" Context="" Value="飛行場" />
+  <Entry Name="Airport Ground" Context="" Value="飛行場の敷地" />
+  <Entry Name="Alcohol" Context="" Value="酒店" />
+  <Entry Name="Allotments" Context="" Value="市民農園" />
+  <Entry Name="Alpine Hut" Context="" Value="山小屋" />
+  <Entry Name="Ambulance Station" Context="" Value="救急車ステーション" />
+  <Entry Name="American Football" Context="" Value="アメリカンフットボール" />
+  <Entry Name="Amusement arcade" Context="" Value="ゲームセンター" />
+  <Entry Name="Amusement/Theme Park" Context="" Value="テーマパーク" />
+  <Entry Name="Animal" Context="" Value="動物" />
+  <Entry Name="Animal boarding" Context="" Value="ペットホテル" />
+  <Entry Name="Animal breeding" Context="" Value="Animal breeding" />
+  <Entry Name="Animal enclosure" Context="" Value="動物の囲い" />
+  <Entry Name="Animal shelter" Context="" Value="動物保護施設" />
+  <Entry Name="Animal watering place" Context="" Value="動物の水飲み場" />
+  <Entry Name="Annotation" Context="" Value="注釈" />
+  <Entry Name="Antenna" Context="" Value="アンテナ" />
+  <Entry Name="Antiques" Context="" Value="古美術品" />
+  <Entry Name="Apartment" Context="" Value="集合住宅" />
+  <Entry Name="Apron" Context="" Value="エプロン" />
+  <Entry Name="Aquaculture" Context="" Value="養殖場" />
+  <Entry Name="Arcade" Context="" Value="アーケード" />
+  <Entry Name="Archaeological Site" Context="" Value="遺跡" />
+  <Entry Name="Archery" Context="" Value="アーチェリー" />
+  <Entry Name="Architect" Context="office" Value="建築設計事務所" />
+  <Entry Name="Arête" Context="" Value="Arête" />
+  <Entry Name="Art" Context="" Value="アート" />
+  <Entry Name="Arts Centre" Context="" Value="アートセンター" />
+  <Entry Name="Artwork" Context="" Value="美術作品" />
+  <Entry Name="Assembly Point" Context="" Value="一時集合場所" />
+  <Entry Name="Assisted Living" Context="" Value="生活支援" />
+  <Entry Name="Associated Street" Context="" Value="通り名住居表示" />
+  <Entry Name="Association" Context="office" Value="非営利団体" />
+  <Entry Name="Attraction" Context="" Value="観光名所" />
+  <Entry Name="Audio Guide" Context="" Value="音声ガイド" />
+  <Entry Name="Australian Football" Context="" Value="オーストラリアフットボール" />
+  <Entry Name="Automated Defibrillator" Context="" Value="AED(自動体外式除細動器)" />
+  <Entry Name="Automated Teller Machine" Context="" Value="ATM" />
+  <Entry Name="Avalanche Protection" Context="" Value="Avalanche Protection" />
+  <Entry Name="Avalanche Protector" Context="" Value="覆道" />
+  <Entry Name="Baby Hatch/Safe Haven" Context="" Value="赤ちゃんポスト" />
+  <Entry Name="Bag" Context="" Value="かばん店" />
+  <Entry Name="Bakery" Context="" Value="パン屋" />
+  <Entry Name="Bandstand" Context="" Value="野外ステージ" />
+  <Entry Name="Bank" Context="" Value="銀行" />
+  <Entry Name="Bar" Context="" Value="バー" />
+  <Entry Name="Bare Rock" Context="" Value="岩場" />
+  <Entry Name="Barracks" Context="" Value="兵舎" />
+  <Entry Name="Barriers" Context="" Value="障害物" />
+  <Entry Name="Baseball" Context="" Value="野球場" />
+  <Entry Name="Basin" Context="" Value="遊水地" />
+  <Entry Name="Basketball" Context="" Value="バスケットボール場" />
+  <Entry Name="Battlefield" Context="" Value="古戦場" />
+  <Entry Name="Bay" Context="" Value="湾" />
+  <Entry Name="Beach" Context="" Value="砂浜" />
+  <Entry Name="Beach Resort" Context="" Value="ビーチリゾート" />
+  <Entry Name="Beach Volleyball" Context="" Value="ビーチバレー" />
+  <Entry Name="Beacon" Context="airmark" Value="ビーコン" />
+  <Entry Name="Beacon" Context="man_made" Value="ビーコン" />
+  <Entry Name="Beauty" Context="" Value="美容" />
+  <Entry Name="Bed" Context="" Value="ベッド" />
+  <Entry Name="Beekeeper" Context="" Value="養蜂場" />
+  <Entry Name="Beer Garden" Context="" Value="ビアガーデン" />
+  <Entry Name="Bench" Context="" Value="ベンチ" />
+  <Entry Name="Beverages" Context="" Value="飲料店" />
+  <Entry Name="Bicycle" Context="" Value="自転車" />
+  <Entry Name="Bicycle Road" Context="" Value="自転車道" />
+  <Entry Name="Bicycle Route" Context="" Value="自転車ルート" />
+  <Entry Name="Bicycle Wash" Context="" Value="Bicycle Wash" />
+  <Entry Name="Big Communication Tower" Context="" Value="高い通信塔" />
+  <Entry Name="Bike Dealer" Context="" Value="自転車店" />
+  <Entry Name="Billboard" Context="" Value="ビルボード" />
+  <Entry Name="Billiards" Context="" Value="ビリヤード" />
+  <Entry Name="Biofuel Power Generator" Context="" Value="バイオ燃料発電" />
+  <Entry Name="Biofuel Power Plant" Context="" Value="バイオ燃料発電所" />
+  <Entry Name="Biogas Power Generator" Context="" Value="バイオガス発電" />
+  <Entry Name="Biogas Power Plant" Context="" Value="バイオガス発電所" />
+  <Entry Name="Biomass Power Generator" Context="" Value="バイオマス発電" />
+  <Entry Name="Biomass Power Plant" Context="" Value="バイオマス発電所" />
+  <Entry Name="Bird Hide" Context="" Value="野鳥観察小屋" />
+  <Entry Name="Blacksmith" Context="" Value="鍛冶場" />
+  <Entry Name="Bleachers" Context="" Value="(屋根のない) 観客席" />
+  <Entry Name="Block" Context="" Value="ブロック" />
+  <Entry Name="Boatyard" Context="" Value="ボートヤード(陸上の船置き場)" />
+  <Entry Name="Bollard" Context="" Value="車止め杭" />
+  <Entry Name="Book Store" Context="" Value="書店" />
+  <Entry Name="Bookmaker" Context="" Value="公営競技投票券売り場" />
+  <Entry Name="Border Control" Context="" Value="国境検査所" />
+  <Entry Name="Boule" Context="" Value="ペタンク" />
+  <Entry Name="Boundaries" Context="" Value="境界線" />
+  <Entry Name="Boundary" Context="" Value="境界" />
+  <Entry Name="Boundary Marker" Context="" Value="境界標" />
+  <Entry Name="Boundary Stone" Context="" Value="境界石" />
+  <Entry Name="Boutique" Context="" Value="ブティック" />
+  <Entry Name="Breakwater" Context="" Value="防波堤" />
+  <Entry Name="Brewery" Context="" Value="地ビール醸造所" />
+  <Entry Name="Bridge" Context="" Value="橋" />
+  <Entry Name="Bridge outline" Context="" Value="橋の輪郭" />
+  <Entry Name="Bridge Support" Context="" Value="支持方法" />
+  <Entry Name="Bridges" Context="" Value="橋の種類" />
+  <Entry Name="Brothel" Context="" Value="売春宿" />
+  <Entry Name="Brownfield" Context="" Value="再開発用地" />
+  <Entry Name="Buddhist Temple" Context="" Value="仏教寺院" />
+  <Entry Name="Buffer Stop" Context="" Value="車止め" />
+  <Entry Name="Building" Context="" Value="建物" />
+  <Entry Name="Building construction" Context="" Value="Building construction" />
+  <Entry Name="Building part" Context="" Value="建物の一部" />
+  <Entry Name="Building Passage" Context="" Value="ビルの通り抜け通路" />
+  <Entry Name="Bump" Context="" Value="バンプ" />
+  <Entry Name="Bump Gate" Context="" Value="バンプ・ゲート" />
+  <Entry Name="Bunker" Context="" Value="掩蔽壕" />
+  <Entry Name="Bunker" Context="golf" Value="バンカー" />
+  <Entry Name="Bunker Silo" Context="" Value="バンカーサイロ" />
+  <Entry Name="Bus Guideway" Context="" Value="ガイドウェイバス" />
+  <Entry Name="Bus Platform" Context="" Value="バス乗り場" />
+  <Entry Name="Bus Station" Context="" Value="バスターミナル" />
+  <Entry Name="Bus Stop" Context="" Value="バス停" />
+  <Entry Name="Bus Trap" Context="" Value="バストラップ" />
+  <Entry Name="Busway" Context="" Value="バス専用路" />
+  <Entry Name="Butcher" Context="" Value="精肉店" />
+  <Entry Name="Cable barrier" Context="" Value="ガードケーブル" />
+  <Entry Name="Cable Car" Context="" Value="交走式ロープウェイ" />
+  <Entry Name="Cable marker" Context="" Value="Cable marker" />
+  <Entry Name="Cafe" Context="" Value="カフェ" />
+  <Entry Name="Cairn" Context="" Value="ケルン" />
+  <Entry Name="Camp pitch" Context="" Value="キャンプピッチ" />
+  <Entry Name="Campsite" Context="" Value="キャンプ場" />
+  <Entry Name="Canadian Football" Context="" Value="カナディアンフットボール" />
+  <Entry Name="Canal" Context="" Value="運河" />
+  <Entry Name="Canoeing/Kayaking" Context="" Value="カヌー・競艇" />
+  <Entry Name="Cape" Context="" Value="岬" />
+  <Entry Name="Car" Context="" Value="自動車" />
+  <Entry Name="Car Dealer" Context="" Value="自動車販売店" />
+  <Entry Name="Caravan Site/RV Park" Context="" Value="キャンプ場/RVパーク" />
+  <Entry Name="Carpenter" Context="" Value="工務店" />
+  <Entry Name="Carpet" Context="" Value="カーペット" />
+  <Entry Name="Cash" Context="" Value="お金" />
+  <Entry Name="Casino" Context="" Value="カジノ" />
+  <Entry Name="Castle" Context="" Value="城" />
+  <Entry Name="Catenary mast" Context="" Value="カテナリー電柱" />
+  <Entry Name="Caterer" Context="" Value="仕出し店" />
+  <Entry Name="Cattle Grid" Context="" Value="家畜脱出防止溝" />
+  <Entry Name="Cave Entrance" Context="" Value="洞窟の出入口" />
+  <Entry Name="Cemetery" Context="" Value="墓地" />
+  <Entry Name="Cemetery sector" Context="" Value="墓地の区画" />
+  <Entry Name="Chain" Context="" Value="チェーン" />
+  <Entry Name="Chair Lift" Context="" Value="チェアリフト" />
+  <Entry Name="Chalet" Context="" Value="貸別荘" />
+  <Entry Name="Changing table" Context="" Value="おむつ交換台" />
+  <Entry Name="Charcoal pile" Context="" Value="Charcoal pile" />
+  <Entry Name="Charging Station" Context="" Value="充電ステーション" />
+  <Entry Name="Charity" Context="" Value="チャリティーショップ" />
+  <Entry Name="Cheese" Context="" Value="チーズ" />
+  <Entry Name="Chemist" Context="" Value="薬品・化粧品店" />
+  <Entry Name="Chess" Context="" Value="チェス" />
+  <Entry Name="Chicane" Context="" Value="シケイン" />
+  <Entry Name="Chimney" Context="" Value="煙突" />
+  <Entry Name="Chocolate" Context="" Value="チョコレート" />
+  <Entry Name="Choker" Context="" Value="チョーカー" />
+  <Entry Name="Church" Context="" Value="教会" />
+  <Entry Name="Circular junction" Context="" Value="円形のジャンクション" />
+  <Entry Name="City" Context="" Value="市区" />
+  <Entry Name="City Block" Context="" Value="City Block" />
+  <Entry Name="City gate" Context="" Value="市門" />
+  <Entry Name="City Limit Sign" Context="" Value="市町村境界標識" />
+  <Entry Name="City Wall" Context="" Value="市壁" />
+  <Entry Name="Citywalls" Context="" Value="市城壁" />
+  <Entry Name="Cliff" Context="" Value="崖" />
+  <Entry Name="Climbing" Context="" Value="Climbing" />
+  <Entry Name="Climbing route" Context="" Value="Climbing route" />
+  <Entry Name="Climbing route bottom" Context="" Value="Climbing route bottom" />
+  <Entry Name="Climbing route top" Context="" Value="Climbing route top" />
+  <Entry Name="Climbing site" Context="" Value="登山場所" />
+  <Entry Name="Clinic" Context="" Value="クリニック" />
+  <Entry Name="Clock" Context="" Value="時計" />
+  <Entry Name="Clothes" Context="" Value="衣料品" />
+  <Entry Name="Club" Context="" Value="クラブ" />
+  <Entry Name="Coal Power Generator" Context="" Value="石炭発電機" />
+  <Entry Name="Coal Power Plant" Context="" Value="石炭発電所" />
+  <Entry Name="Coastline" Context="" Value="海岸線" />
+  <Entry Name="Coffee" Context="" Value="コーヒー" />
+  <Entry Name="College" Context="" Value="短大・専門学校" />
+  <Entry Name="Colonnade" Context="" Value="コロネード" />
+  <Entry Name="Combined Foot- and Cycleway" Context="" Value="統合された歩行者および自転車道" />
+  <Entry Name="Commercial" Context="" Value="オフィス用地" />
+  <Entry Name="Community Centre" Context="" Value="公民館" />
+  <Entry Name="Compressed Air" Context="" Value="空気ポンプ" />
+  <Entry Name="Computer" Context="" Value="コンピューター店" />
+  <Entry Name="Confectionery" Context="" Value="(焼菓子が中心ではない) 菓子" />
+  <Entry Name="Connection" Context="power" Value="Connection" />
+  <Entry Name="Connection Point" Context="" Value="接続ポイント" />
+  <Entry Name="Construction" Context="" Value="工事中道路" />
+  <Entry Name="Construction Area" Context="" Value="建設用地" />
+  <Entry Name="Contact (Common Schema)" Context="" Value="連絡先(共通スキーマ)" />
+  <Entry Name="Contact (Schema with 'contact:*' Prefix)" Context="" Value="Contact (Schema with 'contact:*' Prefix)" />
+  <Entry Name="Continent" Context="" Value="大陸" />
+  <Entry Name="Convenience Store" Context="" Value="コンビニエンスストア" />
+  <Entry Name="Copy Shop" Context="" Value="コピー店" />
+  <Entry Name="Cosmetics" Context="" Value="化粧品" />
+  <Entry Name="Country" Context="" Value="国(country)" />
+  <Entry Name="County" Context="" Value="郡" />
+  <Entry Name="Courthouse" Context="" Value="裁判所" />
+  <Entry Name="Covered Reservoir" Context="" Value="蓋付き貯水池" />
+  <Entry Name="Craft" Context="" Value="工房" />
+  <Entry Name="Crane" Context="" Value="クレーン" />
+  <Entry Name="Cricket" Context="" Value="クリケット" />
+  <Entry Name="Croquet" Context="" Value="クロッケー" />
+  <Entry Name="Cross" Context="" Value="クロス" />
+  <Entry Name="Crossing" Context="" Value="歩行者用踏切" />
+  <Entry Name="Culture" Context="" Value="文化" />
+  <Entry Name="Culvert" Context="" Value="水路トンネル" />
+  <Entry Name="Curling" Context="" Value="カーリング" />
+  <Entry Name="Curtain" Context="" Value="カーテン店" />
+  <Entry Name="Cushion" Context="" Value="クッション" />
+  <Entry Name="Cutline" Context="" Value="カットライン" />
+  <Entry Name="Cycle Barrier" Context="" Value="自転車止め" />
+  <Entry Name="Cycle Lane/Track" Context="" Value="自転車専用通行帯" />
+  <Entry Name="Cycling" Context="" Value="サイクリング" />
+  <Entry Name="Dairy" Context="" Value="乳製品" />
+  <Entry Name="Dam" Context="" Value="ダム" />
+  <Entry Name="Dance" Context="" Value="Dance" />
+  <Entry Name="Dedicated Bridleway" Context="" Value="馬道" />
+  <Entry Name="Dedicated Cycleway" Context="" Value="自転車道" />
+  <Entry Name="Dedicated Footway" Context="" Value="歩道" />
+  <Entry Name="Deli (Fine Food)" Context="" Value="惣菜屋" />
+  <Entry Name="Dentist" Context="" Value="歯科医院" />
+  <Entry Name="Department Store" Context="" Value="百貨店" />
+  <Entry Name="Description" Context="" Value="説明" />
+  <Entry Name="Destination Sign" Context="" Value="案内標識" />
+  <Entry Name="Detour Route" Context="" Value="回り道" />
+  <Entry Name="Diesel Power Generator" Context="" Value="ディーゼル発電機" />
+  <Entry Name="Diesel Power Plant" Context="" Value="ディーゼル発電所" />
+  <Entry Name="Diet" Context="" Value="食事制限" />
+  <Entry Name="Dip" Context="" Value="Dip" />
+  <Entry Name="Diplomatic" Context="office" Value="外交" />
+  <Entry Name="Disused Rail" Context="" Value="休止線路" />
+  <Entry Name="Ditch" Context="" Value="排水路" />
+  <Entry Name="Ditch" Context="Barrier" Value="排水路" />
+  <Entry Name="Dive centre" Context="" Value="ダイブセンター" />
+  <Entry Name="Dock" Context="" Value="ドック" />
+  <Entry Name="Doctor's Office" Context="" Value="Doctor's Office" />
+  <Entry Name="Dog Park" Context="" Value="ドッグパーク" />
+  <Entry Name="Dog Racing" Context="" Value="ドッグレース" />
+  <Entry Name="Do-It-Yourself Store" Context="" Value="日曜大工用品店" />
+  <Entry Name="Doors" Context="" Value="ドア" />
+  <Entry Name="Drag Lift" Context="" Value="牽引リフト" />
+  <Entry Name="Drain" Context="" Value="放水路" />
+  <Entry Name="Drinking Water" Context="" Value="飲用水" />
+  <Entry Name="Driver Training" Context="" Value="運転教習所" />
+  <Entry Name="Driving range" Context="golf" Value="ゴルフ練習場" />
+  <Entry Name="Driving School" Context="" Value="自動車学校" />
+  <Entry Name="Dry Cleaning" Context="" Value="ドライクリーニング店" />
+  <Entry Name="Earth Bank" Context="" Value="Earth Bank" />
+  <Entry Name="E-cigarette" Context="" Value="電子たばこ" />
+  <Entry Name="Education" Context="" Value="教育" />
+  <Entry Name="Educational institution" Context="office" Value="教育団体" />
+  <Entry Name="Electrician" Context="" Value="電気工事店" />
+  <Entry Name="Electronic" Context="" Value="電器店" />
+  <Entry Name="Electronics" Context="" Value="家電販売店" />
+  <Entry Name="Electronics Repair" Context="" Value="電子機器の修理" />
+  <Entry Name="Elevator" Context="" Value="エレベーター" />
+  <Entry Name="Embankment" Context="" Value="土手" />
+  <Entry Name="Emergency" Context="" Value="緊急設備" />
+  <Entry Name="Emergency Access Point" Context="" Value="夜間急病センター" />
+  <Entry Name="Emergency Bay" Context="" Value="非常駐車帯" />
+  <Entry Name="Emergency Phone" Context="" Value="緊急電話" />
+  <Entry Name="Emergency ward entrance" Context="" Value="救急入口" />
+  <Entry Name="Employment agency" Context="office" Value="職業紹介所" />
+  <Entry Name="Enforcement" Context="" Value="交通取締り" />
+  <Entry Name="Enforcement (average speed)" Context="" Value="Enforcement (average speed)" />
+  <Entry Name="Entrance" Context="" Value="出入口" />
+  <Entry Name="Entrance (Barrier Opening)" Context="" Value="出入口 (障害物の開口部)" />
+  <Entry Name="Equestrian Sport" Context="" Value="Equestrian Sport" />
+  <Entry Name="Erotic" Context="" Value="成人娯楽店" />
+  <Entry Name="Escape" Context="" Value="緊急避難所" />
+  <Entry Name="Estate agent" Context="office" Value="不動産屋" />
+  <Entry Name="Events Venue" Context="" Value="イベント会場" />
+  <Entry Name="Fabric" Context="" Value="布地店" />
+  <Entry Name="Facilities" Context="" Value="施設等" />
+  <Entry Name="Fair Trade" Context="" Value="フェアトレード店" />
+  <Entry Name="Fairway" Context="golf" Value="フェアウェイ" />
+  <Entry Name="Farm" Context="" Value="農場" />
+  <Entry Name="Farm Stand" Context="" Value="農産物直売所" />
+  <Entry Name="Farm Store" Context="" Value="Farm Store" />
+  <Entry Name="Farmland" Context="" Value="農地" />
+  <Entry Name="Farmyard" Context="" Value="農業施設用地" />
+  <Entry Name="Fast Food" Context="" Value="ファストフード" />
+  <Entry Name="Fell" Context="" Value="高原" />
+  <Entry Name="Fence" Context="" Value="フェンス" />
+  <Entry Name="Ferry Route" Context="" Value="フェリー航路" />
+  <Entry Name="Ferry Terminal" Context="" Value="フェリーターミナル" />
+  <Entry Name="Field Hockey" Context="" Value="フィールドホッケー" />
+  <Entry Name="Financial" Context="office" Value="金融" />
+  <Entry Name="Fire Extinguisher" Context="" Value="消火器" />
+  <Entry Name="Fire Hose" Context="" Value="消火ホース" />
+  <Entry Name="Fire Hydrant" Context="" Value="消火栓" />
+  <Entry Name="Fire Station" Context="" Value="消防署" />
+  <Entry Name="Firepit" Context="" Value="焚火場所" />
+  <Entry Name="Fishing" Context="" Value="つり場" />
+  <Entry Name="Fishing" Context="shop" Value="釣り" />
+  <Entry Name="Fitness Centre" Context="" Value="フィットネスクラブ" />
+  <Entry Name="Fitness Station" Context="" Value="屋外フィットネス" />
+  <Entry Name="Fitness Trail" Context="" Value="Fitness Trail" />
+  <Entry Name="Fixme" Context="" Value="要修正" />
+  <Entry Name="Flagpole" Context="" Value="旗竿" />
+  <Entry Name="Florist" Context="" Value="生花店" />
+  <Entry Name="Flowerbed" Context="" Value="花壇" />
+  <Entry Name="Flowline" Context="" Value="Flowline" />
+  <Entry Name="Food" Context="" Value="食品" />
+  <Entry Name="Food Bank" Context="" Value="フードバンク" />
+  <Entry Name="Food Court" Context="" Value="フードコート" />
+  <Entry Name="Food+Drinks" Context="" Value="飲食店" />
+  <Entry Name="For the body" Context="" Value="身体用" />
+  <Entry Name="Ford" Context="" Value="浅瀬(洗い越し)" />
+  <Entry Name="Forest" Context="" Value="人工林" />
+  <Entry Name="Fort" Context="" Value="とりで" />
+  <Entry Name="Foundation" Context="office" Value="財団" />
+  <Entry Name="Fountain" Context="" Value="噴水" />
+  <Entry Name="Frame" Context="" Value="額縁店" />
+  <Entry Name="Frontal Water hazard" Context="golf" Value="前線性水災害" />
+  <Entry Name="Frozen food" Context="" Value="冷凍食品" />
+  <Entry Name="Fuel" Context="" Value="ガソリンスタンド" />
+  <Entry Name="Full-Height Turnstile" Context="" Value="Full-Height Turnstile" />
+  <Entry Name="Funeral Directors" Context="" Value="葬儀社" />
+  <Entry Name="Funicular" Context="" Value="ケーブルカー" />
+  <Entry Name="Furniture" Context="" Value="家具店" />
+  <Entry Name="Gaelic Games" Context="" Value="ゲーリックゲーム" />
+  <Entry Name="Gallery" Context="" Value="美術館" />
+  <Entry Name="Gambling" Context="" Value="賭博場" />
+  <Entry Name="Games" Context="" Value="Games" />
+  <Entry Name="Garages" Context="" Value="車庫" />
+  <Entry Name="Garden" Context="" Value="庭園" />
+  <Entry Name="Garden Centre" Context="" Value="園芸用品店" />
+  <Entry Name="Gardener" Context="" Value="造園" />
+  <Entry Name="Gas" Context="" Value="ガス" />
+  <Entry Name="Gas Power Generator" Context="" Value="ガス発電機" />
+  <Entry Name="Gas Power Plant" Context="" Value="ガス発電所" />
+  <Entry Name="Gasoline Power Generator" Context="" Value="ガソリン発電機" />
+  <Entry Name="Gasoline Power Plant" Context="" Value="ガソリン発電所" />
+  <Entry Name="Gasometer" Context="" Value="ガスタンク" />
+  <Entry Name="Gate" Context="" Value="門" />
+  <Entry Name="Gate" Context="airport" Value="搭乗口" />
+  <Entry Name="General Store" Context="" Value="雑貨店" />
+  <Entry Name="Geography" Context="" Value="地理" />
+  <Entry Name="Geothermal Power Generator" Context="" Value="地熱発電" />
+  <Entry Name="Geothermal Power Plant" Context="" Value="地熱発電所" />
+  <Entry Name="Gift/Souvenir" Context="" Value="ギフト・おみやげ店" />
+  <Entry Name="Give Way" Context="" Value="前方優先道路" />
+  <Entry Name="Glacier" Context="" Value="氷河" />
+  <Entry Name="Golf" Context="" Value="ゴルフ" />
+  <Entry Name="Golf Course" Context="" Value="ゴルフコース" />
+  <Entry Name="Gondola" Context="" Value="ゴンドラ" />
+  <Entry Name="Goods" Context="" Value="貨物用索道" />
+  <Entry Name="Goods conveyor" Context="" Value="商品コンベア" />
+  <Entry Name="Government" Context="office" Value="政府機関" />
+  <Entry Name="Grass" Context="" Value="芝生" />
+  <Entry Name="Grassland" Context="" Value="草原" />
+  <Entry Name="Grave" Context="" Value="墓" />
+  <Entry Name="Graveyard" Context="" Value="(教会・寺院の)墓所" />
+  <Entry Name="Green" Context="golf" Value="グリーン" />
+  <Entry Name="Greenfield" Context="" Value="開発予定地" />
+  <Entry Name="Greengrocer" Context="" Value="八百屋" />
+  <Entry Name="Greenhouse Horticulture" Context="" Value="温室領域" />
+  <Entry Name="Grit Bin" Context="" Value="凍結防止用のグリット入れ" />
+  <Entry Name="Group Home" Context="" Value="グループホーム" />
+  <Entry Name="Groyne" Context="" Value="防砂堤" />
+  <Entry Name="Guard Rail" Context="" Value="ガードレール" />
+  <Entry Name="Guest House/Bed &amp; Breakfast" Context="" Value="ゲストハウス/B&amp;B" />
+  <Entry Name="Guidepost" Context="" Value="道標" />
+  <Entry Name="Gymnastics" Context="" Value="体操" />
+  <Entry Name="Hackerspace" Context="" Value="ハッカースペース" />
+  <Entry Name="Hairdresser/Barber" Context="" Value="理美容店" />
+  <Entry Name="Hamlet" Context="" Value="集落" />
+  <Entry Name="Hampshire Gate" Context="" Value="ワイヤーゲート" />
+  <Entry Name="Handball" Context="" Value="ハンドボール" />
+  <Entry Name="Handicraft" Context="" Value="日用品工房" />
+  <Entry Name="Handrail" Context="" Value="手すり" />
+  <Entry Name="Hangar" Context="" Value="格納庫" />
+  <Entry Name="Hardware" Context="" Value="金物屋" />
+  <Entry Name="Hazardous Area" Context="" Value="危険区域" />
+  <Entry Name="Health" Context="" Value="健康" />
+  <Entry Name="Heap" Context="" Value="Heap" />
+  <Entry Name="Hearing Aids" Context="" Value="補聴器店" />
+  <Entry Name="Heath" Context="" Value="茂み" />
+  <Entry Name="Hedge" Context="" Value="生垣" />
+  <Entry Name="Height Restrictor" Context="" Value="Height Restrictor" />
+  <Entry Name="Heliostat" Context="" Value="反射鏡" />
+  <Entry Name="Helipad" Context="" Value="ヘリパッド" />
+  <Entry Name="Herbalist" Context="" Value="ハーブ店" />
+  <Entry Name="Hifi" Context="" Value="音響機器店" />
+  <Entry Name="Highway milestone" Context="" Value="幹線道路の距離標" />
+  <Entry Name="Highways" Context="" Value="道路" />
+  <Entry Name="Hiking Route" Context="" Value="ハイキングルート" />
+  <Entry Name="Hindu Temple" Context="" Value="ヒンドゥー教寺院" />
+  <Entry Name="Historic monastery" Context="" Value="歴史的な僧院" />
+  <Entry Name="Historic Places" Context="" Value="史跡" />
+  <Entry Name="Holding Position" Context="" Value="待機位置" />
+  <Entry Name="Hole" Context="golf" Value="ホール" />
+  <Entry Name="Home decoration" Context="" Value="インテリア" />
+  <Entry Name="Horse Racing" Context="" Value="競馬" />
+  <Entry Name="Horse Riding Centre" Context="" Value="乗馬施設" />
+  <Entry Name="Hospital" Context="" Value="病院" />
+  <Entry Name="Hostel" Context="" Value="簡易宿泊所" />
+  <Entry Name="Hotel" Context="" Value="ホテル" />
+  <Entry Name="Houseware" Context="" Value="家庭用品" />
+  <Entry Name="Hump" Context="" Value="ハンプ" />
+  <Entry Name="Hunting Stand" Context="" Value="ハンティングスタンド" />
+  <Entry Name="Hvac" Context="" Value="空調設備" />
+  <Entry Name="Hydrant marker" Context="" Value="Hydrant marker" />
+  <Entry Name="Hydro Power Plant" Context="" Value="水力発電所" />
+  <Entry Name="Ice cream" Context="" Value="アイスクリーム店" />
+  <Entry Name="Ice Hockey" Context="" Value="アイスホッケー" />
+  <Entry Name="Ice Skating" Context="" Value="アイススケート" />
+  <Entry Name="Industrial" Context="" Value="工業用地" />
+  <Entry Name="Information Board" Context="" Value="案内板" />
+  <Entry Name="Information Office" Context="" Value="案内所" />
+  <Entry Name="Information Terminal" Context="" Value="情報端末" />
+  <Entry Name="Insulator" Context="" Value="碍子" />
+  <Entry Name="Insurance" Context="office" Value="保険代理店" />
+  <Entry Name="Interior Decoration" Context="" Value="内装店" />
+  <Entry Name="Internet Access" Context="" Value="インターネットアクセス" />
+  <Entry Name="Internet Cafe" Context="" Value="インターネットカフェ" />
+  <Entry Name="Island" Context="" Value="島" />
+  <Entry Name="Island" Context="traffic_calming" Value="島" />
+  <Entry Name="Islet" Context="" Value="小島" />
+  <Entry Name="Isolated Dwelling" Context="" Value="一軒家" />
+  <Entry Name="IT Specialist" Context="office" Value="IT専門家" />
+  <Entry Name="Jersey Barrier" Context="" Value="ジャージーバリア" />
+  <Entry Name="Jewellery" Context="" Value="宝石店" />
+  <Entry Name="Kart Racing" Context="" Value="ゴーカート" />
+  <Entry Name="Kerb" Context="" Value="縁石" />
+  <Entry Name="Key cutter" Context="" Value="合鍵屋" />
+  <Entry Name="Kiln" Context="" Value="窯" />
+  <Entry Name="Kindergarten" Context="" Value="幼稚園" />
+  <Entry Name="Kiosk" Context="" Value="キオスク" />
+  <Entry Name="Kissing Gate" Context="" Value="キッシングゲート" />
+  <Entry Name="Kitchen" Context="" Value="キッチン設備" />
+  <Entry Name="Laboratory" Context="" Value="研究所" />
+  <Entry Name="Land use" Context="" Value="土地利用" />
+  <Entry Name="Landfill" Context="" Value="ゴミ最終処分場" />
+  <Entry Name="Lane Connectivity" Context="" Value="車線接続" />
+  <Entry Name="Language school" Context="" Value="語学学校" />
+  <Entry Name="Lateral water hazard" Context="golf" Value="ラテラルウォーターハザード" />
+  <Entry Name="Laundry" Context="" Value="洗濯屋・コインランドリー" />
+  <Entry Name="Lawn Bowling" Context="" Value="ローンボウルズ" />
+  <Entry Name="Lawyer" Context="office" Value="法律事務所" />
+  <Entry Name="Leisure" Context="" Value="レジャー" />
+  <Entry Name="Levee" Context="" Value="堤防・土手" />
+  <Entry Name="Level Crossing" Context="" Value="踏切" />
+  <Entry Name="Library" Context="" Value="図書館" />
+  <Entry Name="Life Guard" Context="" Value="Life Guard" />
+  <Entry Name="Life Ring" Context="" Value="救命浮輪" />
+  <Entry Name="Lift Gate" Context="" Value="遮断機" />
+  <Entry Name="Light Rail" Context="" Value="ライトレール(専用軌道)" />
+  <Entry Name="Lighthouse" Context="" Value="灯台" />
+  <Entry Name="Lighting" Context="" Value="照明器具" />
+  <Entry Name="Living Street" Context="" Value="生活道路" />
+  <Entry Name="Locality" Context="" Value="地形名" />
+  <Entry Name="Lock Gate" Context="" Value="ロックゲート" />
+  <Entry Name="Locksmith" Context="" Value="錠前屋" />
+  <Entry Name="Log" Context="" Value="Log" />
+  <Entry Name="Lottery" Context="" Value="宝くじ売り場" />
+  <Entry Name="Magic Carpet" Context="" Value="マジックカーペット" />
+  <Entry Name="Mall" Context="" Value="ショッピングセンター" />
+  <Entry Name="Man Made" Context="" Value="人工物" />
+  <Entry Name="Manhole" Context="" Value="マンホール" />
+  <Entry Name="Manor" Context="" Value="荘園" />
+  <Entry Name="Map" Context="" Value="案内地図" />
+  <Entry Name="Marina" Context="" Value="マリーナ" />
+  <Entry Name="Marine Fuel" Context="" Value="水上燃料補給所" />
+  <Entry Name="Maritime" Context="" Value="海上境界線" />
+  <Entry Name="Marker" Context="" Value="Marker" />
+  <Entry Name="Massage" Context="" Value="マッサージ店、接骨院" />
+  <Entry Name="Mast" Context="" Value="マスト" />
+  <Entry Name="Meadow" Context="" Value="牧草地" />
+  <Entry Name="Medical Supply" Context="" Value="医療用品" />
+  <Entry Name="Memorial" Context="" Value="記念碑" />
+  <Entry Name="Metal construction" Context="" Value="金属加工所" />
+  <Entry Name="Milestone" Context="" Value="マイルストーン" />
+  <Entry Name="Military" Context="" Value="軍用地" />
+  <Entry Name="Military" Context="preset group" Value="軍用" />
+  <Entry Name="Mine" Context="" Value="鉱山" />
+  <Entry Name="Mine shaft" Context="" Value="坑道" />
+  <Entry Name="Mineshaft" Context="" Value="縦坑" />
+  <Entry Name="Mini bumps" Context="" Value="Mini bumps" />
+  <Entry Name="Miniature Golf" Context="" Value="ミニチュアゴルフ" />
+  <Entry Name="Miniature Rail" Context="" Value="ミニ鉄道" />
+  <Entry Name="Mini-Roundabout" Context="" Value="小さい環状交差点" />
+  <Entry Name="Mixed Lift" Context="" Value="混合リフト" />
+  <Entry Name="Mobile Phone" Context="" Value="携帯電話店" />
+  <Entry Name="Model Aerodrome" Context="" Value="模型飛行機場" />
+  <Entry Name="Monastery" Context="" Value="僧院" />
+  <Entry Name="Money Exchange" Context="" Value="両替" />
+  <Entry Name="Money transfer" Context="" Value="送金" />
+  <Entry Name="Monitoring Station" Context="" Value="観測所" />
+  <Entry Name="Monorail" Context="" Value="モノレール" />
+  <Entry Name="Monument" Context="" Value="記念堂" />
+  <Entry Name="Mosque" Context="" Value="モスク" />
+  <Entry Name="Motel" Context="" Value="モーテル" />
+  <Entry Name="Motocross" Context="" Value="モトクロス" />
+  <Entry Name="Motorcycle" Context="" Value="バイク" />
+  <Entry Name="Motorcycle Dealer" Context="" Value="バイク店" />
+  <Entry Name="Motorsport" Context="" Value="モータースポーツ" />
+  <Entry Name="Motorway" Context="" Value="自動車専用道路" />
+  <Entry Name="Motorway Junction" Context="" Value="自動車道のIC/JCT" />
+  <Entry Name="Motorway Link" Context="" Value="自動車専用道路の連絡路" />
+  <Entry Name="Mountain Biking Route" Context="" Value="マウンテンバイクルート" />
+  <Entry Name="Mountain Pass" Context="" Value="峠" />
+  <Entry Name="Movable Bridge" Context="" Value="可動橋" />
+  <Entry Name="Movie Theater/Cinema" Context="" Value="映画館" />
+  <Entry Name="Mud" Context="" Value="泥地" />
+  <Entry Name="Multi" Context="" Value="多目的" />
+  <Entry Name="Multipolygon" Context="" Value="マルチポリゴン" />
+  <Entry Name="Municipality" Context="" Value="Municipality" />
+  <Entry Name="Museum" Context="" Value="博物館・美術館" />
+  <Entry Name="Music" Context="" Value="CD店" />
+  <Entry Name="Music school" Context="" Value="音楽学校" />
+  <Entry Name="Musical Instrument" Context="" Value="楽器店" />
+  <Entry Name="Name" Context="" Value="名前" />
+  <Entry Name="Named Junction" Context="junction=yes" Value="名前付き交差点" />
+  <Entry Name="Narrow Gauge Rail" Context="" Value="軽便鉄道" />
+  <Entry Name="National Park" Context="" Value="国立公園" />
+  <Entry Name="Nature" Context="" Value="自然" />
+  <Entry Name="Nature Reserve" Context="" Value="自然保護区" />
+  <Entry Name="Navigation aid" Context="" Value="ナビゲーションエイド" />
+  <Entry Name="Neighbourhood" Context="" Value="小字/丁目" />
+  <Entry Name="Newspaper" Context="office" Value="新聞社" />
+  <Entry Name="Newspaper Stand" Context="" Value="新聞販売店" />
+  <Entry Name="Night Club" Context="" Value="ナイトクラブ" />
+  <Entry Name="Nine-pin Bowling" Context="" Value="ボウリング場(9ピン)" />
+  <Entry Name="Non-governmental organisation (NGO)" Context="office" Value="非政府組織（NGO）" />
+  <Entry Name="Non-public police facility" Context="" Value="非公共警察施設" />
+  <Entry Name="Notary" Context="office" Value="公証人" />
+  <Entry Name="Note" Context="the tag note=*" Value="メモ" />
+  <Entry Name="Nuclear Power Plant" Context="" Value="原子力発電所" />
+  <Entry Name="Nuclear Reactor" Context="" Value="原子炉" />
+  <Entry Name="Nursing Home" Context="" Value="介護施設" />
+  <Entry Name="Nursing Home (Legacy)" Context="" Value="介護施設 (旧)" />
+  <Entry Name="Offices" Context="" Value="事務所" />
+  <Entry Name="Oil Power Generator" Context="" Value="石油発電機" />
+  <Entry Name="Oil Power Plant" Context="" Value="石油発電所" />
+  <Entry Name="Optician" Context="" Value="眼鏡店" />
+  <Entry Name="Orchard" Context="" Value="果樹園" />
+  <Entry Name="Organic" Context="" Value="自然素材" />
+  <Entry Name="Osmotic Power Generator" Context="" Value="浸透圧発電" />
+  <Entry Name="Osmotic Power Plant" Context="" Value="浸透圧発電" />
+  <Entry Name="Other" Context="" Value="その他" />
+  <Entry Name="Other Information Point" Context="" Value="その他の情報ポイント" />
+  <Entry Name="Other Place of Worship" Context="" Value="その他の宗教施設" />
+  <Entry Name="Outdoor" Context="" Value="アウトドア用品店" />
+  <Entry Name="Outdoor seating" Context="" Value="屋外席" />
+  <Entry Name="Outreach" Context="" Value="アウトリーチ" />
+  <Entry Name="Paint" Context="" Value="画材店" />
+  <Entry Name="Painter" Context="" Value="塗装店" />
+  <Entry Name="Palaeontological Site" Context="" Value="化石サイト" />
+  <Entry Name="Parcel Locker" Context="" Value="宅配ロッカー" />
+  <Entry Name="Park" Context="" Value="公園" />
+  <Entry Name="Parking" Context="bicycle" Value="駐車場・駐輪場" />
+  <Entry Name="Parking" Context="car" Value="駐車場・駐輪場" />
+  <Entry Name="Parking" Context="motorcycle" Value="駐車場・駐輪場" />
+  <Entry Name="Parking Aisle" Context="" Value="駐車場内通路" />
+  <Entry Name="Parking Entrance/Exit" Context="" Value="出入口 (駐車場)" />
+  <Entry Name="Parking Space" Context="" Value="駐車スペース" />
+  <Entry Name="Parts" Context="" Value="部品" />
+  <Entry Name="Party supplies" Context="" Value="パーティ用品" />
+  <Entry Name="Passageways" Context="" Value="通り抜け通路" />
+  <Entry Name="Passing Place" Context="" Value="対向車待機所" />
+  <Entry Name="Pastry" Context="" Value="焼菓子" />
+  <Entry Name="Path" Context="" Value="小道" />
+  <Entry Name="Pawnbroker" Context="" Value="質屋" />
+  <Entry Name="Payment Methods" Context="" Value="支払方法" />
+  <Entry Name="Peak" Context="" Value="山頂" />
+  <Entry Name="Pedestrian" Context="" Value="歩行者天国" />
+  <Entry Name="Pedestrian Crossing" Context="" Value="横断歩道" />
+  <Entry Name="Pelota" Context="" Value="ペロタ" />
+  <Entry Name="Penstock" Context="" Value="水圧鉄管" />
+  <Entry Name="Perfumery" Context="" Value="香水" />
+  <Entry Name="Pet" Context="" Value="ペット店" />
+  <Entry Name="Pet grooming" Context="" Value="ペットグルーミング" />
+  <Entry Name="Petroleum Well" Context="" Value="油井" />
+  <Entry Name="Pharmacy" Context="" Value="薬局" />
+  <Entry Name="Photo" Context="" Value="写真" />
+  <Entry Name="Photo booth" Context="" Value="証明写真機" />
+  <Entry Name="Photographer" Context="" Value="写真スタジオ" />
+  <Entry Name="Picnic Site" Context="" Value="ピクニック場" />
+  <Entry Name="Picnic Table" Context="" Value="ピクニックテーブル" />
+  <Entry Name="Pier" Context="" Value="桟橋" />
+  <Entry Name="Pin" Context="golf" Value="ピン" />
+  <Entry Name="Pipeline" Context="" Value="パイプライン" />
+  <Entry Name="Pipeline Substation" Context="" Value="パイプライン変電所" />
+  <Entry Name="Pipeline Valve" Context="" Value="パイプラインのバルブ" />
+  <Entry Name="Piste Route" Context="" Value="スキールート" />
+  <Entry Name="Pitch" Context="" Value="競技場" />
+  <Entry Name="Place of Worship" Context="" Value="宗教施設" />
+  <Entry Name="Places" Context="" Value="地名" />
+  <Entry Name="Plane Parking Position" Context="" Value="駐機場" />
+  <Entry Name="Plant Nursery" Context="" Value="育苗場" />
+  <Entry Name="Planter" Context="" Value="プランター" />
+  <Entry Name="Platform" Context="" Value="プラットホーム" />
+  <Entry Name="Playground" Context="" Value="児童公園" />
+  <Entry Name="Playground device" Context="" Value="遊具" />
+  <Entry Name="Plumber" Context="" Value="水道工事店" />
+  <Entry Name="Pole" Context="" Value="電柱" />
+  <Entry Name="Pole with Substation" Context="" Value="Pole with Substation" />
+  <Entry Name="Pole with Switch" Context="" Value="開閉器付き電柱" />
+  <Entry Name="Pole with Transformer" Context="" Value="変圧器つきの電柱" />
+  <Entry Name="Police" Context="" Value="警察署・交番" />
+  <Entry Name="Political" Context="" Value="選挙区・自治区" />
+  <Entry Name="Political party" Context="office" Value="政党事務所" />
+  <Entry Name="Pooling" Context="" Value="Pooling" />
+  <Entry Name="Post Box" Context="" Value="郵便ポスト" />
+  <Entry Name="Post Office" Context="" Value="郵便局" />
+  <Entry Name="Postal Code" Context="" Value="郵便番号" />
+  <Entry Name="Poster box" Context="" Value="Poster box" />
+  <Entry Name="Pottery" Context="" Value="窯元" />
+  <Entry Name="Power" Context="" Value="電力関係" />
+  <Entry Name="Power Bay" Context="" Value="構内回線" />
+  <Entry Name="Power Busbar" Context="" Value="ブスバー" />
+  <Entry Name="Power Cable" Context="" Value="電力ケーブル" />
+  <Entry Name="Power circuit" Context="" Value="Power circuit" />
+  <Entry Name="Power Compensator" Context="" Value="電力補償装置" />
+  <Entry Name="Power Converter" Context="" Value="整流器" />
+  <Entry Name="Power Generator" Context="" Value="発電機" />
+  <Entry Name="Power Line" Context="" Value="送電線" />
+  <Entry Name="Power line section" Context="" Value="Power line section" />
+  <Entry Name="Power Plant" Context="" Value="発電所" />
+  <Entry Name="Power Portal" Context="" Value="門型鉄構" />
+  <Entry Name="Power Street Cabinet" Context="" Value="野外仕様キャビネット" />
+  <Entry Name="Power Substation" Context="" Value="変電所" />
+  <Entry Name="Power Switch" Context="" Value="開閉器" />
+  <Entry Name="Power Switchgear" Context="" Value="スイッチギア" />
+  <Entry Name="Power Tower" Context="" Value="送電塔" />
+  <Entry Name="Power Transformer" Context="" Value="変圧・変換機" />
+  <Entry Name="Preserved" Context="" Value="保存鉄道" />
+  <Entry Name="Primary" Context="" Value="主要地方道" />
+  <Entry Name="Primary Link" Context="" Value="主要地方道の連絡路" />
+  <Entry Name="Printed Material" Context="" Value="印刷物" />
+  <Entry Name="Prison" Context="" Value="刑務所・拘置所" />
+  <Entry Name="Private company" Context="office" Value="企業" />
+  <Entry Name="Private Mailbox" Context="" Value="私書箱" />
+  <Entry Name="Protected Area" Context="" Value="保護区域" />
+  <Entry Name="Pub" Context="" Value="居酒屋" />
+  <Entry Name="Public bath" Context="" Value="公衆浴場" />
+  <Entry Name="Public Bicycle Repair Station" Context="" Value="公共自転車修理場所" />
+  <Entry Name="Public bookcase" Context="" Value="公共の本棚" />
+  <Entry Name="Public Building" Context="" Value="公共施設" />
+  <Entry Name="Public Grill" Context="" Value="バーベキュー場" />
+  <Entry Name="Public Market" Context="" Value="青空市場" />
+  <Entry Name="Public Transport" Context="" Value="公共交通" />
+  <Entry Name="Public Transport (Legacy)" Context="" Value="公共交通(旧)" />
+  <Entry Name="Public Transport Route (Aerialway)" Context="" Value="Public Transport Route (Aerialway)" />
+  <Entry Name="Public Transport Route (Bus)" Context="" Value="路線(バス)" />
+  <Entry Name="Public Transport Route (Ferry)" Context="" Value="Public Transport Route (Ferry)" />
+  <Entry Name="Public transport route (Legacy)" Context="" Value="Public transport route (Legacy)" />
+  <Entry Name="Public transport route (Legacy) (Aerialway)" Context="" Value="Public transport route (Legacy) (Aerialway)" />
+  <Entry Name="Public transport route (Legacy) (Ferry)" Context="" Value="Public transport route (Legacy) (Ferry)" />
+  <Entry Name="Public Transport Route (Rail)" Context="" Value="路線（鉄道）" />
+  <Entry Name="Pump" Context="" Value="ポンプ" />
+  <Entry Name="Pumping station" Context="" Value="ポンプ場" />
+  <Entry Name="Pylon" Context="" Value="索道用支柱" />
+  <Entry Name="Quarry" Context="" Value="露天掘り鉱山" />
+  <Entry Name="Quarter" Context="" Value="大字/町名" />
+  <Entry Name="Racetrack" Context="" Value="競技トラック" />
+  <Entry Name="Raceway" Context="" Value="レース用道路" />
+  <Entry Name="Racquetball" Context="" Value="ラケットボール" />
+  <Entry Name="Rail" Context="" Value="線路" />
+  <Entry Name="Railway" Context="" Value="鉄道" />
+  <Entry Name="Railway construction" Context="" Value="建設中鉄道" />
+  <Entry Name="Railway crossing" Context="" Value="線路の交差" />
+  <Entry Name="Railway Halt" Context="" Value="停留所" />
+  <Entry Name="Railway Land" Context="" Value="鉄道用地" />
+  <Entry Name="Railway milestone" Context="" Value="鉄道の距離標" />
+  <Entry Name="Railway Platform" Context="" Value="鉄道のプラットホーム" />
+  <Entry Name="Railway Platform Edge" Context="" Value="Railway Platform Edge" />
+  <Entry Name="Railway Route" Context="" Value="鉄道ルート" />
+  <Entry Name="Railway Signal" Context="" Value="鉄道信号機" />
+  <Entry Name="Railway Switch" Context="" Value="分岐器" />
+  <Entry Name="Range" Context="" Value="射撃場" />
+  <Entry Name="Ranger Station" Context="" Value="森林警備隊の基地" />
+  <Entry Name="RC Car" Context="" Value="ラジコンカー" />
+  <Entry Name="Recreation Ground" Context="" Value="レクレーション広場" />
+  <Entry Name="Recycling Centre" Context="" Value="リサイクル処理場" />
+  <Entry Name="Recycling Container" Context="" Value="リサイクルコンテナ" />
+  <Entry Name="Reef" Context="" Value="礁" />
+  <Entry Name="Region" Context="" Value="地方" />
+  <Entry Name="Relations" Context="" Value="リレーション" />
+  <Entry Name="Religion" Context="office" Value="宗教団体" />
+  <Entry Name="Religious" Context="" Value="境内" />
+  <Entry Name="Rental" Context="" Value="レンタル店" />
+  <Entry Name="Repair" Context="" Value="修理工場" />
+  <Entry Name="Research" Context="office" Value="研究所" />
+  <Entry Name="Reservoir" Context="" Value="貯水池" />
+  <Entry Name="Residential" Context="" Value="居住区域内道路" />
+  <Entry Name="Residential Area" Context="" Value="住宅地" />
+  <Entry Name="Residential Building" Context="" Value="住宅" />
+  <Entry Name="Resort" Context="" Value="リゾート区" />
+  <Entry Name="Rest Area" Context="" Value="パーキングエリア" />
+  <Entry Name="Restaurant" Context="" Value="レストラン" />
+  <Entry Name="Retail" Context="" Value="商業地" />
+  <Entry Name="Retaining Wall" Context="" Value="擁壁" />
+  <Entry Name="Ridge" Context="" Value="尾根" />
+  <Entry Name="Riding Route" Context="" Value="乗馬コース" />
+  <Entry Name="River" Context="" Value="川" />
+  <Entry Name="Road (Unknown Type)" Context="" Value="道路(区分不明)" />
+  <Entry Name="Road Restrictions" Context="" Value="通行制限" />
+  <Entry Name="Road Route" Context="" Value="道路ルート" />
+  <Entry Name="Rock" Context="" Value="岩" />
+  <Entry Name="Roller Skating" Context="" Value="ローラースケート" />
+  <Entry Name="Roofer" Context="" Value="屋根屋" />
+  <Entry Name="Rough" Context="golf" Value="ラフ" />
+  <Entry Name="Roundabout" Context="" Value="環状交差点" />
+  <Entry Name="Route marker" Context="" Value="ルートマーカー" />
+  <Entry Name="Route Master" Context="" Value="運行系統" />
+  <Entry Name="Route Network" Context="" Value="道路網" />
+  <Entry Name="Route Node Network" Context="" Value="Route Node Network" />
+  <Entry Name="Routes" Context="" Value="ルート" />
+  <Entry Name="Rowing" Context="" Value="漕艇" />
+  <Entry Name="Rugby League" Context="" Value="ラグビーリーグ" />
+  <Entry Name="Rugby Union" Context="" Value="ラグビー(通常の)" />
+  <Entry Name="Ruins" Context="" Value="廃墟" />
+  <Entry Name="Rumble strip" Context="" Value="ランブルトリップス" />
+  <Entry Name="Running" Context="" Value="ランニング" />
+  <Entry Name="Running Route" Context="" Value="ランニングルート" />
+  <Entry Name="Runway" Context="" Value="滑走路" />
+  <Entry Name="Saddle" Context="" Value="鞍部" />
+  <Entry Name="Sally Port" Context="" Value="城の出撃路" />
+  <Entry Name="Salt Pond" Context="" Value="塩田" />
+  <Entry Name="Sand" Context="" Value="砂地" />
+  <Entry Name="Sanitary Dump Station" Context="" Value="汚物廃棄場" />
+  <Entry Name="Sauna" Context="" Value="サウナ" />
+  <Entry Name="Sawmill" Context="" Value="製材所" />
+  <Entry Name="School" Context="" Value="学校" />
+  <Entry Name="Scree" Context="" Value="ガレ場" />
+  <Entry Name="Scrub" Context="" Value="やぶ" />
+  <Entry Name="Scuba Diving" Context="" Value="スキューバダイビング" />
+  <Entry Name="Scuba diving" Context="" Value="スキューバダイビング" />
+  <Entry Name="Seafood" Context="" Value="水産物店" />
+  <Entry Name="Second hand" Context="" Value="中古品(セコハン)" />
+  <Entry Name="Secondary" Context="" Value="一般都道府県道" />
+  <Entry Name="Secondary Link" Context="" Value="一般都道府県道の連絡路" />
+  <Entry Name="Security" Context="" Value="セキュリティ" />
+  <Entry Name="Segregated Foot- and Cycleway" Context="" Value="分割された歩行者および自転車道" />
+  <Entry Name="Service" Context="" Value="敷地内道路" />
+  <Entry Name="Service Building" Context="" Value="Service Building" />
+  <Entry Name="Service Device" Context="" Value="Service Device" />
+  <Entry Name="Services" Context="" Value="サービスエリア" />
+  <Entry Name="Sharing" Context="" Value="カーシェアリング" />
+  <Entry Name="Shelter" Context="" Value="待合室・避難所" />
+  <Entry Name="Shelter" Context="social_facility" Value="待合室・避難所" />
+  <Entry Name="Shieling" Context="" Value="仮小屋" />
+  <Entry Name="Shingle" Context="" Value="シングル" />
+  <Entry Name="Shinto Shrine" Context="" Value="神社" />
+  <Entry Name="Shipping" Context="" Value="港湾関連" />
+  <Entry Name="Shoemaker" Context="" Value="靴工場" />
+  <Entry Name="Shoes" Context="shop" Value="靴店" />
+  <Entry Name="Shooting" Context="" Value="射撃" />
+  <Entry Name="Shops" Context="" Value="店舗" />
+  <Entry Name="Shower" Context="" Value="公衆浴場・シャワー" />
+  <Entry Name="Shrub" Context="" Value="低木" />
+  <Entry Name="Shrubbery" Context="" Value="Shrubbery" />
+  <Entry Name="Silo" Context="" Value="サイロ" />
+  <Entry Name="Sinkhole" Context="" Value="Sinkhole" />
+  <Entry Name="Siren" Context="" Value="サイレン" />
+  <Entry Name="Site" Context="" Value="サイト" />
+  <Entry Name="Skateboard" Context="" Value="スケートボード" />
+  <Entry Name="Ski Route" Context="" Value="スキールート" />
+  <Entry Name="Skiing" Context="" Value="スキー" />
+  <Entry Name="Slipway" Context="" Value="進水路" />
+  <Entry Name="Soccer" Context="" Value="サッカー" />
+  <Entry Name="Social Centre" Context="" Value="Social Centre" />
+  <Entry Name="Social Facility" Context="" Value="社会福祉施設" />
+  <Entry Name="Social Networks" Context="" Value="ソーシャルネットワーク" />
+  <Entry Name="Solar Power Generator" Context="" Value="太陽光発電" />
+  <Entry Name="Solar Power Plant" Context="" Value="太陽光発電所" />
+  <Entry Name="Speed Camera" Context="" Value="スピードカメラ(オービス)" />
+  <Entry Name="Speed Limit Sign" Context="" Value="速度制限標識" />
+  <Entry Name="Spikes" Context="" Value="車止めのとげ" />
+  <Entry Name="Sport" Context="" Value="スポーツ" />
+  <Entry Name="Sport (Ball)" Context="" Value="球技" />
+  <Entry Name="Sport Facilities" Context="" Value="スポーツ施設" />
+  <Entry Name="Sports" Context="" Value="スポーツ" />
+  <Entry Name="Sports Centre" Context="" Value="スポーツセンター" />
+  <Entry Name="Spring" Context="" Value="泉" />
+  <Entry Name="Square" Context="" Value="Square" />
+  <Entry Name="Stadium" Context="" Value="スタジアム" />
+  <Entry Name="State" Context="place" Value="州" />
+  <Entry Name="Station" Context="aerialway" Value="索道駅" />
+  <Entry Name="Station" Context="railway" Value="駅" />
+  <Entry Name="Stationery" Context="" Value="文具店" />
+  <Entry Name="Steps" Context="" Value="階段" />
+  <Entry Name="Stile" Context="" Value="通路" />
+  <Entry Name="Stone" Context="" Value="石" />
+  <Entry Name="Stonemason" Context="" Value="石材加工店" />
+  <Entry Name="Stop" Context="" Value="停止" />
+  <Entry Name="Stop Area" Context="" Value="停車場" />
+  <Entry Name="Stop Position" Context="" Value="停止位置" />
+  <Entry Name="Storage Rental" Context="" Value="貸倉庫" />
+  <Entry Name="Storage Tank" Context="" Value="貯蔵タンク" />
+  <Entry Name="Strait" Context="" Value="海峡" />
+  <Entry Name="Stream" Context="" Value="小川" />
+  <Entry Name="Street" Context="" Value="通り" />
+  <Entry Name="Street cabinet" Context="" Value="街路側キャビネット" />
+  <Entry Name="Street Lamp" Context="" Value="街灯" />
+  <Entry Name="Streets" Context="" Value="ストリート" />
+  <Entry Name="Strip Club" Context="" Value="ストリップクラブ" />
+  <Entry Name="Studio" Context="" Value="スタジオ" />
+  <Entry Name="Suburb" Context="" Value="区" />
+  <Entry Name="Subway" Context="" Value="地下鉄" />
+  <Entry Name="Subway Entrance" Context="" Value="地下鉄の出入口" />
+  <Entry Name="Suction point" Context="" Value="消防水利" />
+  <Entry Name="Supermarket" Context="" Value="スーパーマーケット" />
+  <Entry Name="Superroute" Context="" Value="Superroute" />
+  <Entry Name="Surveillance Camera" Context="" Value="監視カメラ" />
+  <Entry Name="Survey Point" Context="" Value="測量標" />
+  <Entry Name="Swimming" Context="" Value="水泳" />
+  <Entry Name="Swimming Pool" Context="" Value="遊泳プール" />
+  <Entry Name="Swimming pool" Context="shop" Value="Swimming pool" />
+  <Entry Name="Swing Gate" Context="" Value="スイングゲート" />
+  <Entry Name="Synagogue" Context="" Value="シナゴーグ" />
+  <Entry Name="Table" Context="" Value="スピードテーブル" />
+  <Entry Name="Table Tennis/Ping-Pong" Context="" Value="卓球" />
+  <Entry Name="Tailings Pond" Context="" Value="Tailings Pond" />
+  <Entry Name="Tailor" Context="" Value="仕立て屋" />
+  <Entry Name="Tattoo" Context="" Value="刺青" />
+  <Entry Name="Tax advisor" Context="office" Value="税理士事務所" />
+  <Entry Name="Taxi" Context="" Value="タクシー乗り場" />
+  <Entry Name="Taxiway" Context="" Value="誘導路" />
+  <Entry Name="Tea" Context="" Value="茶" />
+  <Entry Name="Tee" Context="golf" Value="ティー" />
+  <Entry Name="Telecom" Context="" Value="通信" />
+  <Entry Name="Telecom Street Cabinet" Context="" Value="通信機器用キャビネット" />
+  <Entry Name="Telecommunication" Context="office" Value="通信会社" />
+  <Entry Name="Telephone" Context="" Value="電話" />
+  <Entry Name="Telephone Exchange" Context="" Value="電話交換機" />
+  <Entry Name="Telescope" Context="" Value="望遠鏡" />
+  <Entry Name="Tennis" Context="" Value="テニス" />
+  <Entry Name="Ten-pin Bowling" Context="" Value="ボウリング場" />
+  <Entry Name="Terminal" Context="" Value="ターミナル" />
+  <Entry Name="Terminal" Context="power" Value="Terminal" />
+  <Entry Name="Tertiary" Context="" Value="一般道(2車線以上)" />
+  <Entry Name="Tertiary Link" Context="" Value="一般道の連絡路" />
+  <Entry Name="Theatre" Context="" Value="劇場" />
+  <Entry Name="Ticket" Context="" Value="チケット" />
+  <Entry Name="Ticket Machine" Context="" Value="券売機" />
+  <Entry Name="Tidal channel" Context="" Value="Tidal channel" />
+  <Entry Name="Tidal Power Plant" Context="" Value="潮力発電所" />
+  <Entry Name="Tidal Water Turbine" Context="" Value="潮力発電" />
+  <Entry Name="Tiler" Context="" Value="タイル店" />
+  <Entry Name="Tires" Context="" Value="タイヤ" />
+  <Entry Name="Tobacco" Context="" Value="たばこ" />
+  <Entry Name="Toilets/Restrooms" Context="" Value="トイレ" />
+  <Entry Name="Toll Booth" Context="" Value="料金所" />
+  <Entry Name="Toll gantry" Context="" Value="Toll gantry" />
+  <Entry Name="Tomb" Context="" Value="霊廟" />
+  <Entry Name="Tourism" Context="" Value="観光" />
+  <Entry Name="Tower" Context="" Value="タワー" />
+  <Entry Name="Towers" Context="" Value="塔" />
+  <Entry Name="Town" Context="" Value="町" />
+  <Entry Name="Town Hall" Context="" Value="役場" />
+  <Entry Name="Toys" Context="" Value="玩具店" />
+  <Entry Name="Track" Context="" Value="農道・林道" />
+  <Entry Name="Track and Field Athletics" Context="" Value="陸上競技" />
+  <Entry Name="Trade" Context="" Value="トレード" />
+  <Entry Name="Traffic Calming" Context="" Value="交通静穏化" />
+  <Entry Name="Traffic Hazard" Context="" Value="Traffic Hazard" />
+  <Entry Name="Traffic Mirror" Context="" Value="交通ミラー" />
+  <Entry Name="Traffic Signal" Context="" Value="信号機" />
+  <Entry Name="Trailhead" Context="" Value="Trailhead" />
+  <Entry Name="Tram" Context="" Value="路面電車" />
+  <Entry Name="Tram Stop" Context="" Value="電停" />
+  <Entry Name="Transformer Tower" Context="" Value="変電塔" />
+  <Entry Name="Transport" Context="" Value="輸送" />
+  <Entry Name="Travel Agency" Context="" Value="旅行代理店" />
+  <Entry Name="Tree" Context="" Value="樹木" />
+  <Entry Name="Tree Row" Context="" Value="並木" />
+  <Entry Name="Trolley Bay/Cart Corral" Context="" Value="Trolley Bay/Cart Corral" />
+  <Entry Name="Trunk" Context="" Value="国道" />
+  <Entry Name="Trunk Link" Context="" Value="国道の連絡路" />
+  <Entry Name="Tunnel" Context="" Value="トンネル" />
+  <Entry Name="Turn Restriction" Context="" Value="進行方向制限" />
+  <Entry Name="Turning Circle" Context="" Value="転回場(島なし)" />
+  <Entry Name="Turning Loop" Context="" Value="転回ループ(島あり)" />
+  <Entry Name="Turning Point" Context="" Value="転回場所" />
+  <Entry Name="Turnstile" Context="" Value="回転式木戸" />
+  <Entry Name="Turntable" Context="" Value="転車台(ターンテーブル)" />
+  <Entry Name="Unclassified" Context="" Value="一般道(2車線未満)" />
+  <Entry Name="University" Context="" Value="大学" />
+  <Entry Name="Upholsterer" Context="" Value="家具製造所" />
+  <Entry Name="Utility Pole" Context="" Value="Utility Pole" />
+  <Entry Name="Vacuum Cleaner" Context="" Value="掃除機店" />
+  <Entry Name="Valley" Context="" Value="谷" />
+  <Entry Name="Variety Store" Context="" Value="雑貨店" />
+  <Entry Name="Vehicle Inspection" Context="" Value="車両の検査" />
+  <Entry Name="Vending Machine" Context="" Value="自動販売機" />
+  <Entry Name="Veterinary" Context="" Value="動物病院" />
+  <Entry Name="Video" Context="" Value="ビデオ" />
+  <Entry Name="Video Games" Context="" Value="ビデオゲーム" />
+  <Entry Name="Viewpoint" Context="" Value="展望台" />
+  <Entry Name="Village" Context="" Value="村" />
+  <Entry Name="Village Green" Context="" Value="ビレッジグリーン" />
+  <Entry Name="Vineyard" Context="" Value="ぶどう畑" />
+  <Entry Name="Volcano" Context="" Value="火山" />
+  <Entry Name="Volleyball" Context="" Value="バレーボールコート" />
+  <Entry Name="Walking Route" Context="" Value="ウォーキングルート" />
+  <Entry Name="Wall" Context="" Value="壁" />
+  <Entry Name="Wash" Context="" Value="洗車場" />
+  <Entry Name="Waste Basket/Trash Can" Context="" Value="ゴミ箱" />
+  <Entry Name="Waste Disposal/Dumpster" Context="" Value="ゴミ集積所" />
+  <Entry Name="Waste Power Generator" Context="" Value="ごみ発電" />
+  <Entry Name="Waste Power Plant" Context="" Value="ごみ発電所" />
+  <Entry Name="Wastewater Treatment Plant" Context="" Value="下水処理場" />
+  <Entry Name="Watches" Context="" Value="時計" />
+  <Entry Name="Water" Context="" Value="水域" />
+  <Entry Name="Water" Context="main group" Value="水域" />
+  <Entry Name="Water" Context="natural" Value="湖沼" />
+  <Entry Name="Water" Context="sub group" Value="水域" />
+  <Entry Name="Water Park" Context="" Value="ウォーターパーク" />
+  <Entry Name="Water Point" Context="" Value="水汲み場" />
+  <Entry Name="Water Slide" Context="" Value="ウォータースライダー" />
+  <Entry Name="Water Tank" Context="" Value="防火用水タンク" />
+  <Entry Name="Water Tower" Context="" Value="給水塔" />
+  <Entry Name="Water Turbine" Context="" Value="水力発電機" />
+  <Entry Name="Water Well" Context="" Value="井戸" />
+  <Entry Name="Water Works" Context="" Value="浄水場" />
+  <Entry Name="Waterfall" Context="" Value="滝" />
+  <Entry Name="Watermill" Context="" Value="水車小屋" />
+  <Entry Name="Waterway" Context="" Value="水路" />
+  <Entry Name="Wave Energy Converter" Context="" Value="波力発電" />
+  <Entry Name="Wave Power Plant" Context="" Value="波力発電所" />
+  <Entry Name="Waypoints" Context="" Value="ウェイポイント" />
+  <Entry Name="Ways" Context="" Value="ウェイ" />
+  <Entry Name="Wayside Cross" Context="" Value="道路際の十字架" />
+  <Entry Name="Wayside Shrine" Context="" Value="道祖神" />
+  <Entry Name="Weapons" Context="" Value="武器" />
+  <Entry Name="Weir" Context="" Value="堰" />
+  <Entry Name="Wetland" Context="" Value="湿地帯" />
+  <Entry Name="Wholesale" Context="" Value="卸売店" />
+  <Entry Name="Wicket Gate" Context="" Value="Wicket Gate" />
+  <Entry Name="Wilderness Hut" Context="" Value="自然観察小屋" />
+  <Entry Name="Wind Power Plant" Context="" Value="風力発電所" />
+  <Entry Name="Wind Turbine" Context="" Value="風力発電" />
+  <Entry Name="Windmill" Context="" Value="風車" />
+  <Entry Name="Window construction" Context="" Value="建窓" />
+  <Entry Name="Windpump" Context="" Value="風力ポンプ" />
+  <Entry Name="Windsock" Context="" Value="吹き流し" />
+  <Entry Name="Wine" Context="" Value="ワイン店" />
+  <Entry Name="Winery" Context="" Value="ワイン製造所" />
+  <Entry Name="Wood" Context="natural" Value="自然林" />
+  <Entry Name="Works" Context="" Value="工場" />
+  <Entry Name="Zip line" Context="" Value="ジップライン" />
+  <Entry Name="Zoo" Context="" Value="動物園" />
+</PresetNames>

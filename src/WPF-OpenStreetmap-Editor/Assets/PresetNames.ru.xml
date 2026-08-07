@@ -1,0 +1,969 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<PresetNames lang="ru">
+  <Entry Name="Abandoned Rail" Context="" Value="Разобранные пути" />
+  <Entry Name="Access Restrictions" Context="" Value="Ограничения доступа" />
+  <Entry Name="Accommodation" Context="" Value="Жильё" />
+  <Entry Name="Accountant" Context="office" Value="Бухгалтерский" />
+  <Entry Name="Address" Context="" Value="Адрес" />
+  <Entry Name="Address Interpolation" Context="" Value="Интерполяция адресов" />
+  <Entry Name="Adit" Context="" Value="Штольня" />
+  <Entry Name="Administrative" Context="" Value="Административная" />
+  <Entry Name="Adult gaming centre" Context="" Value="Зал игровых автоматов для взрослых" />
+  <Entry Name="Advanced stop line" Context="" Value="Зона остановки велосипедистов (ASL)" />
+  <Entry Name="Advertising agency" Context="office" Value="Рекламное агентство" />
+  <Entry Name="Advertising Column" Context="" Value="Рекламная тумба" />
+  <Entry Name="Advertising Totem" Context="" Value="Рекламный тотем" />
+  <Entry Name="Aerialway" Context="" Value="Канатная дорога" />
+  <Entry Name="Airfield" Context="" Value="Аэродром" />
+  <Entry Name="Airport" Context="" Value="Аэропорт" />
+  <Entry Name="Airport Ground" Context="" Value="Территория аэропорта" />
+  <Entry Name="Alcohol" Context="" Value="Алкогольная продукция" />
+  <Entry Name="Allotments" Context="" Value="Огородные участки" />
+  <Entry Name="Alpine Hut" Context="" Value="Альпинистский домик" />
+  <Entry Name="Ambulance Station" Context="" Value="Станция скорой помощи" />
+  <Entry Name="American Football" Context="" Value="Американский футбол" />
+  <Entry Name="Amusement arcade" Context="" Value="Зал игровых автоматов" />
+  <Entry Name="Amusement/Theme Park" Context="" Value="Парк развлечений/Тематический парк" />
+  <Entry Name="Animal" Context="" Value="Животные" />
+  <Entry Name="Animal boarding" Context="" Value="Гостиница для животных" />
+  <Entry Name="Animal breeding" Context="" Value="Разведение животных" />
+  <Entry Name="Animal enclosure" Context="" Value="Вольер для животных" />
+  <Entry Name="Animal shelter" Context="" Value="Приют для животных" />
+  <Entry Name="Animal watering place" Context="" Value="Водопой" />
+  <Entry Name="Annotation" Context="" Value="Аннотация" />
+  <Entry Name="Antenna" Context="" Value="Антенна" />
+  <Entry Name="Antiques" Context="" Value="Антиквариат" />
+  <Entry Name="Apartment" Context="" Value="Меблированные квартиры" />
+  <Entry Name="Apron" Context="" Value="Перрон" />
+  <Entry Name="Aquaculture" Context="" Value="Аквакультура" />
+  <Entry Name="Arcade" Context="" Value="Сводчатая галерея" />
+  <Entry Name="Archaeological Site" Context="" Value="Археологические раскопки" />
+  <Entry Name="Archery" Context="" Value="Стрельба из лука" />
+  <Entry Name="Architect" Context="office" Value="Архитектурный" />
+  <Entry Name="Arête" Context="" Value="Скальная гряда" />
+  <Entry Name="Art" Context="" Value="Произведения искусства" />
+  <Entry Name="Arts Centre" Context="" Value="Центр искусств" />
+  <Entry Name="Artwork" Context="" Value="Произведения искусства" />
+  <Entry Name="Assembly Point" Context="" Value="Точка сбора" />
+  <Entry Name="Assisted Living" Context="" Value="Учреждение совместного проживания" />
+  <Entry Name="Associated Street" Context="" Value="Ассоциированная улица" />
+  <Entry Name="Association" Context="office" Value="Некоммерческая организация" />
+  <Entry Name="Attraction" Context="" Value="Достопримечательность" />
+  <Entry Name="Audio Guide" Context="" Value="Аудиоинформатор" />
+  <Entry Name="Australian Football" Context="" Value="Австралийский футбол" />
+  <Entry Name="Automated Defibrillator" Context="" Value="Автоматизированный дефибриллятор" />
+  <Entry Name="Automated Teller Machine" Context="" Value="Банкомат" />
+  <Entry Name="Avalanche Protection" Context="" Value="Противолавинная защита" />
+  <Entry Name="Avalanche Protector" Context="" Value="Лавинозащитная галерея" />
+  <Entry Name="Baby Hatch/Safe Haven" Context="" Value="Бэби-бокс" />
+  <Entry Name="Bag" Context="" Value="Сумки и чемоданы" />
+  <Entry Name="Bakery" Context="" Value="Булочная" />
+  <Entry Name="Bandstand" Context="" Value="Павильон для оркестра" />
+  <Entry Name="Bank" Context="" Value="Банк" />
+  <Entry Name="Bar" Context="" Value="Бар" />
+  <Entry Name="Bare Rock" Context="" Value="Обнажённая коренная порода" />
+  <Entry Name="Barracks" Context="" Value="Казармы" />
+  <Entry Name="Barriers" Context="" Value="Преграды" />
+  <Entry Name="Baseball" Context="" Value="Бейсбол" />
+  <Entry Name="Basin" Context="" Value="Сточный бассейн" />
+  <Entry Name="Basketball" Context="" Value="Баскетбол" />
+  <Entry Name="Battlefield" Context="" Value="Поле битвы" />
+  <Entry Name="Bay" Context="" Value="Бухта" />
+  <Entry Name="Beach" Context="" Value="Пляж" />
+  <Entry Name="Beach Resort" Context="" Value="Обслуживаемый пляж" />
+  <Entry Name="Beach Volleyball" Context="" Value="Пляжный волейбол" />
+  <Entry Name="Beacon" Context="airmark" Value="Радиомаяк" />
+  <Entry Name="Beacon" Context="man_made" Value="Бакен" />
+  <Entry Name="Beauty" Context="" Value="Салон красоты" />
+  <Entry Name="Bed" Context="" Value="Постельные принадлежности" />
+  <Entry Name="Beekeeper" Context="" Value="Пчеловод" />
+  <Entry Name="Beer Garden" Context="" Value="Пивной сад" />
+  <Entry Name="Bench" Context="" Value="Скамейка" />
+  <Entry Name="Beverages" Context="" Value="Напитки" />
+  <Entry Name="Bicycle" Context="" Value="Велосипеды" />
+  <Entry Name="Bicycle Road" Context="" Value="Велосипедная дорога" />
+  <Entry Name="Bicycle Route" Context="" Value="Велосипедный маршрут" />
+  <Entry Name="Bicycle Wash" Context="" Value="Мойка велосипедов" />
+  <Entry Name="Big Communication Tower" Context="" Value="Большая башня связи" />
+  <Entry Name="Bike Dealer" Context="" Value="Веломагазин" />
+  <Entry Name="Billboard" Context="" Value="Рекламный щит" />
+  <Entry Name="Billiards" Context="" Value="Бильярд" />
+  <Entry Name="Biofuel Power Generator" Context="" Value="Генератор на биотопливе" />
+  <Entry Name="Biofuel Power Plant" Context="" Value="Биотопливная энергостанция" />
+  <Entry Name="Biogas Power Generator" Context="" Value="Генератор на биогазе" />
+  <Entry Name="Biogas Power Plant" Context="" Value="Энергостанция на биогазе" />
+  <Entry Name="Biomass Power Generator" Context="" Value="Генератор на биомассе" />
+  <Entry Name="Biomass Power Plant" Context="" Value="Энергостанция на биомассе" />
+  <Entry Name="Bird Hide" Context="" Value="Укрытие для наблюдения за птицами" />
+  <Entry Name="Blacksmith" Context="" Value="Кузница" />
+  <Entry Name="Bleachers" Context="" Value="Открытые трибуны" />
+  <Entry Name="Block" Context="" Value="Бетонный блок" />
+  <Entry Name="Boatyard" Context="" Value="Лодочная мастерская" />
+  <Entry Name="Bollard" Context="" Value="Столбик" />
+  <Entry Name="Book Store" Context="" Value="Книжный магазин" />
+  <Entry Name="Bookmaker" Context="" Value="Букмекерская контора" />
+  <Entry Name="Border Control" Context="" Value="Пограничный контроль" />
+  <Entry Name="Boule" Context="" Value="Бочче" />
+  <Entry Name="Boundaries" Context="" Value="Границы" />
+  <Entry Name="Boundary" Context="" Value="Граница" />
+  <Entry Name="Boundary Marker" Context="" Value="Пограничный знак" />
+  <Entry Name="Boundary Stone" Context="" Value="Пограничный камень" />
+  <Entry Name="Boutique" Context="" Value="Бутик" />
+  <Entry Name="Breakwater" Context="" Value="Волнорез" />
+  <Entry Name="Brewery" Context="" Value="Пивоварня" />
+  <Entry Name="Bridge" Context="" Value="Мост" />
+  <Entry Name="Bridge outline" Context="" Value="Контур моста" />
+  <Entry Name="Bridge Support" Context="" Value="Опора моста" />
+  <Entry Name="Bridges" Context="" Value="Мосты" />
+  <Entry Name="Brothel" Context="" Value="Бордель" />
+  <Entry Name="Brownfield" Context="" Value="Расчистка застройки" />
+  <Entry Name="Buddhist Temple" Context="" Value="Буддистский храм" />
+  <Entry Name="Buffer Stop" Context="" Value="Тупик" />
+  <Entry Name="Building" Context="" Value="Здание" />
+  <Entry Name="Building construction" Context="" Value="Строительство здания" />
+  <Entry Name="Building part" Context="" Value="Часть здания" />
+  <Entry Name="Building Passage" Context="" Value="Сквозной проезд в здании" />
+  <Entry Name="Bump" Context="" Value="Лежачий полицейский" />
+  <Entry Name="Bump Gate" Context="" Value="Ворота, открываемые бампером" />
+  <Entry Name="Bunker" Context="" Value="Укрытие" />
+  <Entry Name="Bunker" Context="golf" Value="Бункер" />
+  <Entry Name="Bunker Silo" Context="" Value="Силосная яма" />
+  <Entry Name="Bus Guideway" Context="" Value="Автобусные рельсы" />
+  <Entry Name="Bus Platform" Context="" Value="Автобусная платформа" />
+  <Entry Name="Bus Station" Context="" Value="Автобусная станция" />
+  <Entry Name="Bus Stop" Context="" Value="Автобусная остановка" />
+  <Entry Name="Bus Trap" Context="" Value="Проезд для автобусов" />
+  <Entry Name="Busway" Context="" Value="Выделенная для общественного транспорта" />
+  <Entry Name="Butcher" Context="" Value="Мясная лавка" />
+  <Entry Name="Cable barrier" Context="" Value="Тросовое ограждение" />
+  <Entry Name="Cable Car" Context="" Value="Фуникулер" />
+  <Entry Name="Cable marker" Context="" Value="Cable marker" />
+  <Entry Name="Cafe" Context="" Value="Кафе" />
+  <Entry Name="Cairn" Context="" Value="Пирамида из камней (тур)" />
+  <Entry Name="Camp pitch" Context="" Value="Участок в кемпинге" />
+  <Entry Name="Campsite" Context="" Value="Кемпинг" />
+  <Entry Name="Canadian Football" Context="" Value="Канадский футбол" />
+  <Entry Name="Canal" Context="" Value="Канал" />
+  <Entry Name="Canoeing/Kayaking" Context="" Value="Гребля на каноэ и каяках" />
+  <Entry Name="Cape" Context="" Value="Мыс" />
+  <Entry Name="Car" Context="" Value="Автомобиль" />
+  <Entry Name="Car Dealer" Context="" Value="Автосалон" />
+  <Entry Name="Caravan Site/RV Park" Context="" Value="Кемпинг для домов на колёсах" />
+  <Entry Name="Carpenter" Context="" Value="Столяр или плотник" />
+  <Entry Name="Carpet" Context="" Value="Ковёр" />
+  <Entry Name="Cash" Context="" Value="Наличные" />
+  <Entry Name="Casino" Context="" Value="Казино" />
+  <Entry Name="Castle" Context="" Value="Замок" />
+  <Entry Name="Catenary mast" Context="" Value="Подвеска" />
+  <Entry Name="Caterer" Context="" Value="Кейтеринговое агентство" />
+  <Entry Name="Cattle Grid" Context="" Value="Лежачая решётка (против скота)" />
+  <Entry Name="Cave Entrance" Context="" Value="Вход в пещеру" />
+  <Entry Name="Cemetery" Context="" Value="Кладбище" />
+  <Entry Name="Cemetery sector" Context="" Value="Сектор кладбища" />
+  <Entry Name="Chain" Context="" Value="Цепь" />
+  <Entry Name="Chair Lift" Context="" Value="Кресельная" />
+  <Entry Name="Chalet" Context="" Value="Съёмный домик (шале)" />
+  <Entry Name="Changing table" Context="" Value="Пеленальный стол" />
+  <Entry Name="Charcoal pile" Context="" Value="Углежогная куча" />
+  <Entry Name="Charging Station" Context="" Value="Станция зарядки" />
+  <Entry Name="Charity" Context="" Value="Благотворительный магазин" />
+  <Entry Name="Cheese" Context="" Value="Сыр" />
+  <Entry Name="Chemist" Context="" Value="Бытовая химия" />
+  <Entry Name="Chess" Context="" Value="Шахматы" />
+  <Entry Name="Chicane" Context="" Value="Шикана" />
+  <Entry Name="Chimney" Context="" Value="Дымовая труба" />
+  <Entry Name="Chocolate" Context="" Value="Шоколад" />
+  <Entry Name="Choker" Context="" Value="Сужение дороги" />
+  <Entry Name="Church" Context="" Value="Церковь" />
+  <Entry Name="Circular junction" Context="" Value="Круговой перекрёсток" />
+  <Entry Name="City" Context="" Value="Город (более 100 000)" />
+  <Entry Name="City Block" Context="" Value="Городской квартал" />
+  <Entry Name="City gate" Context="" Value="Городские ворота" />
+  <Entry Name="City Limit Sign" Context="" Value="Знак границ населенного пункта" />
+  <Entry Name="City Wall" Context="" Value="Городская стена" />
+  <Entry Name="Citywalls" Context="" Value="Городские стены" />
+  <Entry Name="Cliff" Context="" Value="Утёс" />
+  <Entry Name="Climbing" Context="" Value="Альпинизм" />
+  <Entry Name="Climbing route" Context="" Value="Скалолазная трасса" />
+  <Entry Name="Climbing route bottom" Context="" Value="Начало маршрута восхождения" />
+  <Entry Name="Climbing route top" Context="" Value="Вершина маршрута восхождения" />
+  <Entry Name="Climbing site" Context="" Value="Альпинистская площадка" />
+  <Entry Name="Clinic" Context="" Value="Клиника" />
+  <Entry Name="Clock" Context="" Value="Часы" />
+  <Entry Name="Clothes" Context="" Value="Одежда" />
+  <Entry Name="Club" Context="" Value="Клуб" />
+  <Entry Name="Coal Power Generator" Context="" Value="Работающий на угле" />
+  <Entry Name="Coal Power Plant" Context="" Value="Угольная энергостанция" />
+  <Entry Name="Coastline" Context="" Value="Береговая линия" />
+  <Entry Name="Coffee" Context="" Value="Кофе" />
+  <Entry Name="College" Context="" Value="Профессиональное училище" />
+  <Entry Name="Colonnade" Context="" Value="Колоннада" />
+  <Entry Name="Combined Foot- and Cycleway" Context="" Value="Совмещённые пешеходная и велодорожка" />
+  <Entry Name="Commercial" Context="" Value="Деловая территория" />
+  <Entry Name="Community Centre" Context="" Value="Общественный центр" />
+  <Entry Name="Compressed Air" Context="" Value="Компрессор для шин" />
+  <Entry Name="Computer" Context="" Value="Компьютеры" />
+  <Entry Name="Confectionery" Context="" Value="Кондитерские изделия" />
+  <Entry Name="Connection" Context="power" Value="Соединение" />
+  <Entry Name="Connection Point" Context="" Value="Точка подключения" />
+  <Entry Name="Construction" Context="" Value="Строительство" />
+  <Entry Name="Construction Area" Context="" Value="Строительная площадка" />
+  <Entry Name="Contact (Common Schema)" Context="" Value="Контактная информация (общая схема)" />
+  <Entry Name="Contact (Schema with 'contact:*' Prefix)" Context="" Value="Contact (Schema with 'contact:*' Prefix)" />
+  <Entry Name="Continent" Context="" Value="Континент" />
+  <Entry Name="Convenience Store" Context="" Value="Небольшой магазин" />
+  <Entry Name="Copy Shop" Context="" Value="Копировальные и полиграфические услуги" />
+  <Entry Name="Cosmetics" Context="" Value="Косметика" />
+  <Entry Name="Country" Context="" Value="Страна" />
+  <Entry Name="County" Context="" Value="Округ" />
+  <Entry Name="Courthouse" Context="" Value="Суд" />
+  <Entry Name="Covered Reservoir" Context="" Value="Крытый резервуар" />
+  <Entry Name="Craft" Context="" Value="Мастерская" />
+  <Entry Name="Crane" Context="" Value="Кран" />
+  <Entry Name="Cricket" Context="" Value="Крикет" />
+  <Entry Name="Croquet" Context="" Value="Крокет" />
+  <Entry Name="Cross" Context="" Value="Крест" />
+  <Entry Name="Crossing" Context="" Value="Переход через рельсовые пути" />
+  <Entry Name="Culture" Context="" Value="Культура" />
+  <Entry Name="Culvert" Context="" Value="Водопропускная труба" />
+  <Entry Name="Curling" Context="" Value="Кёрлинг" />
+  <Entry Name="Curtain" Context="" Value="Шторы" />
+  <Entry Name="Cushion" Context="" Value="Лежачий полицейский с разрывами" />
+  <Entry Name="Cutline" Context="" Value="Просека" />
+  <Entry Name="Cycle Barrier" Context="" Value="Преграда для велосипедов" />
+  <Entry Name="Cycle Lane/Track" Context="" Value="Велосипедная полоса/дорожка" />
+  <Entry Name="Cycling" Context="" Value="велосипедные" />
+  <Entry Name="Dairy" Context="" Value="Молочные продукты" />
+  <Entry Name="Dam" Context="" Value="Дамба" />
+  <Entry Name="Dance" Context="" Value="Танцплощадка" />
+  <Entry Name="Dedicated Bridleway" Context="" Value="Дорога для верховой езды" />
+  <Entry Name="Dedicated Cycleway" Context="" Value="Велодорожка" />
+  <Entry Name="Dedicated Footway" Context="" Value="Пешеходная дорожка" />
+  <Entry Name="Deli (Fine Food)" Context="" Value="Деликатесы" />
+  <Entry Name="Dentist" Context="" Value="Стоматология" />
+  <Entry Name="Department Store" Context="" Value="Универмаг" />
+  <Entry Name="Description" Context="" Value="Описание" />
+  <Entry Name="Destination Sign" Context="" Value="Указатель направлений" />
+  <Entry Name="Detour Route" Context="" Value="Объездной маршрут" />
+  <Entry Name="Diesel Power Generator" Context="" Value="Работающий на дизельном топливе" />
+  <Entry Name="Diesel Power Plant" Context="" Value="Дизельная энергостанция" />
+  <Entry Name="Diet" Context="" Value="Диета" />
+  <Entry Name="Dip" Context="" Value="Жёлоб" />
+  <Entry Name="Diplomatic" Context="office" Value="Дипломатический" />
+  <Entry Name="Disused Rail" Context="" Value="Неиспользуемые пути" />
+  <Entry Name="Ditch" Context="" Value="Канава" />
+  <Entry Name="Ditch" Context="Barrier" Value="Канава" />
+  <Entry Name="Dive centre" Context="" Value="Дайвинг-центр" />
+  <Entry Name="Dock" Context="" Value="Док" />
+  <Entry Name="Doctor's Office" Context="" Value="Doctor's Office" />
+  <Entry Name="Dog Park" Context="" Value="Площадка для выгула собак" />
+  <Entry Name="Dog Racing" Context="" Value="Собачьи бега" />
+  <Entry Name="Do-It-Yourself Store" Context="" Value="Строительный гипермаркет" />
+  <Entry Name="Doors" Context="" Value="Двери" />
+  <Entry Name="Drag Lift" Context="" Value="Бугельная" />
+  <Entry Name="Drain" Context="" Value="Дренажный канал" />
+  <Entry Name="Drinking Water" Context="" Value="Питьевая вода" />
+  <Entry Name="Driver Training" Context="" Value="Обучение водителей" />
+  <Entry Name="Driving range" Context="golf" Value="Тренировочная зона" />
+  <Entry Name="Driving School" Context="" Value="Автошкола" />
+  <Entry Name="Dry Cleaning" Context="" Value="Химчистка" />
+  <Entry Name="Earth Bank" Context="" Value="Земляная осыпь" />
+  <Entry Name="E-cigarette" Context="" Value="Электронные сигареты" />
+  <Entry Name="Education" Context="" Value="Образование" />
+  <Entry Name="Educational institution" Context="office" Value="Учебное заведение" />
+  <Entry Name="Electrician" Context="" Value="Электрик" />
+  <Entry Name="Electronic" Context="" Value="Электроника" />
+  <Entry Name="Electronics" Context="" Value="Бытовая электроника" />
+  <Entry Name="Electronics Repair" Context="" Value="Ремонт электроники" />
+  <Entry Name="Elevator" Context="" Value="Лифт" />
+  <Entry Name="Embankment" Context="" Value="Насыпь" />
+  <Entry Name="Emergency" Context="" Value="Экстренная помощь" />
+  <Entry Name="Emergency Access Point" Context="" Value="Точка экстренной помощи" />
+  <Entry Name="Emergency Bay" Context="" Value="Аварийный карман" />
+  <Entry Name="Emergency Phone" Context="" Value="Телефон экстренного вызова" />
+  <Entry Name="Emergency ward entrance" Context="" Value="Вход в отделение экстренной помощи" />
+  <Entry Name="Employment agency" Context="office" Value="Бюро по трудоустройству" />
+  <Entry Name="Enforcement" Context="" Value="Ограничение" />
+  <Entry Name="Enforcement (average speed)" Context="" Value="Ограничение (средняя скорость)" />
+  <Entry Name="Entrance" Context="" Value="Вход" />
+  <Entry Name="Entrance (Barrier Opening)" Context="" Value="Проход или проезд (проём в преграде)" />
+  <Entry Name="Equestrian Sport" Context="" Value="Конный спорт" />
+  <Entry Name="Erotic" Context="" Value="Секс-шоп" />
+  <Entry Name="Escape" Context="" Value="Полоса аварийного торможения" />
+  <Entry Name="Estate agent" Context="office" Value="Агентство недвижимости" />
+  <Entry Name="Events Venue" Context="" Value="Место проведения мероприятий" />
+  <Entry Name="Fabric" Context="" Value="Ткани" />
+  <Entry Name="Facilities" Context="" Value="Услуги" />
+  <Entry Name="Fair Trade" Context="" Value="Справедливая торговля" />
+  <Entry Name="Fairway" Context="golf" Value="Гладкое поле" />
+  <Entry Name="Farm" Context="" Value="Ферма" />
+  <Entry Name="Farm Stand" Context="" Value="Фермерский магазин" />
+  <Entry Name="Farm Store" Context="" Value="Фермерский магазин" />
+  <Entry Name="Farmland" Context="" Value="Сельскохозяйственные угодья" />
+  <Entry Name="Farmyard" Context="" Value="Двор фермы" />
+  <Entry Name="Fast Food" Context="" Value="Ресторан быстрого питания" />
+  <Entry Name="Fell" Context="" Value="Каменистая пустошь" />
+  <Entry Name="Fence" Context="" Value="Забор" />
+  <Entry Name="Ferry Route" Context="" Value="Маршрут водного транспорта" />
+  <Entry Name="Ferry Terminal" Context="" Value="Причал" />
+  <Entry Name="Field Hockey" Context="" Value="Хоккей на траве" />
+  <Entry Name="Financial" Context="office" Value="Финансовый" />
+  <Entry Name="Fire Extinguisher" Context="" Value="Огнетушитель" />
+  <Entry Name="Fire Hose" Context="" Value="Пожарный рукав" />
+  <Entry Name="Fire Hydrant" Context="" Value="Пожарный кран" />
+  <Entry Name="Fire Station" Context="" Value="Пожарная часть" />
+  <Entry Name="Firepit" Context="" Value="Место разведения костра" />
+  <Entry Name="Fishing" Context="" Value="Место для рыбалки" />
+  <Entry Name="Fishing" Context="shop" Value="Рыбалка" />
+  <Entry Name="Fitness Centre" Context="" Value="Фитнес-центр" />
+  <Entry Name="Fitness Station" Context="" Value="Площадка для фитнеса" />
+  <Entry Name="Fitness Trail" Context="" Value="Оздоровительная тропа" />
+  <Entry Name="Fixme" Context="" Value="Fixme" />
+  <Entry Name="Flagpole" Context="" Value="Флагшток" />
+  <Entry Name="Florist" Context="" Value="Цветочный магазин" />
+  <Entry Name="Flowerbed" Context="" Value="Клумба" />
+  <Entry Name="Flowline" Context="" Value="Линия потока" />
+  <Entry Name="Food" Context="" Value="Еда" />
+  <Entry Name="Food Bank" Context="" Value="Кухня или столовая для бездомных" />
+  <Entry Name="Food Court" Context="" Value="Ресторанный дворик" />
+  <Entry Name="Food+Drinks" Context="" Value="Общественное питание" />
+  <Entry Name="For the body" Context="" Value="Для тела" />
+  <Entry Name="Ford" Context="" Value="Брод" />
+  <Entry Name="Forest" Context="" Value="Лесопосадки" />
+  <Entry Name="Fort" Context="" Value="Форт" />
+  <Entry Name="Foundation" Context="office" Value="Учреждение" />
+  <Entry Name="Fountain" Context="" Value="Фонтан" />
+  <Entry Name="Frame" Context="" Value="Рамки" />
+  <Entry Name="Frontal Water hazard" Context="golf" Value="Фронтальная водная преграда" />
+  <Entry Name="Frozen food" Context="" Value="Замороженная еда" />
+  <Entry Name="Fuel" Context="" Value="Заправочная станция" />
+  <Entry Name="Full-Height Turnstile" Context="" Value="Полноростовой турникет" />
+  <Entry Name="Funeral Directors" Context="" Value="Ритуальные услуги" />
+  <Entry Name="Funicular" Context="" Value="Фуникулёр" />
+  <Entry Name="Furniture" Context="" Value="Мебельный" />
+  <Entry Name="Gaelic Games" Context="" Value="Гэльские игры" />
+  <Entry Name="Gallery" Context="" Value="Галерея" />
+  <Entry Name="Gambling" Context="" Value="Азартные игры" />
+  <Entry Name="Games" Context="" Value="Games" />
+  <Entry Name="Garages" Context="" Value="Гаражи" />
+  <Entry Name="Garden" Context="" Value="Сады" />
+  <Entry Name="Garden Centre" Context="" Value="Садово-огородный магазин" />
+  <Entry Name="Gardener" Context="" Value="Садовник или ландшафтный дизайнер" />
+  <Entry Name="Gas" Context="" Value="Газ" />
+  <Entry Name="Gas Power Generator" Context="" Value="Работающий на природном газе" />
+  <Entry Name="Gas Power Plant" Context="" Value="Газовая энергостанция" />
+  <Entry Name="Gasoline Power Generator" Context="" Value="Работающий на бензине" />
+  <Entry Name="Gasoline Power Plant" Context="" Value="Бензиновая энергостанция" />
+  <Entry Name="Gasometer" Context="" Value="Газгольдер" />
+  <Entry Name="Gate" Context="" Value="Ворота/калитка" />
+  <Entry Name="Gate" Context="airport" Value="Выход на посадку" />
+  <Entry Name="General Store" Context="" Value="Магазин смешанного ассортимента" />
+  <Entry Name="Geography" Context="" Value="География" />
+  <Entry Name="Geothermal Power Generator" Context="" Value="Геотермальный генератор" />
+  <Entry Name="Geothermal Power Plant" Context="" Value="Геотермальная энергостанция" />
+  <Entry Name="Gift/Souvenir" Context="" Value="Подарки и сувениры" />
+  <Entry Name="Give Way" Context="" Value="Уступите дорогу" />
+  <Entry Name="Glacier" Context="" Value="Ледник" />
+  <Entry Name="Golf" Context="" Value="Гольф" />
+  <Entry Name="Golf Course" Context="" Value="Поле для гольфа" />
+  <Entry Name="Gondola" Context="" Value="Гондольная" />
+  <Entry Name="Goods" Context="" Value="Грузовая" />
+  <Entry Name="Goods conveyor" Context="" Value="Транспортировочный конвейер" />
+  <Entry Name="Government" Context="office" Value="Государственное учреждение" />
+  <Entry Name="Grass" Context="" Value="Газон" />
+  <Entry Name="Grassland" Context="" Value="Луг" />
+  <Entry Name="Grave" Context="" Value="Могила" />
+  <Entry Name="Graveyard" Context="" Value="Погост" />
+  <Entry Name="Green" Context="golf" Value="Лужайка" />
+  <Entry Name="Greenfield" Context="" Value="Зона под застройку" />
+  <Entry Name="Greengrocer" Context="" Value="Продавец фруктов или овощей" />
+  <Entry Name="Greenhouse Horticulture" Context="" Value="Парниковое садоводство" />
+  <Entry Name="Grit Bin" Context="" Value="Контейнер с песком (щебнем)" />
+  <Entry Name="Group Home" Context="" Value="Учреждение группового проживания" />
+  <Entry Name="Groyne" Context="" Value="Буна" />
+  <Entry Name="Guard Rail" Context="" Value="Дорожное ограждение (отбойник)" />
+  <Entry Name="Guest House/Bed &amp; Breakfast" Context="" Value="Гостевой дом/Bed &amp; Breakfast" />
+  <Entry Name="Guidepost" Context="" Value="Указатель направлений" />
+  <Entry Name="Gymnastics" Context="" Value="Гимнастика" />
+  <Entry Name="Hackerspace" Context="" Value="Хакерспейс" />
+  <Entry Name="Hairdresser/Barber" Context="" Value="Парикмахерская" />
+  <Entry Name="Hamlet" Context="" Value="Деревня" />
+  <Entry Name="Hampshire Gate" Context="" Value="Проволочные ворота" />
+  <Entry Name="Handball" Context="" Value="Гандбол" />
+  <Entry Name="Handicraft" Context="" Value="Ручная работа" />
+  <Entry Name="Handrail" Context="" Value="Перила" />
+  <Entry Name="Hangar" Context="" Value="Ангар" />
+  <Entry Name="Hardware" Context="" Value="Хозяйственный магазин" />
+  <Entry Name="Hazardous Area" Context="" Value="Опасная зона" />
+  <Entry Name="Health" Context="" Value="Здравоохранение" />
+  <Entry Name="Heap" Context="" Value="Груда" />
+  <Entry Name="Hearing Aids" Context="" Value="Слуховые аппараты" />
+  <Entry Name="Heath" Context="" Value="Пустошь" />
+  <Entry Name="Hedge" Context="" Value="Живая изгородь" />
+  <Entry Name="Height Restrictor" Context="" Value="Ограничитель высоты" />
+  <Entry Name="Heliostat" Context="" Value="Гелиостат" />
+  <Entry Name="Helipad" Context="" Value="Вертолётная площадка" />
+  <Entry Name="Herbalist" Context="" Value="Травник" />
+  <Entry Name="Hifi" Context="" Value="Звуковая аппаратура" />
+  <Entry Name="Highway milestone" Context="" Value="Дистанционный столб" />
+  <Entry Name="Highways" Context="" Value="Дороги" />
+  <Entry Name="Hiking Route" Context="" Value="Пеший туристический маршрут" />
+  <Entry Name="Hindu Temple" Context="" Value="Индуистский храм" />
+  <Entry Name="Historic monastery" Context="" Value="Исторический монастырь" />
+  <Entry Name="Historic Places" Context="" Value="Исторические места" />
+  <Entry Name="Holding Position" Context="" Value="Предварительный старт" />
+  <Entry Name="Hole" Context="golf" Value="Путь к лунке" />
+  <Entry Name="Home decoration" Context="" Value="Предметы интерьера" />
+  <Entry Name="Horse Racing" Context="" Value="Лошадиные бега" />
+  <Entry Name="Horse Riding Centre" Context="" Value="Центр верховой езды" />
+  <Entry Name="Hospital" Context="" Value="Больница" />
+  <Entry Name="Hostel" Context="" Value="Хостел (гостиница)" />
+  <Entry Name="Hotel" Context="" Value="Гостиница" />
+  <Entry Name="Houseware" Context="" Value="Домашняя утварь" />
+  <Entry Name="Hump" Context="" Value="Широкий лежачий полицейский" />
+  <Entry Name="Hunting Stand" Context="" Value="Охотничья вышка" />
+  <Entry Name="Hvac" Context="" Value="Установка кондиционеров" />
+  <Entry Name="Hydrant marker" Context="" Value="Hydrant marker" />
+  <Entry Name="Hydro Power Plant" Context="" Value="Гидроэнергостанция" />
+  <Entry Name="Ice cream" Context="" Value="Мороженое" />
+  <Entry Name="Ice Hockey" Context="" Value="Хоккей с шайбой" />
+  <Entry Name="Ice Skating" Context="" Value="Катание на коньках" />
+  <Entry Name="Industrial" Context="" Value="Промышленная территория" />
+  <Entry Name="Information Board" Context="" Value="Информационный стенд" />
+  <Entry Name="Information Office" Context="" Value="Справочное бюро" />
+  <Entry Name="Information Terminal" Context="" Value="Информационная стойка" />
+  <Entry Name="Insulator" Context="" Value="Изолятор" />
+  <Entry Name="Insurance" Context="office" Value="Страховая компания" />
+  <Entry Name="Interior Decoration" Context="" Value="Оформление интерьера" />
+  <Entry Name="Internet Access" Context="" Value="Доступ в интернет" />
+  <Entry Name="Internet Cafe" Context="" Value="Интернет-кафе" />
+  <Entry Name="Island" Context="" Value="Остров" />
+  <Entry Name="Island" Context="traffic_calming" Value="Островок" />
+  <Entry Name="Islet" Context="" Value="Островок" />
+  <Entry Name="Isolated Dwelling" Context="" Value="Изолированное жилье" />
+  <Entry Name="IT Specialist" Context="office" Value="Информационные технологии" />
+  <Entry Name="Jersey Barrier" Context="" Value="Заграждение из блоков" />
+  <Entry Name="Jewellery" Context="" Value="Ювелирный магазин" />
+  <Entry Name="Kart Racing" Context="" Value="Картинг" />
+  <Entry Name="Kerb" Context="" Value="Бордюр" />
+  <Entry Name="Key cutter" Context="" Value="Изготовление дубликатов ключей" />
+  <Entry Name="Kiln" Context="" Value="Обжиговая печь" />
+  <Entry Name="Kindergarten" Context="" Value="Детский сад" />
+  <Entry Name="Kiosk" Context="" Value="Киоск" />
+  <Entry Name="Kissing Gate" Context="" Value="Ворота &quot;Kissing Gate&quot;" />
+  <Entry Name="Kitchen" Context="" Value="Кухня" />
+  <Entry Name="Laboratory" Context="" Value="Лаборатория" />
+  <Entry Name="Land use" Context="" Value="Землепользование" />
+  <Entry Name="Landfill" Context="" Value="Свалка" />
+  <Entry Name="Lane Connectivity" Context="" Value="Соединения полос" />
+  <Entry Name="Language school" Context="" Value="Языковая школа" />
+  <Entry Name="Lateral water hazard" Context="golf" Value="Боковая водная преграда" />
+  <Entry Name="Laundry" Context="" Value="Прачечная" />
+  <Entry Name="Lawn Bowling" Context="" Value="Игра в шары на траве" />
+  <Entry Name="Lawyer" Context="office" Value="Юридические услуги" />
+  <Entry Name="Leisure" Context="" Value="Досуг" />
+  <Entry Name="Levee" Context="" Value="Насыпь для защиты от наводнений" />
+  <Entry Name="Level Crossing" Context="" Value="Железнодорожный переезд" />
+  <Entry Name="Library" Context="" Value="Библиотека" />
+  <Entry Name="Life Guard" Context="" Value="Спасатель" />
+  <Entry Name="Life Ring" Context="" Value="Спасательный круг" />
+  <Entry Name="Lift Gate" Context="" Value="Шлагбаум" />
+  <Entry Name="Light Rail" Context="" Value="Лёгкая железная дорога" />
+  <Entry Name="Lighthouse" Context="" Value="Маяк" />
+  <Entry Name="Lighting" Context="" Value="Освещение" />
+  <Entry Name="Living Street" Context="" Value="Жилая улица" />
+  <Entry Name="Locality" Context="" Value="Местность" />
+  <Entry Name="Lock Gate" Context="" Value="Ворота шлюза" />
+  <Entry Name="Locksmith" Context="" Value="Изготовление замков и ключей" />
+  <Entry Name="Log" Context="" Value="Бревно" />
+  <Entry Name="Lottery" Context="" Value="Лотерейные билеты" />
+  <Entry Name="Magic Carpet" Context="" Value="Ленточный подъёмник" />
+  <Entry Name="Mall" Context="" Value="Крупный торговый центр" />
+  <Entry Name="Man Made" Context="" Value="Рукотворное" />
+  <Entry Name="Manhole" Context="" Value="Люк" />
+  <Entry Name="Manor" Context="" Value="Особняк" />
+  <Entry Name="Map" Context="" Value="Карта" />
+  <Entry Name="Marina" Context="" Value="Пристань для яхт" />
+  <Entry Name="Marine Fuel" Context="" Value="Судовое топливо" />
+  <Entry Name="Maritime" Context="" Value="Морская" />
+  <Entry Name="Marker" Context="" Value="Маркер" />
+  <Entry Name="Massage" Context="" Value="Массаж" />
+  <Entry Name="Mast" Context="" Value="Мачта" />
+  <Entry Name="Meadow" Context="" Value="Сенокосный луг" />
+  <Entry Name="Medical Supply" Context="" Value="Медицинские принадлежности" />
+  <Entry Name="Memorial" Context="" Value="Памятник" />
+  <Entry Name="Metal construction" Context="" Value="Изделия из металла" />
+  <Entry Name="Milestone" Context="" Value="Дистанционный столб" />
+  <Entry Name="Military" Context="" Value="Военная зона" />
+  <Entry Name="Military" Context="preset group" Value="Военные объекты" />
+  <Entry Name="Mine" Context="" Value="Шахта" />
+  <Entry Name="Mine shaft" Context="" Value="Шахтный ствол" />
+  <Entry Name="Mineshaft" Context="" Value="Шахта" />
+  <Entry Name="Mini bumps" Context="" Value="Мини-неровности" />
+  <Entry Name="Miniature Golf" Context="" Value="Поле для минигольфа" />
+  <Entry Name="Miniature Rail" Context="" Value="Миниатюрная железная дорога" />
+  <Entry Name="Mini-Roundabout" Context="" Value="Мини-круговое движение" />
+  <Entry Name="Mixed Lift" Context="" Value="Смешанный подъёмник" />
+  <Entry Name="Mobile Phone" Context="" Value="Мобильный телефон" />
+  <Entry Name="Model Aerodrome" Context="" Value="Авиамодельный спорт" />
+  <Entry Name="Monastery" Context="" Value="Монастырь" />
+  <Entry Name="Money Exchange" Context="" Value="Обмен валют" />
+  <Entry Name="Money transfer" Context="" Value="Денежные переводы" />
+  <Entry Name="Monitoring Station" Context="" Value="Станция наблюдения" />
+  <Entry Name="Monorail" Context="" Value="Монорельс" />
+  <Entry Name="Monument" Context="" Value="Монумент" />
+  <Entry Name="Mosque" Context="" Value="Мечеть" />
+  <Entry Name="Motel" Context="" Value="Мотель" />
+  <Entry Name="Motocross" Context="" Value="Мотокросс" />
+  <Entry Name="Motorcycle" Context="" Value="Мотоциклы" />
+  <Entry Name="Motorcycle Dealer" Context="" Value="Продажа мотоциклов" />
+  <Entry Name="Motorsport" Context="" Value="Мотоспорт" />
+  <Entry Name="Motorway" Context="" Value="Автомагистраль" />
+  <Entry Name="Motorway Junction" Context="" Value="Съезд с магистрали" />
+  <Entry Name="Motorway Link" Context="" Value="Съезд с автомагистрали" />
+  <Entry Name="Mountain Biking Route" Context="" Value="Маршрут горных велосипедов" />
+  <Entry Name="Mountain Pass" Context="" Value="Перевал" />
+  <Entry Name="Movable Bridge" Context="" Value="Разводной мост" />
+  <Entry Name="Movie Theater/Cinema" Context="" Value="Кинотеатр" />
+  <Entry Name="Mud" Context="" Value="Грязь" />
+  <Entry Name="Multi" Context="" Value="Многоборье" />
+  <Entry Name="Multipolygon" Context="" Value="Мультиполигон" />
+  <Entry Name="Municipality" Context="" Value="Муниципалитет" />
+  <Entry Name="Museum" Context="" Value="Музей" />
+  <Entry Name="Music" Context="" Value="Музыка" />
+  <Entry Name="Music school" Context="" Value="Музыкальная школа" />
+  <Entry Name="Musical Instrument" Context="" Value="Музыкальные инструменты" />
+  <Entry Name="Name" Context="" Value="Название" />
+  <Entry Name="Named Junction" Context="junction=yes" Value="Именованный перекрёсток" />
+  <Entry Name="Narrow Gauge Rail" Context="" Value="Узкоколейка" />
+  <Entry Name="National Park" Context="" Value="Национальный парк" />
+  <Entry Name="Nature" Context="" Value="Природа" />
+  <Entry Name="Nature Reserve" Context="" Value="Заповедник" />
+  <Entry Name="Navigation aid" Context="" Value="Средство визуальной навигации" />
+  <Entry Name="Neighbourhood" Context="" Value="Микрорайон" />
+  <Entry Name="Newspaper" Context="office" Value="Редакция газеты или журнала" />
+  <Entry Name="Newspaper Stand" Context="" Value="Газетный киоск" />
+  <Entry Name="Night Club" Context="" Value="Ночной клуб" />
+  <Entry Name="Nine-pin Bowling" Context="" Value="Кегельбан (9 кеглей)" />
+  <Entry Name="Non-governmental organisation (NGO)" Context="office" Value="Общественная организация" />
+  <Entry Name="Non-public police facility" Context="" Value="Служебные объекты полиции" />
+  <Entry Name="Notary" Context="office" Value="Нотариус" />
+  <Entry Name="Note" Context="the tag note=*" Value="Заметка" />
+  <Entry Name="Nuclear Power Plant" Context="" Value="Атомная энергостанция" />
+  <Entry Name="Nuclear Reactor" Context="" Value="Ядерный реактор" />
+  <Entry Name="Nursing Home" Context="" Value="Дом престарелых" />
+  <Entry Name="Nursing Home (Legacy)" Context="" Value="Дом престарелых (устаревший тег)" />
+  <Entry Name="Offices" Context="" Value="Офисы" />
+  <Entry Name="Oil Power Generator" Context="" Value="Работающий на мазуте" />
+  <Entry Name="Oil Power Plant" Context="" Value="Нефтяная энергостанция" />
+  <Entry Name="Optician" Context="" Value="Оптика" />
+  <Entry Name="Orchard" Context="" Value="Фруктовый сад" />
+  <Entry Name="Organic" Context="" Value="Натуральные продукты" />
+  <Entry Name="Osmotic Power Generator" Context="" Value="Осмотический генератор" />
+  <Entry Name="Osmotic Power Plant" Context="" Value="Осмотическая энергостанция" />
+  <Entry Name="Other" Context="" Value="Другие" />
+  <Entry Name="Other Information Point" Context="" Value="Другая информационная точка" />
+  <Entry Name="Other Place of Worship" Context="" Value="Другое культовое место" />
+  <Entry Name="Outdoor" Context="" Value="Товары для активного отдыха" />
+  <Entry Name="Outdoor seating" Context="" Value="Столики на улице" />
+  <Entry Name="Outreach" Context="" Value="Социальное учреждение без проживания" />
+  <Entry Name="Paint" Context="" Value="Краски" />
+  <Entry Name="Painter" Context="" Value="Маляр" />
+  <Entry Name="Palaeontological Site" Context="" Value="Палеонтологические раскопки" />
+  <Entry Name="Parcel Locker" Context="" Value="Постамат" />
+  <Entry Name="Park" Context="" Value="Парк" />
+  <Entry Name="Parking" Context="bicycle" Value="Парковка" />
+  <Entry Name="Parking" Context="car" Value="Парковка" />
+  <Entry Name="Parking" Context="motorcycle" Value="Парковка" />
+  <Entry Name="Parking Aisle" Context="" Value="Между рядами парковки" />
+  <Entry Name="Parking Entrance/Exit" Context="" Value="Въезд на парковку/выезд с парковки" />
+  <Entry Name="Parking Space" Context="" Value="Парковочное место" />
+  <Entry Name="Parts" Context="" Value="Запчасти" />
+  <Entry Name="Party supplies" Context="" Value="Товары для праздников и вечеринок" />
+  <Entry Name="Passageways" Context="" Value="Проезды" />
+  <Entry Name="Passing Place" Context="" Value="Место разъезда" />
+  <Entry Name="Pastry" Context="" Value="Выпечка" />
+  <Entry Name="Path" Context="" Value="Тропа" />
+  <Entry Name="Pawnbroker" Context="" Value="Ломбард" />
+  <Entry Name="Payment Methods" Context="" Value="Способы оплаты" />
+  <Entry Name="Peak" Context="" Value="Вершина" />
+  <Entry Name="Pedestrian" Context="" Value="Пешеходная улица" />
+  <Entry Name="Pedestrian Crossing" Context="" Value="Пешеходный переход" />
+  <Entry Name="Pelota" Context="" Value="Пелота" />
+  <Entry Name="Penstock" Context="" Value="Турбинный водовод" />
+  <Entry Name="Perfumery" Context="" Value="Парфюмерия" />
+  <Entry Name="Pet" Context="" Value="Зоомагазин" />
+  <Entry Name="Pet grooming" Context="" Value="Салон по уходу за домашними животными" />
+  <Entry Name="Petroleum Well" Context="" Value="Нефтяная скважина" />
+  <Entry Name="Pharmacy" Context="" Value="Аптека" />
+  <Entry Name="Photo" Context="" Value="Фотография" />
+  <Entry Name="Photo booth" Context="" Value="Фотоавтомат" />
+  <Entry Name="Photographer" Context="" Value="Фотограф" />
+  <Entry Name="Picnic Site" Context="" Value="Место для пикника" />
+  <Entry Name="Picnic Table" Context="" Value="Стол для пикника" />
+  <Entry Name="Pier" Context="" Value="Пирс" />
+  <Entry Name="Pin" Context="golf" Value="Лунка" />
+  <Entry Name="Pipeline" Context="" Value="Трубопровод" />
+  <Entry Name="Pipeline Substation" Context="" Value="Трубопроводная подстанция" />
+  <Entry Name="Pipeline Valve" Context="" Value="Задвижка трубопровода" />
+  <Entry Name="Piste Route" Context="" Value="Маршрут лыжни" />
+  <Entry Name="Pitch" Context="" Value="Спортивное поле" />
+  <Entry Name="Place of Worship" Context="" Value="Культовое место" />
+  <Entry Name="Places" Context="" Value="Места" />
+  <Entry Name="Plane Parking Position" Context="" Value="Место стоянки самолёта" />
+  <Entry Name="Plant Nursery" Context="" Value="Питомник растений" />
+  <Entry Name="Planter" Context="" Value="Садок" />
+  <Entry Name="Platform" Context="" Value="Платформа" />
+  <Entry Name="Playground" Context="" Value="Игровая площадка" />
+  <Entry Name="Playground device" Context="" Value="Игровое оборудование" />
+  <Entry Name="Plumber" Context="" Value="Сантехник" />
+  <Entry Name="Pole" Context="" Value="Столб" />
+  <Entry Name="Pole with Substation" Context="" Value="Pole with Substation" />
+  <Entry Name="Pole with Switch" Context="" Value="Столб с разъединителем" />
+  <Entry Name="Pole with Transformer" Context="" Value="Столб с трансформатором" />
+  <Entry Name="Police" Context="" Value="Полиция/милиция" />
+  <Entry Name="Political" Context="" Value="Политическая" />
+  <Entry Name="Political party" Context="office" Value="Политическая партия" />
+  <Entry Name="Pooling" Context="" Value="Карпулинг" />
+  <Entry Name="Post Box" Context="" Value="Почтовый ящик" />
+  <Entry Name="Post Office" Context="" Value="Почтовое отделение" />
+  <Entry Name="Postal Code" Context="" Value="Почтовый индекс" />
+  <Entry Name="Poster box" Context="" Value="Сити-формат" />
+  <Entry Name="Pottery" Context="" Value="Гончарная мастерская" />
+  <Entry Name="Power" Context="" Value="Электроэнергия" />
+  <Entry Name="Power Bay" Context="" Value="Ячейка" />
+  <Entry Name="Power Busbar" Context="" Value="Сборная шина" />
+  <Entry Name="Power Cable" Context="" Value="Электрический кабель" />
+  <Entry Name="Power circuit" Context="" Value="Силовая цепь" />
+  <Entry Name="Power Compensator" Context="" Value="Компенсатор" />
+  <Entry Name="Power Converter" Context="" Value="Преобразователь" />
+  <Entry Name="Power Generator" Context="" Value="Генератор" />
+  <Entry Name="Power Line" Context="" Value="Линия электропередачи" />
+  <Entry Name="Power line section" Context="" Value="Участок линии электропередачи" />
+  <Entry Name="Power Plant" Context="" Value="Электростанция" />
+  <Entry Name="Power Portal" Context="" Value="Портальная опора" />
+  <Entry Name="Power Street Cabinet" Context="" Value="Электротехнический шкаф" />
+  <Entry Name="Power Substation" Context="" Value="Подстанция" />
+  <Entry Name="Power Switch" Context="" Value="Разъединитель" />
+  <Entry Name="Power Switchgear" Context="" Value="Распределительное устройство" />
+  <Entry Name="Power Tower" Context="" Value="Опора ЛЭП" />
+  <Entry Name="Power Transformer" Context="" Value="Трансформатор" />
+  <Entry Name="Preserved" Context="" Value="Историческая железная дорога" />
+  <Entry Name="Primary" Context="" Value="Основная" />
+  <Entry Name="Primary Link" Context="" Value="Съезд с основной" />
+  <Entry Name="Printed Material" Context="" Value="Печатные материалы" />
+  <Entry Name="Prison" Context="" Value="Тюрьма" />
+  <Entry Name="Private company" Context="office" Value="Частная компания" />
+  <Entry Name="Private Mailbox" Context="" Value="Индивидуальный почтовый ящик" />
+  <Entry Name="Protected Area" Context="" Value="Особо охраняемая природная территория" />
+  <Entry Name="Pub" Context="" Value="Пивная" />
+  <Entry Name="Public bath" Context="" Value="Общественная купальня" />
+  <Entry Name="Public Bicycle Repair Station" Context="" Value="Стойка для ремонта велосипедов" />
+  <Entry Name="Public bookcase" Context="" Value="Общественный книжный шкаф" />
+  <Entry Name="Public Building" Context="" Value="Общественное здание" />
+  <Entry Name="Public Grill" Context="" Value="Публичный мангал" />
+  <Entry Name="Public Market" Context="" Value="Рынок" />
+  <Entry Name="Public Transport" Context="" Value="Общественный транспорт" />
+  <Entry Name="Public Transport (Legacy)" Context="" Value="Общественный транспорт (устаревший)" />
+  <Entry Name="Public Transport Route (Aerialway)" Context="" Value="Маршрут общественного транспорта (авиационный)" />
+  <Entry Name="Public Transport Route (Bus)" Context="" Value="Маршрут общественного транспорта (автобус)" />
+  <Entry Name="Public Transport Route (Ferry)" Context="" Value="Маршрут общественного транспорта (паром)" />
+  <Entry Name="Public transport route (Legacy)" Context="" Value="Маршрут общественного транспорта (устаревший)" />
+  <Entry Name="Public transport route (Legacy) (Aerialway)" Context="" Value="Маршрут общественного транспорта (устаревший) (авиационный)" />
+  <Entry Name="Public transport route (Legacy) (Ferry)" Context="" Value="Маршрут общественного транспорта (устаревший) (паром)" />
+  <Entry Name="Public Transport Route (Rail)" Context="" Value="Маршрут общественного транспорта (железнодорожный)" />
+  <Entry Name="Pump" Context="" Value="Насос" />
+  <Entry Name="Pumping station" Context="" Value="Насосная станция" />
+  <Entry Name="Pylon" Context="" Value="Опора" />
+  <Entry Name="Quarry" Context="" Value="Карьер" />
+  <Entry Name="Quarter" Context="" Value="Квартал" />
+  <Entry Name="Racetrack" Context="" Value="Трек" />
+  <Entry Name="Raceway" Context="" Value="Гоночная трасса" />
+  <Entry Name="Racquetball" Context="" Value="Ракетбол" />
+  <Entry Name="Rail" Context="" Value="Железная дорога" />
+  <Entry Name="Railway" Context="" Value="Рельсовый транспорт" />
+  <Entry Name="Railway construction" Context="" Value="Строящаяся железная дорога" />
+  <Entry Name="Railway crossing" Context="" Value="Пересечение путей" />
+  <Entry Name="Railway Halt" Context="" Value="Остановочный пункт" />
+  <Entry Name="Railway Land" Context="" Value="Земли железной дороги" />
+  <Entry Name="Railway milestone" Context="" Value="Ж/д дистанционный столб" />
+  <Entry Name="Railway Platform" Context="" Value="Платформа" />
+  <Entry Name="Railway Platform Edge" Context="" Value="Край железнодорожной платформы" />
+  <Entry Name="Railway Route" Context="" Value="Железнодорожный маршрут" />
+  <Entry Name="Railway Signal" Context="" Value="Железнодорожный сигнал" />
+  <Entry Name="Railway Switch" Context="" Value="Железнодорожная стрелка" />
+  <Entry Name="Range" Context="" Value="Полигон" />
+  <Entry Name="Ranger Station" Context="" Value="Пост рейнджеров" />
+  <Entry Name="RC Car" Context="" Value="Машинка на дистанционном управлении" />
+  <Entry Name="Recreation Ground" Context="" Value="Общественная земля для отдыха и игр" />
+  <Entry Name="Recycling Centre" Context="" Value="Пункт приёма перерабатываемых отходов" />
+  <Entry Name="Recycling Container" Context="" Value="Контейнер для перерабатываемых отходов" />
+  <Entry Name="Reef" Context="" Value="Риф" />
+  <Entry Name="Region" Context="" Value="Область" />
+  <Entry Name="Relations" Context="" Value="Отношения" />
+  <Entry Name="Religion" Context="office" Value="Религиозная организация" />
+  <Entry Name="Religious" Context="" Value="Религия" />
+  <Entry Name="Rental" Context="" Value="Прокат" />
+  <Entry Name="Repair" Context="" Value="Автомастерская" />
+  <Entry Name="Research" Context="office" Value="Научно-исследовательская организация" />
+  <Entry Name="Reservoir" Context="" Value="Резервуар" />
+  <Entry Name="Residential" Context="" Value="Местного значения" />
+  <Entry Name="Residential Area" Context="" Value="Жилая зона" />
+  <Entry Name="Residential Building" Context="" Value="Жилое здание" />
+  <Entry Name="Resort" Context="" Value="Курорт" />
+  <Entry Name="Rest Area" Context="" Value="Место для отдыха" />
+  <Entry Name="Restaurant" Context="" Value="Ресторан" />
+  <Entry Name="Retail" Context="" Value="Розничная торговля" />
+  <Entry Name="Retaining Wall" Context="" Value="Подпорная стена" />
+  <Entry Name="Ridge" Context="" Value="Кряж или горный хребет" />
+  <Entry Name="Riding Route" Context="" Value="Конный маршрут" />
+  <Entry Name="River" Context="" Value="Река" />
+  <Entry Name="Road (Unknown Type)" Context="" Value="Дорога (тип неизвестен)" />
+  <Entry Name="Road Restrictions" Context="" Value="Дорожные ограничения" />
+  <Entry Name="Road Route" Context="" Value="Автомобильный маршрут" />
+  <Entry Name="Rock" Context="" Value="Скала" />
+  <Entry Name="Roller Skating" Context="" Value="Катание на роликовых коньках" />
+  <Entry Name="Roofer" Context="" Value="Кровельщик" />
+  <Entry Name="Rough" Context="golf" Value="Неровное поле" />
+  <Entry Name="Roundabout" Context="" Value="Круговое движение" />
+  <Entry Name="Route marker" Context="" Value="Маркер маршрута" />
+  <Entry Name="Route Master" Context="" Value="Мастер-маршрут" />
+  <Entry Name="Route Network" Context="" Value="Сеть маршрутов" />
+  <Entry Name="Route Node Network" Context="" Value="Сеть маршрутов с нумерованными узлами" />
+  <Entry Name="Routes" Context="" Value="Маршруты" />
+  <Entry Name="Rowing" Context="" Value="Академическая гребля" />
+  <Entry Name="Rugby League" Context="" Value="Лига регби" />
+  <Entry Name="Rugby Union" Context="" Value="Объединение регби" />
+  <Entry Name="Ruins" Context="" Value="Развалины" />
+  <Entry Name="Rumble strip" Context="" Value="Стиральная доска" />
+  <Entry Name="Running" Context="" Value="Бег" />
+  <Entry Name="Running Route" Context="" Value="Беговой маршрут" />
+  <Entry Name="Runway" Context="" Value="Взлётно-посадочная полоса" />
+  <Entry Name="Saddle" Context="" Value="Перевал" />
+  <Entry Name="Sally Port" Context="" Value="Двойные ворота" />
+  <Entry Name="Salt Pond" Context="" Value="Соляной пруд" />
+  <Entry Name="Sand" Context="" Value="Песок" />
+  <Entry Name="Sanitary Dump Station" Context="" Value="Ассенизационная сливная станция" />
+  <Entry Name="Sauna" Context="" Value="Сауна" />
+  <Entry Name="Sawmill" Context="" Value="Пилорама" />
+  <Entry Name="School" Context="" Value="Школа" />
+  <Entry Name="Scree" Context="" Value="Каменистая осыпь" />
+  <Entry Name="Scrub" Context="" Value="Дикий кустарник" />
+  <Entry Name="Scuba Diving" Context="" Value="Подводное плавание" />
+  <Entry Name="Scuba diving" Context="" Value="Подводное плавание" />
+  <Entry Name="Seafood" Context="" Value="Морепродукты" />
+  <Entry Name="Second hand" Context="" Value="Подержанные" />
+  <Entry Name="Secondary" Context="" Value="Вторичная" />
+  <Entry Name="Secondary Link" Context="" Value="Съезд со вторичной" />
+  <Entry Name="Security" Context="" Value="Системы безопасности" />
+  <Entry Name="Segregated Foot- and Cycleway" Context="" Value="Разделённые пешеходная и велодорожка" />
+  <Entry Name="Service" Context="" Value="Служебная" />
+  <Entry Name="Service Building" Context="" Value="Service Building" />
+  <Entry Name="Service Device" Context="" Value="Сервисное устройство" />
+  <Entry Name="Services" Context="" Value="Придорожный сервис" />
+  <Entry Name="Sharing" Context="" Value="Кратковременный прокат" />
+  <Entry Name="Shelter" Context="" Value="Навес" />
+  <Entry Name="Shelter" Context="social_facility" Value="Учреждение для временного проживания или ночлега" />
+  <Entry Name="Shieling" Context="" Value="Пастушья хижина" />
+  <Entry Name="Shingle" Context="" Value="Галька" />
+  <Entry Name="Shinto Shrine" Context="" Value="Святилище синто" />
+  <Entry Name="Shipping" Context="" Value="Судоходство" />
+  <Entry Name="Shoemaker" Context="" Value="Пошив или ремонт обуви" />
+  <Entry Name="Shoes" Context="shop" Value="Обувь" />
+  <Entry Name="Shooting" Context="" Value="Стрельба" />
+  <Entry Name="Shops" Context="" Value="Магазины, служба быта" />
+  <Entry Name="Shower" Context="" Value="Душ" />
+  <Entry Name="Shrub" Context="" Value="Кустарник" />
+  <Entry Name="Shrubbery" Context="" Value="Декоративный кустарник" />
+  <Entry Name="Silo" Context="" Value="Хранилище для сыпучих материалов" />
+  <Entry Name="Sinkhole" Context="" Value="Карстовый провал" />
+  <Entry Name="Siren" Context="" Value="Сирена" />
+  <Entry Name="Site" Context="" Value="Место" />
+  <Entry Name="Skateboard" Context="" Value="Скейтбординг" />
+  <Entry Name="Ski Route" Context="" Value="Лыжный маршрут" />
+  <Entry Name="Skiing" Context="" Value="лыжные" />
+  <Entry Name="Slipway" Context="" Value="Слип" />
+  <Entry Name="Soccer" Context="" Value="Футбол (европейский)" />
+  <Entry Name="Social Centre" Context="" Value="Общественный центр" />
+  <Entry Name="Social Facility" Context="" Value="Социальные услуги" />
+  <Entry Name="Social Networks" Context="" Value="Социальные сети" />
+  <Entry Name="Solar Power Generator" Context="" Value="Солнечный генератор" />
+  <Entry Name="Solar Power Plant" Context="" Value="Солнечная энергостанция" />
+  <Entry Name="Speed Camera" Context="" Value="Камера-скоростемер" />
+  <Entry Name="Speed Limit Sign" Context="" Value="Знак ограничения скорости" />
+  <Entry Name="Spikes" Context="" Value="Шипы" />
+  <Entry Name="Sport" Context="" Value="Спорт" />
+  <Entry Name="Sport (Ball)" Context="" Value="Спорт (с мячом)" />
+  <Entry Name="Sport Facilities" Context="" Value="Спортивные сооружения" />
+  <Entry Name="Sports" Context="" Value="Спорт" />
+  <Entry Name="Sports Centre" Context="" Value="Спортивный центр" />
+  <Entry Name="Spring" Context="" Value="Родник" />
+  <Entry Name="Square" Context="" Value="Площадь" />
+  <Entry Name="Stadium" Context="" Value="Стадион" />
+  <Entry Name="State" Context="place" Value="Штат" />
+  <Entry Name="Station" Context="aerialway" Value="Станция" />
+  <Entry Name="Station" Context="railway" Value="Станция" />
+  <Entry Name="Stationery" Context="" Value="Канцтовары" />
+  <Entry Name="Steps" Context="" Value="Лестница" />
+  <Entry Name="Stile" Context="" Value="Ступени через ограду" />
+  <Entry Name="Stone" Context="" Value="Камень" />
+  <Entry Name="Stonemason" Context="" Value="Каменщик" />
+  <Entry Name="Stop" Context="" Value="Стоп" />
+  <Entry Name="Stop Area" Context="" Value="Зона остановки" />
+  <Entry Name="Stop Position" Context="" Value="Место остановки транспорта" />
+  <Entry Name="Storage Rental" Context="" Value="Аренда хранилища" />
+  <Entry Name="Storage Tank" Context="" Value="Резервуар" />
+  <Entry Name="Strait" Context="" Value="Пролив" />
+  <Entry Name="Stream" Context="" Value="Ручей" />
+  <Entry Name="Street" Context="" Value="Улица" />
+  <Entry Name="Street cabinet" Context="" Value="Уличный шкаф" />
+  <Entry Name="Street Lamp" Context="" Value="Уличный фонарь" />
+  <Entry Name="Streets" Context="" Value="Улицы" />
+  <Entry Name="Strip Club" Context="" Value="Стрип-клуб" />
+  <Entry Name="Studio" Context="" Value="Студия" />
+  <Entry Name="Suburb" Context="" Value="Пригород" />
+  <Entry Name="Subway" Context="" Value="Метрополитен" />
+  <Entry Name="Subway Entrance" Context="" Value="Вход в метро" />
+  <Entry Name="Suction point" Context="" Value="Точка забора воды" />
+  <Entry Name="Supermarket" Context="" Value="Супермаркет" />
+  <Entry Name="Superroute" Context="" Value="Супермаршрут" />
+  <Entry Name="Surveillance Camera" Context="" Value="Камера видеонаблюдения" />
+  <Entry Name="Survey Point" Context="" Value="Геодезический пункт" />
+  <Entry Name="Swimming" Context="" Value="Плавание" />
+  <Entry Name="Swimming Pool" Context="" Value="Плавательный бассейн" />
+  <Entry Name="Swimming pool" Context="shop" Value="Товары для бассейнов" />
+  <Entry Name="Swing Gate" Context="" Value="Поворотный шлагбаум" />
+  <Entry Name="Synagogue" Context="" Value="Синагога" />
+  <Entry Name="Table" Context="" Value="Стол" />
+  <Entry Name="Table Tennis/Ping-Pong" Context="" Value="Настольный теннис (пинг-понг)" />
+  <Entry Name="Tailings Pond" Context="" Value="Хвостохранилище" />
+  <Entry Name="Tailor" Context="" Value="Портной" />
+  <Entry Name="Tattoo" Context="" Value="Татуировка" />
+  <Entry Name="Tax advisor" Context="office" Value="Налоговый консультант" />
+  <Entry Name="Taxi" Context="" Value="Такси" />
+  <Entry Name="Taxiway" Context="" Value="Рулёжная дорожка" />
+  <Entry Name="Tea" Context="" Value="Чай" />
+  <Entry Name="Tee" Context="golf" Value="Стартовая площадка" />
+  <Entry Name="Telecom" Context="" Value="Связь" />
+  <Entry Name="Telecom Street Cabinet" Context="" Value="Уличная будка" />
+  <Entry Name="Telecommunication" Context="office" Value="Телекоммуникационная компания" />
+  <Entry Name="Telephone" Context="" Value="Телефон" />
+  <Entry Name="Telephone Exchange" Context="" Value="Телефонная станция" />
+  <Entry Name="Telescope" Context="" Value="Телескоп" />
+  <Entry Name="Tennis" Context="" Value="Теннис" />
+  <Entry Name="Ten-pin Bowling" Context="" Value="Боулинг (10 кеглей)" />
+  <Entry Name="Terminal" Context="" Value="Терминал" />
+  <Entry Name="Terminal" Context="power" Value="ввод ЛЭП" />
+  <Entry Name="Tertiary" Context="" Value="Третичная" />
+  <Entry Name="Tertiary Link" Context="" Value="Съезд с третичной" />
+  <Entry Name="Theatre" Context="" Value="Театр" />
+  <Entry Name="Ticket" Context="" Value="Билетная касса" />
+  <Entry Name="Ticket Machine" Context="" Value="Автомат для покупки билетов" />
+  <Entry Name="Tidal channel" Context="" Value="Приливный канал" />
+  <Entry Name="Tidal Power Plant" Context="" Value="Приливная энергостанция" />
+  <Entry Name="Tidal Water Turbine" Context="" Value="Приливная турбина" />
+  <Entry Name="Tiler" Context="" Value="Укладка плитки" />
+  <Entry Name="Tires" Context="" Value="Шины" />
+  <Entry Name="Tobacco" Context="" Value="Табачные изделия" />
+  <Entry Name="Toilets/Restrooms" Context="" Value="Общественный туалет" />
+  <Entry Name="Toll Booth" Context="" Value="Пункт оплаты за проезд" />
+  <Entry Name="Toll gantry" Context="" Value="Рамка оплаты проезда" />
+  <Entry Name="Tomb" Context="" Value="Гробница" />
+  <Entry Name="Tourism" Context="" Value="Туризм" />
+  <Entry Name="Tower" Context="" Value="Башня" />
+  <Entry Name="Towers" Context="" Value="Башни" />
+  <Entry Name="Town" Context="" Value="Город (до 100 000)" />
+  <Entry Name="Town Hall" Context="" Value="Административное здание" />
+  <Entry Name="Toys" Context="" Value="Игрушки" />
+  <Entry Name="Track" Context="" Value="Полевая/лесная дорога" />
+  <Entry Name="Track and Field Athletics" Context="" Value="Лёгкая атлетика" />
+  <Entry Name="Trade" Context="" Value="Оптовый склад" />
+  <Entry Name="Traffic Calming" Context="" Value="Приспособление для ограничения скорости" />
+  <Entry Name="Traffic Hazard" Context="" Value="Опасность на дороге" />
+  <Entry Name="Traffic Mirror" Context="" Value="Дорожное зеркало" />
+  <Entry Name="Traffic Signal" Context="" Value="Светофор" />
+  <Entry Name="Trailhead" Context="" Value="Начало тропы" />
+  <Entry Name="Tram" Context="" Value="Трамвай" />
+  <Entry Name="Tram Stop" Context="" Value="Трамвайная остановка" />
+  <Entry Name="Transformer Tower" Context="" Value="Трансформаторная башня" />
+  <Entry Name="Transport" Context="" Value="Транспорт" />
+  <Entry Name="Travel Agency" Context="" Value="Туристическое агентство" />
+  <Entry Name="Tree" Context="" Value="Дерево" />
+  <Entry Name="Tree Row" Context="" Value="Ряд деревьев" />
+  <Entry Name="Trolley Bay/Cart Corral" Context="" Value="Место для товарных тележек" />
+  <Entry Name="Trunk" Context="" Value="Автострада" />
+  <Entry Name="Trunk Link" Context="" Value="Съезд с автострады" />
+  <Entry Name="Tunnel" Context="" Value="Тоннель" />
+  <Entry Name="Turn Restriction" Context="" Value="Ограничение на поворот" />
+  <Entry Name="Turning Circle" Context="" Value="Разворотный круг" />
+  <Entry Name="Turning Loop" Context="" Value="Разворотная петля" />
+  <Entry Name="Turning Point" Context="" Value="Место разворота" />
+  <Entry Name="Turnstile" Context="" Value="Турникет" />
+  <Entry Name="Turntable" Context="" Value="Поворотный стол" />
+  <Entry Name="Unclassified" Context="" Value="Не классифицировано" />
+  <Entry Name="University" Context="" Value="Вуз" />
+  <Entry Name="Upholsterer" Context="" Value="Драпировщик" />
+  <Entry Name="Utility Pole" Context="" Value="Столб коммунального назначения" />
+  <Entry Name="Vacuum Cleaner" Context="" Value="Пылесос" />
+  <Entry Name="Valley" Context="" Value="Долина" />
+  <Entry Name="Variety Store" Context="" Value="Магазин с фиксированной ценой" />
+  <Entry Name="Vehicle Inspection" Context="" Value="Осмотр транспортного средства" />
+  <Entry Name="Vending Machine" Context="" Value="Торговый автомат" />
+  <Entry Name="Veterinary" Context="" Value="Ветеринария" />
+  <Entry Name="Video" Context="" Value="Видео" />
+  <Entry Name="Video Games" Context="" Value="Видеоигры" />
+  <Entry Name="Viewpoint" Context="" Value="Место с хорошим видом" />
+  <Entry Name="Village" Context="" Value="Село" />
+  <Entry Name="Village Green" Context="" Value="Общественное пространство (Village Green)" />
+  <Entry Name="Vineyard" Context="" Value="Виноградники" />
+  <Entry Name="Volcano" Context="" Value="Вулкан" />
+  <Entry Name="Volleyball" Context="" Value="Волейбол" />
+  <Entry Name="Walking Route" Context="" Value="Пеший маршрут" />
+  <Entry Name="Wall" Context="" Value="Стена" />
+  <Entry Name="Wash" Context="" Value="Автомойка" />
+  <Entry Name="Waste Basket/Trash Can" Context="" Value="Урна" />
+  <Entry Name="Waste Disposal/Dumpster" Context="" Value="Мусорный бак" />
+  <Entry Name="Waste Power Generator" Context="" Value="Работающий на отходах" />
+  <Entry Name="Waste Power Plant" Context="" Value="Энергостанция по переработке мусора" />
+  <Entry Name="Wastewater Treatment Plant" Context="" Value="Сооружения для очистки сточных вод" />
+  <Entry Name="Watches" Context="" Value="Часы" />
+  <Entry Name="Water" Context="" Value="Вода" />
+  <Entry Name="Water" Context="main group" Value="Вода" />
+  <Entry Name="Water" Context="natural" Value="Вода" />
+  <Entry Name="Water" Context="sub group" Value="Вода" />
+  <Entry Name="Water Park" Context="" Value="Аквапарк" />
+  <Entry Name="Water Point" Context="" Value="Пункт набора воды" />
+  <Entry Name="Water Slide" Context="" Value="Водная горка" />
+  <Entry Name="Water Tank" Context="" Value="Резервуар с водой" />
+  <Entry Name="Water Tower" Context="" Value="Водонапорная башня" />
+  <Entry Name="Water Turbine" Context="" Value="Гидравлическая турбина" />
+  <Entry Name="Water Well" Context="" Value="Колодец" />
+  <Entry Name="Water Works" Context="" Value="Станция водоподготовки" />
+  <Entry Name="Waterfall" Context="" Value="Водопад" />
+  <Entry Name="Watermill" Context="" Value="Водяная мельница" />
+  <Entry Name="Waterway" Context="" Value="Водный путь" />
+  <Entry Name="Wave Energy Converter" Context="" Value="Преобразователь энергии волн" />
+  <Entry Name="Wave Power Plant" Context="" Value="Волновая энергостанция" />
+  <Entry Name="Waypoints" Context="" Value="Точки на дорогах" />
+  <Entry Name="Ways" Context="" Value="Линии" />
+  <Entry Name="Wayside Cross" Context="" Value="Придорожный крест" />
+  <Entry Name="Wayside Shrine" Context="" Value="Придорожная святыня" />
+  <Entry Name="Weapons" Context="" Value="Оружие" />
+  <Entry Name="Weir" Context="" Value="Небольшая плотина" />
+  <Entry Name="Wetland" Context="" Value="Заболоченные земли" />
+  <Entry Name="Wholesale" Context="" Value="Оптовый магазин" />
+  <Entry Name="Wicket Gate" Context="" Value="Калитка" />
+  <Entry Name="Wilderness Hut" Context="" Value="Туристический домик" />
+  <Entry Name="Wind Power Plant" Context="" Value="Ветряная энергостанция" />
+  <Entry Name="Wind Turbine" Context="" Value="Ветротурбина" />
+  <Entry Name="Windmill" Context="" Value="Ветряная мельница" />
+  <Entry Name="Window construction" Context="" Value="Изготовление и установка окон" />
+  <Entry Name="Windpump" Context="" Value="Ветряной насос" />
+  <Entry Name="Windsock" Context="" Value="Ветроуказатель (флюгер)" />
+  <Entry Name="Wine" Context="" Value="Вино" />
+  <Entry Name="Winery" Context="" Value="Винодельня" />
+  <Entry Name="Wood" Context="natural" Value="Деревья" />
+  <Entry Name="Works" Context="" Value="Цеха" />
+  <Entry Name="Zip line" Context="" Value="Зиплайн" />
+  <Entry Name="Zoo" Context="" Value="Зоопарк" />
+</PresetNames>
