@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6.0.0
@@ -50,7 +52,6 @@ jobs:
           $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
           $publishDir = Join-Path $releaseRoot "WOSM-$tag-win-x64"
           $zipPath = Join-Path $releaseRoot "WOSM-$tag-win-x64.zip"
-          $sumPath = Join-Path $releaseRoot "SHA256SUMS-$tag.txt"
           New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
 
           dotnet publish ./src/WPF-OpenStreetmap-Editor/WPF-OpenStreetmap-Editor.csproj `
@@ -60,9 +61,62 @@ jobs:
             -o $publishDir
 
           Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
-          $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          $zipName = Split-Path -Leaf $zipPath
-          Set-Content -LiteralPath $sumPath -Value "$hash  $zipName" -Encoding ascii
+
+      - name: Build Inno Setup installer
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
+          $publishDir = Join-Path $releaseRoot "WOSM-$tag-win-x64"
+          $setupPath = Join-Path $releaseRoot "WOSM-Setup-$tag-win-x64.exe"
+
+          $iscc = Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+          if (-not $iscc) {
+            $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup*\ISCC.exe" -ErrorAction SilentlyContinue |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $iscc) {
+            throw "ISCC.exe (Inno Setup) was not found on this runner."
+          }
+
+          $version = $tag.TrimStart("v")
+          $numericVersion = ($version -split "-")[0]
+
+          & $iscc `
+            "/DAppVersion=$version" `
+            "/DVersionInfoVersion=$numericVersion" `
+            "/DSourceDir=$publishDir" `
+            "/DOutputDir=$releaseRoot" `
+            "/DOutputBaseFilename=WOSM-Setup-$tag-win-x64" `
+            "installer/WOSM.iss"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "ISCC.exe failed with exit code $LASTEXITCODE."
+          }
+          if (-not (Test-Path -LiteralPath $setupPath)) {
+            throw "Installer was not produced at $setupPath."
+          }
+
+      - name: Write checksums
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
+          $sumPath = Join-Path $releaseRoot "SHA256SUMS-$tag.txt"
+
+          $lines = @()
+          foreach ($name in @("WOSM-$tag-win-x64.zip", "WOSM-Setup-$tag-win-x64.exe")) {
+            $filePath = Join-Path $releaseRoot $name
+            $hash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash.ToLowerInvariant()
+            $lines += "$hash  $name"
+          }
+          Set-Content -LiteralPath $sumPath -Value $lines -Encoding ascii
 
       - name: Create GitHub release
         shell: pwsh
@@ -74,17 +128,54 @@ jobs:
           $tag = $env:RELEASE_TAG
           $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/release"
           $zipPath = Join-Path $releaseRoot "WOSM-$tag-win-x64.zip"
+          $setupPath = Join-Path $releaseRoot "WOSM-Setup-$tag-win-x64.exe"
           $sumPath = Join-Path $releaseRoot "SHA256SUMS-$tag.txt"
           $prerelease = @()
           if ($tag -match "-") {
             $prerelease = @("--prerelease")
           }
 
+          gh release delete $tag `
+            --repo "${{ github.repository }}" `
+            --yes 2>$null
+
+          # Releases use a per-tag notes file (for example .github/release-notes/v0.2.2.md)
+          # when present so the body keeps the multilingual release-note format; otherwise
+          # fall back to GitHub's generated notes.
+          $notesArgs = @("--generate-notes")
+          $notesFile = Join-Path ".github/release-notes" "$tag.md"
+          if (Test-Path -LiteralPath $notesFile) {
+            $body = Get-Content -LiteralPath $notesFile -Raw
+            if ($body -notmatch "Full Changelog") {
+              # Stable releases compare against the previous stable tag; prereleases
+              # compare against the nearest reachable tag (for example alpha.1...beta.1).
+              $previousTag = $null
+              if ($tag -match "-") {
+                $previousTag = git describe --tags --abbrev=0 "$tag^" 2>$null
+                if ($LASTEXITCODE -ne 0) {
+                  $previousTag = $null
+                }
+              } else {
+                $previousTag = git tag --list --merged "$tag^" --sort=-v:refname |
+                  Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } |
+                  Select-Object -First 1
+              }
+              if (-not [string]::IsNullOrWhiteSpace($previousTag)) {
+                $body = $body.TrimEnd() + "`n`n**Full Changelog**: https://github.com/${{ github.repository }}/compare/$previousTag...$tag`n"
+              } else {
+                Write-Host "Previous tag not found; publishing release notes without a Full Changelog link."
+              }
+            }
+            $filledNotes = Join-Path $releaseRoot "release-notes-$tag.md"
+            Set-Content -LiteralPath $filledNotes -Value $body -Encoding utf8
+            $notesArgs = @("--notes-file", $filledNotes)
+          }
+
           gh release create $tag `
             $zipPath `
+            $setupPath `
             $sumPath `
             --repo "${{ github.repository }}" `
             --title "WOSM $tag" `
-            --generate-notes `
-            --clobber `
+            @notesArgs `
             @prerelease

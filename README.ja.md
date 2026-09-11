@@ -12,15 +12,17 @@ WOSM は WPF OpenStreetMap Editor の略称で、C# / WPF で作成された Ope
 
 最新の正式版は、Windows x64 の自己完結型パッケージとして提供されています。
 
-[WOSM v0.2.0 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/WOSM-v0.2.0-win-x64.zip)
+[WOSM v0.2.1 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/WOSM-v0.2.1-win-x64.zip)
 
-OpenStreetMap へのサインインまたは変更のアップロードを行う前に、[`SHA256SUMS-v0.2.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/SHA256SUMS-v0.2.0.txt) を使用して ZIP を検証してください。
+[Releases ページ](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)では、単一ユーザー向けインストーラー `WOSM-Setup-<バージョン>-win-x64.exe` も公開しています。管理者権限は不要で、`%LOCALAPPDATA%\Programs\WOSM` にインストールしてスタート メニューの項目を作成し、アンインストールしても `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` の設定、キャッシュ、プラグイン、テーマ、ログは残ります。
+
+OpenStreetMap へのサインインまたは変更のアップロードを行う前に、ZIP とインストーラーの両方が記載された [`SHA256SUMS-v0.2.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/SHA256SUMS-v0.2.1.txt) でダウンロードしたファイルを検証してください。
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.1-win-x64.zip -Algorithm SHA256
 ```
 
-ZIP を展開し、`WPF-OpenStreetmap-Editor.exe` を実行します。同じ実行可能ファイルでは、`help`、`import`、`convert`、`download`、`changeset`、`upload` などのコマンドライン データ ワークフロー コマンドも使用できます。このビルドは署名されていないため、Windows で SmartScreen 警告が表示される場合があります。再現可能な問題は [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) で報告してください。
+ZIP を展開して `WPF-OpenStreetmap-Editor.exe` を実行するか、インストーラーを実行してスタート メニューから WOSM を起動します。同じ実行可能ファイルでは、`help`、`import`、`convert`、`download`、`changeset`、`upload` などのコマンドライン データ ワークフロー コマンドも使用できます。このビルドは署名されていないため、Windows で SmartScreen 警告が表示される場合があります。再現可能な問題は [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) で報告してください。
 
 ## 機能
 
@@ -61,7 +63,7 @@ scripts/                               ローカル CLI ヘルパー
 
 ## はじめに
 
-事前ビルド済みアプリケーションを使用するには、[Releases ページ](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)から ZIP をダウンロードし、書き込み可能なディレクトリに展開して、`WPF-OpenStreetmap-Editor.exe` を実行します。
+事前ビルド済みアプリケーションを使用するには、[Releases ページ](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)から ZIP をダウンロードし、書き込み可能なディレクトリに展開して、`WPF-OpenStreetmap-Editor.exe` を実行します。スタート メニューへのインストールを希望する場合は、同じページの単一ユーザー向けインストーラーを使用してください。
 
 ソースからビルドするには、リポジトリを複製して次を実行します。
 

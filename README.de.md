@@ -12,15 +12,17 @@ Die aktuelle Anwendung kann OpenStreetMap-kompatible Kachel-Layer laden, gängig
 
 Die aktuelle stabile Version ist als selbstständiges Windows-x64-Paket verfügbar:
 
-[WOSM v0.2.0 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/WOSM-v0.2.0-win-x64.zip)
+[WOSM v0.2.1 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/WOSM-v0.2.1-win-x64.zip)
 
-Prüfe die ZIP-Datei gegen [`SHA256SUMS-v0.2.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.0/SHA256SUMS-v0.2.0.txt), bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
+Auf der [Releases-Seite](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) gibt es zusätzlich einen Installer für einzelne Benutzer, `WOSM-Setup-<Version>-win-x64.exe`. Er benötigt keine Administratorrechte, installiert nach `%LOCALAPPDATA%\Programs\WOSM`, legt einen Startmenüeintrag an und lässt Einstellungen, Caches, Plugins, Themes und Protokolle unter `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` beim Deinstallieren unangetastet.
+
+Prüfe die heruntergeladenen Dateien gegen [`SHA256SUMS-v0.2.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/SHA256SUMS-v0.2.1.txt), das sowohl die ZIP-Datei als auch den Installer auflistet, bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.1-win-x64.zip -Algorithm SHA256
 ```
 
-Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`. Dieselbe ausführbare Datei unterstützt auch Befehle für Datenworkflows wie `help`, `import`, `convert`, `download`, `changeset` und `upload`. Dieser Build ist nicht signiert, daher kann Windows eine SmartScreen-Warnung anzeigen. Reproduzierbare Probleme bitte über [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) melden.
+Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`, oder führe den Installer aus und starte WOSM über das Startmenü. Dieselbe ausführbare Datei unterstützt auch Befehle für Datenworkflows wie `help`, `import`, `convert`, `download`, `changeset` und `upload`. Dieser Build ist nicht signiert, daher kann Windows eine SmartScreen-Warnung anzeigen. Reproduzierbare Probleme bitte über [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) melden.
 
 ## Funktionen
 
@@ -61,7 +63,7 @@ scripts/                               Lokale CLI-Hilfsskripte
 
 ## Einstieg
 
-Für die vorgefertigte Anwendung lade die ZIP-Datei von der [Releases-Seite](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) herunter, entpacke sie in ein beschreibbares Verzeichnis und starte `WPF-OpenStreetmap-Editor.exe`.
+Für die vorgefertigte Anwendung lade die ZIP-Datei von der [Releases-Seite](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) herunter, entpacke sie in ein beschreibbares Verzeichnis und starte `WPF-OpenStreetmap-Editor.exe`; nutze den Installer für einzelne Benutzer von derselben Seite, wenn dir eine Startmenü-Installation lieber ist.
 
 Zum Bauen aus dem Quellcode klone das Repository und führe aus:
 
