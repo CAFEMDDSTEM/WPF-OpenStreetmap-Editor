@@ -86,4 +86,5 @@ jobs:
             --repo "${{ github.repository }}" `
             --title "WOSM $tag" `
             --generate-notes `
+            --clobber `
             @prerelease
