@@ -80,11 +80,14 @@ jobs:
             $prerelease = @("--prerelease")
           }
 
+          gh release delete $tag `
+            --repo "${{ github.repository }}" `
+            --yes 2>$null
+
           gh release create $tag `
             $zipPath `
             $sumPath `
             --repo "${{ github.repository }}" `
             --title "WOSM $tag" `
             --generate-notes `
-            --clobber `
             @prerelease
