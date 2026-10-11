@@ -27,14 +27,14 @@ The current application can load OpenStreetMap-compatible tile layers, import co
 
 The latest stable WOSM release is available as a Windows x64 self-contained package:
 
-[Download WOSM v0.2.1](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/WOSM-v0.2.1-win-x64.zip)
+[Download WOSM v0.2.2](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
 
 The [Releases page](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) also publishes a per-user installer, `WOSM-Setup-<version>-win-x64.exe`. It needs no administrator rights, installs into `%LOCALAPPDATA%\Programs\WOSM`, adds a Start Menu entry, and leaves settings, caches, plugins, themes, and logs in `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` in place when uninstalled.
 
-Verify the downloaded files against [`SHA256SUMS-v0.2.1.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.1/SHA256SUMS-v0.2.1.txt), which lists both the ZIP and the installer, before signing in to OpenStreetMap or uploading changes:
+Verify the downloaded files against [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt), which lists both the ZIP and the installer, before signing in to OpenStreetMap or uploading changes:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.1-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
 ```
 
 Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`, or run the installer and start WOSM from the Start Menu. The same executable also accepts command-line data workflow commands such as `help`, `import`, `convert`, `download`, `changeset`, and `upload`. This build is unsigned, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
