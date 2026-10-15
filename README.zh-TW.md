@@ -12,14 +12,14 @@ WOSM 是 WPF OpenStreetMap Editor 的簡稱，是一個以 C# / WPF 編寫的 Op
 
 最新正式版提供 Windows x64 自包含套件：
 
-[下載 WOSM v0.2.2](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
+[下載 WOSM v0.3.0](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/WOSM-v0.3.0-win-x64.zip)
 
 [Releases 頁面](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)同時提供單一使用者安裝包 `WOSM-Setup-<版本>-win-x64.exe`：無需管理員權限，安裝到 `%LOCALAPPDATA%\Programs\WOSM`，建立開始功能表項目，解除安裝時保留 `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` 下的設定、快取、外掛、佈景主題與記錄。
 
-登入 OpenStreetMap 或上傳變更前，請使用 [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt)（其中同時列出 ZIP 與安裝包的雜湊值）驗證下載檔案：
+登入 OpenStreetMap 或上傳變更前，請使用 [`SHA256SUMS-v0.3.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/SHA256SUMS-v0.3.0.txt)（其中同時列出 ZIP 與安裝包的雜湊值）驗證下載檔案：
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 解壓縮 ZIP 後執行 `WPF-OpenStreetmap-Editor.exe`，或執行安裝包並從開始功能表啟動 WOSM。同一個可執行檔也支援 `help`、`import`、`convert`、`download`、`changeset` 和 `upload` 等命令列資料流程命令。此組建未簽署，Windows 可能會顯示 SmartScreen 提示。可重現的問題請回報到 [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues)。
@@ -36,7 +36,8 @@ Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
 - 將編輯後的資料儲存為 GeoJSON、OpenStreetMap XML、GPX、KML 或 GML。PBF、Shapefile 和 KMZ 目前僅支援匯入。
 - 在影像上選取、框選、隱藏、刪除、複製、貼上、建立複本、加入點、繪製線、旋轉、移動和正交化圖徵。
 - JOSM 風格的吸附繪製：新路徑會重用既有節點，點擊線段會插入共用節點，點擊起點可閉合成面；移動、旋轉或對齊相連路徑時，交會節點會一起移動。
-- 插入、拖曳與刪除頂點；分割、合併、反轉與簡化線；將節點連接到路徑；將頂點對齊成圓或直線、均勻分佈、鏡像或建立圓形。
+- 插入、拖曳與刪除頂點；分割、合併、反轉與簡化線；將節點連接到路徑；將頂點對齊成圓或直線、均勻分佈、鏡像，或從完整環、弧線、兩個直徑點建立圓形。
+- 用鋼筆工具繪製貝茲曲線，用魔術棒選取相連且主標籤相同的圖徵，或用快速選取筆刷把圖徵刷入選取。
 - 在常駐的標籤面板中編輯標籤，鍵與值可由內建 JOSM 預設集和目前文件自動完成；狀態列顯示所選圖徵的長度與面積。
 - 資料驗證可找出無效標籤與幾何、重複節點、未加標籤的物件、道路端點幾乎相接卻未連接，以及沒有共用節點的道路交叉。
 - 為單一選取圖徵要求 BetterID AI OSM 標籤建議，並在上傳前產生待審閱的 OSM 變更集註解草稿。

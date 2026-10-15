@@ -6,20 +6,20 @@ WOSM 是 WPF OpenStreetMap Editor 的简称，是一个使用 C# / WPF 编写的
 
 当前应用可加载兼容 OpenStreetMap 的瓦片图层，导入常见矢量地图格式，预览和编辑地图要素，并管理可复用的影像、主题和插件。
 
-> 项目状态：正式版。WOSM v0.2.0 新增五语界面本地化、带投影处理的导入、BetterID AI 辅助 OSM 变更集注释，以及 OSM 编辑流程改进。发送任何 OpenStreetMap 上传前请仔细检查。
+> 项目状态：正式版。WOSM v0.3.0 新增 JOSM 风格的拓扑编辑（吸附、顶点工具、连通移动、孤儿节点清理）、贝塞尔钢笔工具、魔棒与快速选择、几何工具、常驻标签面板和新的校验规则。发送任何 OpenStreetMap 上传前请仔细检查。
 
 ## 发布
 
 最新正式版提供 Windows x64 自包含软件包：
 
-[下载 WOSM v0.2.2](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
+[下载 WOSM v0.3.0](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/WOSM-v0.3.0-win-x64.zip)
 
 [Releases 页面](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)同时提供单用户安装包 `WOSM-Setup-<版本>-win-x64.exe`：无需管理员权限，安装到 `%LOCALAPPDATA%\Programs\WOSM`，创建开始菜单项，卸载时保留 `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` 下的设置、缓存、插件、主题和日志。
 
-登录 OpenStreetMap 或上传变更前，请使用 [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt)（其中同时列出 ZIP 与安装包的校验值）校验下载文件：
+登录 OpenStreetMap 或上传变更前，请使用 [`SHA256SUMS-v0.3.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/SHA256SUMS-v0.3.0.txt)（其中同时列出 ZIP 与安装包的校验值）校验下载文件：
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 解压 ZIP 后运行 `WPF-OpenStreetmap-Editor.exe`，或运行安装包并从开始菜单启动 WOSM。同一可执行文件也支持 `help`、`import`、`convert`、`download`、`changeset` 和 `upload` 等命令行数据流程命令。此构建未签名，Windows 可能显示 SmartScreen 提示。可复现的问题请提交到 [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues)。
@@ -36,7 +36,8 @@ Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
 - 将编辑后的数据保存为 GeoJSON、OpenStreetMap XML、GPX、KML 或 GML。PBF、Shapefile 和 KMZ 当前仅支持导入。
 - 在影像上选择、框选、隐藏、删除、复制、粘贴、创建副本、添加点、绘制线、旋转、移动和直角化要素。
 - JOSM 风格的吸附绘制：新路径会复用已有节点，点击线段会插入共享节点，点击起点可闭合成面；移动、旋转或对齐相连的路径时，交汇节点会一起移动。
-- 插入、拖动和删除顶点；拆分、合并、反转和简化线；将节点连接到路径；将顶点对齐成圆或直线、均匀分布、镜像或创建圆形。
+- 插入、拖动和删除顶点；拆分、合并、反转和简化线；将节点连接到路径；将顶点对齐成圆或直线、均匀分布、镜像，或从完整环、弧线、两个直径点创建圆形。
+- 用钢笔工具绘制贝塞尔曲线，用魔棒选中相连且主标签相同的要素，或用快速选择画笔把要素刷入选择。
 - 在常驻的标签面板中编辑标签，键和值可从内置 JOSM 预设和当前文档自动补全；状态栏显示所选要素的长度和面积。
 - 数据校验可发现无效标签和几何、重复节点、未打标签的对象、道路端点与其他道路几乎相接但未连接，以及无共享节点的道路交叉。
 - 为单个选定要素请求 BetterID AI OSM 标签建议，并在上传前生成待审核的 OSM 变更集注释草稿。
@@ -105,9 +106,10 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 8. 按 `R` 或 `M` 后用鼠标旋转或移动选定要素，再按 `Enter` 或单击左键应用。在选择模式下，拖动已选要素也可以移动当前选择；拖动顶点会同时移动所有共用该节点的路径，双击线段可插入顶点，指向顶点后按 `Delete` 可删除它。
 9. 输入 `r20`、`mx2` 或 `mx20y20` 等精确命令后按 `Enter`。旋转值单位为度；移动值单位为分米，`x` 表示向东，`y` 表示向北。
 10. 按 `Q` 直角化，`O` 将顶点对齐成圆，`L` 对齐成直线，`Shift+B` 均匀分布，`Shift+M` 镜像，`Shift+O` 创建圆形，`P` 在悬停顶点处拆分，`C` 合并两条线，`J` 将选中节点连接到最近的路径。
-11. 在 **标签** 面板中编辑所选要素的标签；键和值可从 JOSM 预设和当前文档自动补全。
-12. 选择单个要素，并使用 AI 标签助手向 BetterID AI 请求建议的 OSM 标签。应用前请检查并选择建议。
-13. 使用 **文件 > 保存** 或 **另存为** 保存支持的矢量格式。向配置的 OSM API 上传前请检查预览；上传对话框可以请求 BetterID AI 生成变更集注释草稿。
+11. 按 `B` 使用钢笔工具：单击放置拐角锚点，按住拖动拉出贝塞尔控制柄，按 `Enter` 把曲线转换为节点。按 `W` 使用魔棒（点击要素即选中所有相连且主标签相同的要素；`Ctrl` 忽略连通性，`Shift` 追加），按 `Shift+W` 使用快速选择画笔（拖动加入，`Alt` 移除，`[` 和 `]` 调整大小）。
+12. 在 **标签** 面板中编辑所选要素的标签；键和值可从 JOSM 预设和当前文档自动补全。
+13. 选择单个要素，并使用 AI 标签助手向 BetterID AI 请求建议的 OSM 标签。应用前请检查并选择建议。
+14. 使用 **文件 > 保存** 或 **另存为** 保存支持的矢量格式。向配置的 OSM API 上传前请检查预览；上传对话框可以请求 BetterID AI 生成变更集注释草稿。
 
 命令行工作流可在从源码运行时通过 `--` 传入 CLI 命令：
 

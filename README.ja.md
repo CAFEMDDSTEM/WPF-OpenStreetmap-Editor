@@ -12,14 +12,14 @@ WOSM は WPF OpenStreetMap Editor の略称で、C# / WPF で作成された Ope
 
 最新の正式版は、Windows x64 の自己完結型パッケージとして提供されています。
 
-[WOSM v0.2.2 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
+[WOSM v0.3.0 をダウンロード](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/WOSM-v0.3.0-win-x64.zip)
 
 [Releases ページ](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases)では、単一ユーザー向けインストーラー `WOSM-Setup-<バージョン>-win-x64.exe` も公開しています。管理者権限は不要で、`%LOCALAPPDATA%\Programs\WOSM` にインストールしてスタート メニューの項目を作成し、アンインストールしても `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` の設定、キャッシュ、プラグイン、テーマ、ログは残ります。
 
-OpenStreetMap へのサインインまたは変更のアップロードを行う前に、ZIP とインストーラーの両方が記載された [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt) でダウンロードしたファイルを検証してください。
+OpenStreetMap へのサインインまたは変更のアップロードを行う前に、ZIP とインストーラーの両方が記載された [`SHA256SUMS-v0.3.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/SHA256SUMS-v0.3.0.txt) でダウンロードしたファイルを検証してください。
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 ZIP を展開して `WPF-OpenStreetmap-Editor.exe` を実行するか、インストーラーを実行してスタート メニューから WOSM を起動します。同じ実行可能ファイルでは、`help`、`import`、`convert`、`download`、`changeset`、`upload` などのコマンドライン データ ワークフロー コマンドも使用できます。このビルドは署名されていないため、Windows で SmartScreen 警告が表示される場合があります。再現可能な問題は [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) で報告してください。
@@ -36,7 +36,8 @@ ZIP を展開して `WPF-OpenStreetmap-Editor.exe` を実行するか、イン�
 - 編集したデータを GeoJSON、OpenStreetMap XML、GPX、KML、GML として保存します。PBF、Shapefile、KMZ は現在インポートのみです。
 - 画像上でフィーチャを選択、ボックス選択、非表示、削除、コピー、貼り付け、複製、点の追加、線の描画、回転、移動、直交化できます。
 - JOSM 風のスナップ描画: 新しいウェイは既存のノードを共有し、線をクリックすると共有ノードが挿入され、始点をクリックするとエリアが閉じます。接続されたウェイを移動・回転・整列すると交点ノードも一緒に動きます。
-- 頂点の挿入・ドラッグ・削除、線の分割・結合・反転・簡略化、ノードのウェイへの結合、頂点の円形・直線整列、等間隔配置、反転、円の作成ができます。
+- 頂点の挿入・ドラッグ・削除、線の分割・結合・反転・簡略化、ノードのウェイへの結合、頂点の円形・直線整列、等間隔配置、反転、完全な環・円弧・直径の 2 点からの円の作成ができます。
+- ペンツールでベジェ曲線を描き、自動選択で同じ主タグのつながった地物を選択し、クイック選択ブラシでなぞった地物を選択に追加できます。
 - 常設のタグパネルでタグを編集でき、キーと値は同梱の JOSM プリセットと現在のドキュメントから自動補完されます。ステータスバーに選択範囲の長さと面積を表示します。
 - データ検証で無効なタグやジオメトリ、重複ノード、タグのないオブジェクト、接続されていない道路端点、共有ノードのない道路の交差を検出します。
 - 選択した 1 つのフィーチャに対して BetterID AI の OSM タグ候補を要求し、アップロード前に確認する OSM 変更セット コメントの下書きを生成します。

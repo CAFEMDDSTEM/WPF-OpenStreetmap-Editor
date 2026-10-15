@@ -21,20 +21,20 @@ WOSM, short for WPF OpenStreetMap Editor, is a C# / WPF OpenStreetMap editor. It
 
 The current application can load OpenStreetMap-compatible tile layers, import common vector map formats, preview and edit map features, and manage reusable imagery, themes, and plugins.
 
-> Project status: stable. WOSM v0.2.0 adds five-language UI localization, projection-aware imports, BetterID AI-assisted OSM comments, and OSM editing workflow refinements. Review all OpenStreetMap uploads before sending them.
+> Project status: stable. WOSM v0.3.0 adds JOSM-style topology editing (snapping, vertex tools, connected moves, orphan-node cleanup), a Bézier pen tool, magic wand and quick selection, geometry tools, a persistent tag panel, and new validators. Review all OpenStreetMap uploads before sending them.
 
 ## Release
 
 The latest stable WOSM release is available as a Windows x64 self-contained package:
 
-[Download WOSM v0.2.2](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
+[Download WOSM v0.3.0](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/WOSM-v0.3.0-win-x64.zip)
 
 The [Releases page](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) also publishes a per-user installer, `WOSM-Setup-<version>-win-x64.exe`. It needs no administrator rights, installs into `%LOCALAPPDATA%\Programs\WOSM`, adds a Start Menu entry, and leaves settings, caches, plugins, themes, and logs in `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` in place when uninstalled.
 
-Verify the downloaded files against [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt), which lists both the ZIP and the installer, before signing in to OpenStreetMap or uploading changes:
+Verify the downloaded files against [`SHA256SUMS-v0.3.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/SHA256SUMS-v0.3.0.txt), which lists both the ZIP and the installer, before signing in to OpenStreetMap or uploading changes:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`, or run the installer and start WOSM from the Start Menu. The same executable also accepts command-line data workflow commands such as `help`, `import`, `convert`, `download`, `changeset`, and `upload`. This build is unsigned, so Windows may display a SmartScreen warning. Please report reproducible problems through [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues).
@@ -51,7 +51,8 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`, or run the installer and
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, copy, paste, duplicate, add point features, draw line features, rotate, move, and orthogonalize features on top of imagery.
 - Draw with JOSM-style snapping: new ways share existing nodes, clicking a line inserts a shared node, clicking the first vertex closes an area, and junction nodes follow when connected ways are moved, rotated, or aligned.
-- Insert, drag, and delete vertices; split, combine, reverse, and simplify lines; join nodes to ways; align vertices in a circle or line, distribute them, mirror, or create circles.
+- Insert, drag, and delete vertices; split, combine, reverse, and simplify lines; join nodes to ways; align vertices in a circle or line, distribute them, mirror, or create circles from rings, arcs, or diameter points.
+- Draw Bézier curves with the pen tool, select connected features with the same main tag using the magic wand, or paint features into the selection with the quick-selection brush.
 - Edit tags in a persistent panel with key and value autocomplete from the bundled JOSM presets and the current document, and see selection length and area in the status bar.
 - Validate data for invalid tags and geometry, duplicate nodes, untagged objects, near-miss highway connections, and crossing highways.
 - Request BetterID AI tag suggestions for a selected feature and generate draft OSM changeset comments for review before upload.
@@ -120,9 +121,10 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 8. Press `R` or `M` to rotate or move selected features with the mouse, then press `Enter` or left-click to apply. In select mode, drag an already-selected feature to move the selection; drag a vertex to move every way that shares that node, double-click a line to insert a vertex, and hover a vertex and press `Delete` to remove it.
 9. Use precision commands such as `r20`, `mx2`, or `mx20y20`, then press `Enter`. Rotation values are degrees; move values are decimeters, with `x` moving east and `y` moving north.
 10. Press `Q` to orthogonalize, `O` to align vertices in a circle, `L` to align them in a line, `Shift+B` to distribute them, `Shift+M` to mirror, `Shift+O` to create a circle, `P` to split at the hovered vertex, `C` to combine two lines, and `J` to join selected nodes to the nearest way.
-11. Edit tags of the selection in the **Tags** panel; keys and values autocomplete from the JOSM presets and the current document.
-12. Select a single feature and use the AI tag assistant to request suggested OSM tags from BetterID AI. Review and choose suggestions before applying them.
-13. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API; the upload dialog can ask BetterID AI for a draft changeset comment.
+11. Press `B` for the pen tool: click places corner anchors, press-and-drag pulls out Bézier handles, and `Enter` converts the curve to nodes. Press `W` for the magic wand (click a feature to select everything connected with the same main tag; `Ctrl` ignores connectivity, `Shift` adds) or `Shift+W` for the quick-selection brush (drag to add, `Alt` to remove, `[` and `]` to resize).
+12. Edit tags of the selection in the **Tags** panel; keys and values autocomplete from the JOSM presets and the current document.
+13. Select a single feature and use the AI tag assistant to request suggested OSM tags from BetterID AI. Review and choose suggestions before applying them.
+14. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API; the upload dialog can ask BetterID AI for a draft changeset comment.
 
 For command-line workflows, pass CLI commands after `--` when running from source:
 

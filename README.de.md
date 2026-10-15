@@ -12,14 +12,14 @@ Die aktuelle Anwendung kann OpenStreetMap-kompatible Kachel-Layer laden, gängig
 
 Die aktuelle stabile Version ist als selbstständiges Windows-x64-Paket verfügbar:
 
-[WOSM v0.2.2 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/WOSM-v0.2.2-win-x64.zip)
+[WOSM v0.3.0 herunterladen](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/WOSM-v0.3.0-win-x64.zip)
 
 Auf der [Releases-Seite](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases) gibt es zusätzlich einen Installer für einzelne Benutzer, `WOSM-Setup-<Version>-win-x64.exe`. Er benötigt keine Administratorrechte, installiert nach `%LOCALAPPDATA%\Programs\WOSM`, legt einen Startmenüeintrag an und lässt Einstellungen, Caches, Plugins, Themes und Protokolle unter `%LOCALAPPDATA%\WPF-OpenStreetmap-Editor` beim Deinstallieren unangetastet.
 
-Prüfe die heruntergeladenen Dateien gegen [`SHA256SUMS-v0.2.2.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.2.2/SHA256SUMS-v0.2.2.txt), das sowohl die ZIP-Datei als auch den Installer auflistet, bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
+Prüfe die heruntergeladenen Dateien gegen [`SHA256SUMS-v0.3.0.txt`](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/releases/download/v0.3.0/SHA256SUMS-v0.3.0.txt), das sowohl die ZIP-Datei als auch den Installer auflistet, bevor du dich bei OpenStreetMap anmeldest oder Änderungen hochlädst:
 
 ```powershell
-Get-FileHash .\WOSM-v0.2.2-win-x64.zip -Algorithm SHA256
+Get-FileHash .\WOSM-v0.3.0-win-x64.zip -Algorithm SHA256
 ```
 
 Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`, oder führe den Installer aus und starte WOSM über das Startmenü. Dieselbe ausführbare Datei unterstützt auch Befehle für Datenworkflows wie `help`, `import`, `convert`, `download`, `changeset` und `upload`. Dieser Build ist nicht signiert, daher kann Windows eine SmartScreen-Warnung anzeigen. Reproduzierbare Probleme bitte über [GitHub Issues](https://github.com/CAFEMDDSTEM/WPF-OpenStreetmap-Editor/issues) melden.
@@ -36,7 +36,8 @@ Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`, oder führe de
 - Speichert bearbeitete Daten als GeoJSON, OpenStreetMap XML, GPX, KML oder GML. PBF, Shapefile und KMZ sind derzeit nur importierbar.
 - Wählt, rahmenwählt, blendet aus, löscht, kopiert, fügt ein, dupliziert, setzt Punkte, zeichnet Linien, dreht, verschiebt und orthogonalisiert Kartenobjekte über der Bildgrundlage.
 - Zeichnet mit Einrasten wie in JOSM: Neue Wege teilen vorhandene Knoten, ein Klick auf eine Linie fügt einen gemeinsamen Knoten ein, ein Klick auf den ersten Punkt schließt eine Fläche, und Kreuzungsknoten folgen, wenn verbundene Wege verschoben, gedreht oder ausgerichtet werden.
-- Fügt Punkte ein, zieht und löscht sie; teilt, vereinigt, kehrt um und vereinfacht Linien; verbindet Knoten mit Wegen; richtet Punkte kreisförmig oder in einer Linie aus, verteilt sie, spiegelt oder erstellt Kreise.
+- Fügt Punkte ein, zieht und löscht sie; teilt, vereinigt, kehrt um und vereinfacht Linien; verbindet Knoten mit Wegen; richtet Punkte kreisförmig oder in einer Linie aus, verteilt sie, spiegelt oder erstellt Kreise aus Ringen, Bögen oder zwei Durchmesserpunkten.
+- Zeichnet Bézierkurven mit dem Zeichenstift, wählt verbundene Objekte mit gleichem Haupt-Tag per Zauberstab aus oder nimmt Objekte mit dem Schnellauswahl-Pinsel in die Auswahl auf.
 - Bearbeitet Tags in einem dauerhaften Panel mit Autovervollständigung für Schlüssel und Werte aus den mitgelieferten JOSM-Vorlagen und dem aktuellen Dokument; die Statusleiste zeigt Länge und Fläche der Auswahl.
 - Prüft Daten auf ungültige Tags und Geometrien, doppelte Knoten, Objekte ohne Tags, fast verbundene Straßenenden und Straßen, die sich ohne gemeinsamen Knoten kreuzen.
 - Fordert BetterID AI-Tagvorschläge für ein ausgewähltes Objekt an und erzeugt vor dem Upload prüfbare Entwürfe für OSM-Änderungssatzkommentare.
