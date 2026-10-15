@@ -50,6 +50,10 @@ Extract the ZIP and run `WPF-OpenStreetmap-Editor.exe`, or run the installer and
 - Choose a default source projection for projected GeoJSON, GML, and Shapefiles without `.prj`; Shapefile `.prj` files are honored when present.
 - Save edited data as GeoJSON, OpenStreetMap XML, GPX, KML, or GML. PBF, Shapefile, and KMZ are currently import-only.
 - Select, box-select, hide, delete, copy, paste, duplicate, add point features, draw line features, rotate, move, and orthogonalize features on top of imagery.
+- Draw with JOSM-style snapping: new ways share existing nodes, clicking a line inserts a shared node, clicking the first vertex closes an area, and junction nodes follow when connected ways are moved, rotated, or aligned.
+- Insert, drag, and delete vertices; split, combine, reverse, and simplify lines; join nodes to ways; align vertices in a circle or line, distribute them, mirror, or create circles.
+- Edit tags in a persistent panel with key and value autocomplete from the bundled JOSM presets and the current document, and see selection length and area in the status bar.
+- Validate data for invalid tags and geometry, duplicate nodes, untagged objects, near-miss highway connections, and crossing highways.
 - Request BetterID AI tag suggestions for a selected feature and generate draft OSM changeset comments for review before upload.
 - Download OSM data for a selected bounding box and upload reviewed create/modify/delete changes; an optional first-party OpenStreetMap transfer addon can add toolbar and menu entry points.
 - Use `WPF-OpenStreetmap-Editor.exe` from the command line to summarize imported map files, convert supported vector formats, download bounding-box OSM data, preview `.osc` changesets, run guarded OSM uploads, and launch the GUI.
@@ -113,11 +117,12 @@ dotnet run --project .\src\WPF-OpenStreetmap-Editor\WPF-OpenStreetmap-Editor.csp
 5. Use **File > Open** to import vector map data, or use `Ctrl+Shift+Down` to choose and download an OSM bounding box.
 6. Use the mouse wheel, `+` / `-`, or `Page Up` / `Page Down` to zoom, drag the map to pan, and use the editor toolbar to select, box-select, hide, delete, add points, or draw lines.
 7. Use `Ctrl+C`, `Ctrl+V`, `Ctrl+Z`, and `Ctrl+Shift+D` to copy, paste, undo, and duplicate selected features.
-8. Press `R` or `M` to rotate or move selected features with the mouse, then press `Enter` or left-click to apply. In select mode, drag an already-selected feature to move the selection.
+8. Press `R` or `M` to rotate or move selected features with the mouse, then press `Enter` or left-click to apply. In select mode, drag an already-selected feature to move the selection; drag a vertex to move every way that shares that node, double-click a line to insert a vertex, and hover a vertex and press `Delete` to remove it.
 9. Use precision commands such as `r20`, `mx2`, or `mx20y20`, then press `Enter`. Rotation values are degrees; move values are decimeters, with `x` moving east and `y` moving north.
-10. Press `Q` to orthogonalize selected line or polygon features.
-11. Select a single feature and use the AI tag assistant to request suggested OSM tags from BetterID AI. Review and choose suggestions before applying them.
-12. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API; the upload dialog can ask BetterID AI for a draft changeset comment.
+10. Press `Q` to orthogonalize, `O` to align vertices in a circle, `L` to align them in a line, `Shift+B` to distribute them, `Shift+M` to mirror, `Shift+O` to create a circle, `P` to split at the hovered vertex, `C` to combine two lines, and `J` to join selected nodes to the nearest way.
+11. Edit tags of the selection in the **Tags** panel; keys and values autocomplete from the JOSM presets and the current document.
+12. Select a single feature and use the AI tag assistant to request suggested OSM tags from BetterID AI. Review and choose suggestions before applying them.
+13. Use **File > Save** or **File > Save As** to save supported vector formats. Review OSM uploads before sending them to the configured OSM API; the upload dialog can ask BetterID AI for a draft changeset comment.
 
 For command-line workflows, pass CLI commands after `--` when running from source:
 

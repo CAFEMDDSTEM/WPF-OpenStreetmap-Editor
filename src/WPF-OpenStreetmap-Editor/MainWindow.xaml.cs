@@ -1640,6 +1640,10 @@ public partial class MainWindow : Window {
         if (NonTextInputImeGuard.IsEditableTextInput(e.OriginalSource as DependencyObject)) {
             return;
         }
+        // The tag editor owns plain keys (Delete removes a tag, letters start editing); only Ctrl shortcuts pass through.
+        if (TagEditor.IsKeyboardFocusWithin && modifiers != ModifierKeys.Control) {
+            return;
+        }
 
         if (modifiers == ModifierKeys.Control && e.Key == Key.C) {
             CopySelectedFeatures();
@@ -1688,6 +1692,8 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Oem3) {
             ReorderImageryLayers();
             e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Back && Editor.HasDraftLine && RemoveLastDraftVertex()) {
+            e.Handled = true;
         } else if (modifiers == ModifierKeys.None && HandleKeyboardEditCommandKey(e)) {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.S) {
@@ -1704,11 +1710,43 @@ public partial class MainWindow : Window {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Delete) {
             ClearKeyboardEditCommand(updateUi: false);
-            DeleteSelectedFeatures();
+            if (!TryDeleteHoveredVertex()) DeleteSelectedFeatures();
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.H) {
             ClearKeyboardEditCommand(updateUi: false);
             HideSelectedFeatures();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.P) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SplitSelectedLine_Click(this, new());
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.C) {
+            ClearKeyboardEditCommand(updateUi: false);
+            CombineSelectedLines_Click(this, new());
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.J) {
+            ClearKeyboardEditCommand(updateUi: false);
+            JoinSelectedNodesToWay();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.O) {
+            ClearKeyboardEditCommand(updateUi: false);
+            ApplyGeometryEdit(GeometryAlignService.AlignInCircle);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.O) {
+            ClearKeyboardEditCommand(updateUi: false);
+            CreateCircleFromSelection();
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.L) {
+            ClearKeyboardEditCommand(updateUi: false);
+            ApplyGeometryEdit(GeometryAlignService.AlignInLine);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.B) {
+            ClearKeyboardEditCommand(updateUi: false);
+            ApplyGeometryEdit(GeometryAlignService.DistributeVertices);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.M) {
+            ClearKeyboardEditCommand(updateUi: false);
+            ApplyGeometryEdit(parts => GeometryAlignService.Mirror(parts, MirrorAxis.Vertical));
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Escape) {
             CancelActiveInteraction();
@@ -1944,6 +1982,11 @@ public partial class MainWindow : Window {
 
         var position = e.GetPosition(MapViewport);
         if (_editorMode == EditorMode.Select) {
+            if (e.ClickCount == 2 && TryInsertVertexAt(position)) {
+                e.Handled = true;
+                return;
+            }
+
             if (TryBeginVertexMove(position)) {
                 e.Handled = true;
                 return;
@@ -1966,8 +2009,7 @@ public partial class MainWindow : Window {
             return;
         }
         if (_editorMode == EditorMode.DrawLine) {
-            if (e.ClickCount >= 2) FinishDraftLine();
-            else AddDraftLinePoint(position);
+            HandleDrawClick(position, e.ClickCount);
             e.Handled = true;
             return;
         }
@@ -2064,7 +2106,8 @@ public partial class MainWindow : Window {
             return;
         }
         if (!_isPanning) {
-            UpdateMapHover(e.GetPosition(MapViewport));
+            if (_editorMode == EditorMode.DrawLine) UpdateDrawHover(pointerPosition);
+            else UpdateMapHover(pointerPosition);
             return;
         }
         ClearMapHover();
@@ -2502,6 +2545,7 @@ public partial class MainWindow : Window {
 
     private void ReverseSelectedLine_Click(object sender, RoutedEventArgs e) {
         var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        if (feature is not null && !EnsureTopologyMappingCurrent([feature])) return;
         ApplyTopologyResult(feature is null
             ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectOne"))
             : TopologyEditService.CreateReverseLineCommand(Editor.Dataset, feature));
@@ -2509,6 +2553,7 @@ public partial class MainWindow : Window {
 
     private void SplitSelectedLine_Click(object sender, RoutedEventArgs e) {
         var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        if (feature is not null && !EnsureTopologyMappingCurrent([feature])) return;
         ApplyTopologyResult(feature is null || _hoveredVertex is not { } vertex || !ReferenceEquals(feature, vertex.Feature)
             ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.HoverVertex"))
             : TopologyEditService.CreateSplitLineCommand(Editor.Dataset, feature, vertex.PointIndex));
@@ -2516,6 +2561,7 @@ public partial class MainWindow : Window {
 
     private void CombineSelectedLines_Click(object sender, RoutedEventArgs e) {
         var features = GetSelectedFeaturesInDocumentOrder();
+        if (features.Count == 2 && !EnsureTopologyMappingCurrent(features)) return;
         ApplyTopologyResult(features.Count != 2
             ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectTwo"))
             : TopologyEditService.CreateCombineLinesCommand(Editor.Dataset, features[0], features[1]));
@@ -2523,6 +2569,7 @@ public partial class MainWindow : Window {
 
     private void SimplifySelectedGeometry_Click(object sender, RoutedEventArgs e) {
         var feature = GetSelectedFeaturesInDocumentOrder().SingleOrDefault();
+        if (feature is not null && !EnsureTopologyMappingCurrent([feature])) return;
         ApplyTopologyResult(feature is null
             ? new TopologyEditCommandResult(null, L.GetString("Main.Topology.SelectOne"))
             : TopologyEditService.CreateSimplifyCommand(Editor.Dataset, feature, 1.0));
@@ -2569,6 +2616,21 @@ public partial class MainWindow : Window {
         SetSelectedFeatures(FeatureDataGrid.SelectedItems.Cast<MapFeature>(), updateGrid: false);
     }
 
+    private void TagEditor_CommandRequested(object? sender, IEditCommand command) {
+        if (!Editor.Execute(command)) return;
+
+        RefreshFeatureList();
+        UpdateVectorLayer();
+        UpdateDocumentUi();
+    }
+
+    private void TagEditor_NavigateRequested(object? sender, MapFeature feature) {
+        if (_document is null || !_document.Features.Contains(feature)) return;
+
+        SetSelectedFeatures([feature]);
+        if (feature.Bounds.IsValid) CenterViewportOnDocumentPoint(feature.Bounds.Center);
+    }
+
     private void SetEditorMode(EditorMode mode) {
         if (_editorMode == EditorMode.Rotate && mode != EditorMode.Rotate && _featureRotation is not null) {
             CommitFeatureRotation();
@@ -2582,7 +2644,10 @@ public partial class MainWindow : Window {
         if (_editorMode == EditorMode.Extrude && mode != EditorMode.Extrude && _segmentExtrude is not null) {
             CommitSegmentExtrude();
         }
-        if (_editorMode == EditorMode.DrawLine && mode != EditorMode.DrawLine) FinishDraftLine();
+        if (_editorMode == EditorMode.DrawLine && mode != EditorMode.DrawLine) {
+            FinishDraftLine();
+            ClearDrawHover();
+        }
         _editorMode = mode;
         PanToolButton.ClearValue(Control.BackgroundProperty);
         SelectToolButton.ClearValue(Control.BackgroundProperty);
@@ -2613,6 +2678,7 @@ public partial class MainWindow : Window {
             _ => ""
         };
         Cursor = GetEditorModeCursor();
+        UpdateMeasurementStatus();
     }
 
     private Cursor GetEditorModeCursor() {
@@ -2686,10 +2752,16 @@ public partial class MainWindow : Window {
             : feature is not null
                 ? Cursors.Hand
                 : GetEditorModeCursor();
+        if (vertex is not null) {
+            var pointerGeo = GetPointerGeo(position);
+            _viewModel.PointerStatus = L.Format("Main.Status.Coordinates", pointerGeo.Latitude, pointerGeo.Longitude) +
+                L.GetString("Main.Status.VertexHint");
+        }
         if (changed) UpdateVectorLayer();
     }
 
     private void ClearMapHover() {
+        ClearDrawHover();
         if (_hoveredFeature is null && _hoveredVertex is null) return;
 
         _hoveredFeature = null;
@@ -2774,17 +2846,9 @@ public partial class MainWindow : Window {
         SelectionRectangle.Visibility = Visibility.Visible;
     }
 
-    private void AddDraftLinePoint(Point screenPoint) {
+    private void AddDraftPoint(GeoPoint point) {
         EnsureDocument();
-        if (_document is null || !int.TryParse(ZoomTextBox.Text, out var zoom)) return;
-        var point = VectorMapInteraction.ScreenToGeo(
-            screenPoint,
-            _centerLat,
-            _centerLon,
-            zoom,
-            new Size(MapViewport.ActualWidth, MapViewport.ActualHeight),
-            displayTransform: _displayTransform);
-        if (!point.IsValid) return;
+        if (_document is null || !point.IsValid) return;
 
         if (!Editor.AddDraftLinePoint(point)) return;
 
@@ -2795,10 +2859,17 @@ public partial class MainWindow : Window {
         UpdateDocumentUi();
     }
 
-    private void FinishDraftLine() {
+    /// <summary>
+    /// Ends the current draft. A lone vertex becomes a node unless it was snapped onto existing
+    /// geometry, in which case it already lives in that feature and the draft is simply dropped.
+    /// </summary>
+    private void FinishDraftLine(DraftCompletion completion = DraftCompletion.SinglePoint) {
         if (!Editor.HasDraftLine) return;
 
-        var completedLine = Editor.FinishDraftLine();
+        if (completion == DraftCompletion.SinglePoint && _draftFirstVertexSnapped) completion = DraftCompletion.Line;
+        var completedLine = Editor.FinishDraftLine(completion);
+        _draftFirstVertexSnapped = false;
+        ClearDrawHover();
         SetSelectedFeatures(completedLine is null ? [] : [completedLine]);
         RefreshFeatureList();
         UpdateVectorLayer();
@@ -3060,11 +3131,7 @@ public partial class MainWindow : Window {
                 state.Feature,
                 MapEditService.OrthogonalizeParts(state.Parts)))
             .ToList();
-        if (!Editor.Execute(new SetFeaturePartsCommand(beforeStates, afterStates))) return;
-
-        RefreshFeatureList();
-        UpdateVectorLayer();
-        UpdateDocumentUi();
+        ExecuteGeometryChangeWithFollowers(beforeStates, afterStates);
     }
 
     private bool InsertFeatureCopies(IEnumerable<MapFeature> sourceFeatures, int offsetMultiplier) {
@@ -3136,10 +3203,12 @@ public partial class MainWindow : Window {
 
         MapViewport.Focus();
         var pointerAngle = GetRotationPointerAngle(Mouse.GetPosition(MapViewport), center);
+        var originalStates = selectedFeatures.Select(CaptureFeatureParts).ToList();
         _featureRotation = new FeatureRotation(
             _editorMode,
             center,
-            selectedFeatures.Select(CaptureFeatureParts).ToList(),
+            originalStates,
+            CaptureFollowerOriginals(originalStates),
             pointerAngle);
         SetEditorMode(EditorMode.Rotate);
         MapViewport.CaptureMouse();
@@ -3155,6 +3224,7 @@ public partial class MainWindow : Window {
         var angleDegrees = -rotation.ScreenAngleRadians * 180.0 / Math.PI;
 
         ApplyFeatureRotation(rotation, angleDegrees);
+        ApplyFollowerPreview(rotation.OriginalStates, rotation.Followers);
         UpdateVectorLayer();
         UpdateDocumentUi();
     }
@@ -3177,7 +3247,7 @@ public partial class MainWindow : Window {
         var afterStates = rotation.OriginalStates.Select(state => CaptureFeatureParts(state.Feature)).ToList();
         var angleDegrees = Math.Abs(rotation.ScreenAngleRadians * 180.0 / Math.PI);
         var committed = (forceCommit || angleDegrees >= MinimumCommittedRotationDegrees) &&
-            Editor.Execute(new SetFeaturePartsCommand(rotation.OriginalStates, afterStates));
+            ExecuteTransformWithFollowers(rotation.OriginalStates, afterStates, rotation.Followers);
         if (!committed) RestoreFeatureRotation(rotation);
 
         SetEditorMode(rotation.PreviousMode == EditorMode.Rotate ? EditorMode.Select : rotation.PreviousMode);
@@ -3200,12 +3270,8 @@ public partial class MainWindow : Window {
     }
 
     private void RestoreFeatureRotation(FeatureRotation rotation) {
-        foreach (var state in rotation.OriginalStates) {
-            Editor.Dataset.ReplaceParts(
-                state.Feature,
-                state.Parts.Select(static part => part.ToList()),
-                markDirty: false);
-        }
+        RestoreSnapshots(rotation.OriginalStates);
+        RestoreSnapshots(rotation.Followers.Originals);
     }
 
     private FeaturePartsSnapshot CaptureFeatureParts(MapFeature feature) {
@@ -3268,9 +3334,11 @@ public partial class MainWindow : Window {
         if (_featureMove is not null || selectedFeatures.Count == 0) return false;
 
         MapViewport.Focus();
+        var originalStates = selectedFeatures.Select(CaptureFeatureParts).ToList();
         _featureMove = new FeatureMove(
             _editorMode,
-            selectedFeatures.Select(CaptureFeatureParts).ToList(),
+            originalStates,
+            CaptureFollowerOriginals(originalStates),
             pointer,
             GetPointerGeo(pointer));
         SetEditorMode(EditorMode.Move);
@@ -3627,100 +3695,11 @@ public partial class MainWindow : Window {
     }
 
     private IReadOnlyList<VertexEditTarget> GetSharedVertexTargets(VertexHit hit) {
-        if (_document is null ||
-            hit.PartIndex < 0 ||
-            hit.PartIndex >= hit.Feature.Parts.Count ||
-            hit.PointIndex < 0 ||
-            hit.PointIndex >= hit.Feature.Parts[hit.PartIndex].Count) {
-            return [];
-        }
+        if (_document is null || hit.PartIndex >= hit.Feature.Parts.Count || hit.PointIndex >= hit.Feature.Parts[hit.PartIndex].Count) return [];
 
-        if (TryGetOsmNodeId(hit.Feature, hit.PointIndex, out var nodeId)) {
-            var byNode = GetVertexTargetsForOsmNode(nodeId).ToList();
-            if (byNode.Count > 0) return byNode;
-        }
-
-        return GetVertexTargetsForPoint(hit.Feature.Parts[hit.PartIndex][hit.PointIndex]).ToList();
-    }
-
-    private IEnumerable<VertexEditTarget> GetVertexTargetsForOsmNode(long nodeId) {
-        if (_document is null) yield break;
-
-        var seen = new HashSet<(MapFeature Feature, int PartIndex, int PointIndex)>();
-        foreach (var feature in _document.Features) {
-            if (feature.GeometryType == MapGeometryType.Point &&
-                feature.Osm?.PrimitiveType == OsmPrimitiveType.Node &&
-                feature.Osm.Id == nodeId &&
-                AddVertexTarget(seen, feature, 0, 0)) {
-                yield return new VertexEditTarget(feature, 0, 0);
-                continue;
-            }
-
-            if (feature.Osm?.PrimitiveType != OsmPrimitiveType.Way ||
-                feature.Osm.NodeReferences.Count == 0) {
-                continue;
-            }
-
-            var count = Math.Min(feature.Osm.NodeReferences.Count, feature.Parts.FirstOrDefault()?.Count ?? 0);
-            for (var i = 0; i < count; i++) {
-                if (feature.Osm.NodeReferences[i].Id != nodeId ||
-                    !AddVertexTarget(seen, feature, 0, NormalizeClosedRingPointIndex(feature.Parts[0], i))) {
-                    continue;
-                }
-
-                yield return new VertexEditTarget(feature, 0, NormalizeClosedRingPointIndex(feature.Parts[0], i));
-            }
-        }
-    }
-
-    private IEnumerable<VertexEditTarget> GetVertexTargetsForPoint(GeoPoint point) {
-        if (_document is null) yield break;
-
-        var seen = new HashSet<(MapFeature Feature, int PartIndex, int PointIndex)>();
-        foreach (var feature in _document.Features) {
-            for (var partIndex = 0; partIndex < feature.Parts.Count; partIndex++) {
-                var part = feature.Parts[partIndex];
-                var count = IsClosedRing(part) ? part.Count - 1 : part.Count;
-                for (var pointIndex = 0; pointIndex < count; pointIndex++) {
-                    if (part[pointIndex] != point || !AddVertexTarget(seen, feature, partIndex, pointIndex)) continue;
-
-                    yield return new VertexEditTarget(feature, partIndex, pointIndex);
-                }
-            }
-        }
-    }
-
-    private static bool TryGetOsmNodeId(MapFeature feature, int pointIndex, out long nodeId) {
-        nodeId = 0;
-        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Node) {
-            nodeId = feature.Osm.Id;
-            return true;
-        }
-
-        if (feature.Osm?.PrimitiveType == OsmPrimitiveType.Way &&
-            pointIndex >= 0 &&
-            pointIndex < feature.Osm.NodeReferences.Count) {
-            nodeId = feature.Osm.NodeReferences[pointIndex].Id;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static int NormalizeClosedRingPointIndex(IReadOnlyList<GeoPoint> part, int pointIndex) {
-        return IsClosedRing(part) && pointIndex == part.Count - 1 ? 0 : pointIndex;
-    }
-
-    private static bool IsClosedRing(IReadOnlyList<GeoPoint> part) {
-        return part.Count > 2 && part[0] == part[^1];
-    }
-
-    private static bool AddVertexTarget(
-        HashSet<(MapFeature Feature, int PartIndex, int PointIndex)> seen,
-        MapFeature feature,
-        int partIndex,
-        int pointIndex) {
-        return seen.Add((feature, partIndex, pointIndex));
+        var point = hit.Feature.Parts[hit.PartIndex][hit.PointIndex];
+        var candidates = QueryFeaturesIntersecting(new GeoBounds(point.Longitude, point.Latitude, point.Longitude, point.Latitude));
+        return SharedVertexLocator.FindTargets(candidates, hit);
     }
 
     private void UpdateFeatureMove(Point pointerPosition) {
@@ -3732,6 +3711,7 @@ public partial class MainWindow : Window {
         var latitudeOffset = pointerGeo.Latitude - move.StartPointerGeo.Latitude;
 
         ApplyFeatureMove(move, longitudeOffset, latitudeOffset);
+        ApplyFollowerPreview(move.OriginalStates, move.Followers);
         UpdateVectorLayer();
         UpdateDocumentUi();
     }
@@ -3754,7 +3734,7 @@ public partial class MainWindow : Window {
         var afterStates = move.OriginalStates.Select(state => CaptureFeatureParts(state.Feature)).ToList();
         var pointerDelta = move.CurrentPointer - move.StartPointer;
         var committed = (forceCommit || pointerDelta.Length >= MinimumCommittedMovePixels) &&
-            Editor.Execute(new SetFeaturePartsCommand(move.OriginalStates, afterStates));
+            ExecuteTransformWithFollowers(move.OriginalStates, afterStates, move.Followers);
         if (!committed) RestoreFeatureMove(move);
 
         SetEditorMode(move.PreviousMode == EditorMode.Move ? EditorMode.Select : move.PreviousMode);
@@ -3777,12 +3757,8 @@ public partial class MainWindow : Window {
     }
 
     private void RestoreFeatureMove(FeatureMove move) {
-        foreach (var state in move.OriginalStates) {
-            Editor.Dataset.ReplaceParts(
-                state.Feature,
-                state.Parts.Select(static part => part.ToList()),
-                markDirty: false);
-        }
+        RestoreSnapshots(move.OriginalStates);
+        RestoreSnapshots(move.Followers.Originals);
     }
 
     private bool MoveSelectedFeaturesByDecimeters(double eastDecimeters, double northDecimeters) {
@@ -4045,6 +4021,8 @@ public partial class MainWindow : Window {
             }
         }
         RefreshAiTagAssistant();
+        UpdateMeasurementStatus();
+        TagEditor.SetSelection(Selection.Features.ToList(), _document);
         UpdateVectorLayer();
         UpdateDocumentUi();
     }
@@ -4081,6 +4059,8 @@ public partial class MainWindow : Window {
         } finally {
             _isUpdatingFeatureSelection = false;
         }
+        TagEditor.Refresh();
+        UpdateMeasurementStatus();
     }
 
     private IReadOnlyList<MapFeature> GetDisplayedFeatures() {
@@ -4136,6 +4116,7 @@ public partial class MainWindow : Window {
             _displayTransform,
             _hoveredFeature,
             _hoveredVertex);
+        UpdateDrawPreviewLayer();
     }
 
     private MapImageLayer? GetVectorDataLayer() {
@@ -4760,10 +4741,12 @@ public partial class MainWindow : Window {
             EditorMode previousMode,
             GeoPoint center,
             IReadOnlyList<FeaturePartsSnapshot> originalStates,
+            TransformFollowers followers,
             double lastPointerAngleRadians) {
             PreviousMode = previousMode;
             Center = center;
             OriginalStates = originalStates;
+            Followers = followers;
             LastPointerAngleRadians = lastPointerAngleRadians;
         }
 
@@ -4772,6 +4755,9 @@ public partial class MainWindow : Window {
         public GeoPoint Center { get; }
 
         public IReadOnlyList<FeaturePartsSnapshot> OriginalStates { get; }
+
+        /// <summary>Connected features whose junction vertices follow the rotation.</summary>
+        public TransformFollowers Followers { get; }
 
         public double LastPointerAngleRadians { get; set; }
 
@@ -4782,10 +4768,12 @@ public partial class MainWindow : Window {
         public FeatureMove(
             EditorMode previousMode,
             IReadOnlyList<FeaturePartsSnapshot> originalStates,
+            TransformFollowers followers,
             Point startPointer,
             GeoPoint startPointerGeo) {
             PreviousMode = previousMode;
             OriginalStates = originalStates;
+            Followers = followers;
             StartPointer = startPointer;
             CurrentPointer = startPointer;
             StartPointerGeo = startPointerGeo;
@@ -4794,6 +4782,9 @@ public partial class MainWindow : Window {
         public EditorMode PreviousMode { get; }
 
         public IReadOnlyList<FeaturePartsSnapshot> OriginalStates { get; }
+
+        /// <summary>Connected features whose junction vertices follow the move.</summary>
+        public TransformFollowers Followers { get; }
 
         public Point StartPointer { get; }
 
@@ -4857,8 +4848,6 @@ public partial class MainWindow : Window {
 
         public SegmentExtrudeConstraint Constraint { get; }
     }
-
-    private readonly record struct VertexEditTarget(MapFeature Feature, int PartIndex, int PointIndex);
 
     private static double ClampWorldPixel(double value, double worldSize) {
         return Math.Clamp(value, 0, worldSize);

@@ -3,7 +3,7 @@ using WPF_OpenStreetmap_Editor.Models;
 namespace WPF_OpenStreetmap_Editor.Services;
 
 public static class MapEditService {
-    private const double EarthRadiusMeters = 6378137.0;
+    private const double EarthRadiusMeters = LocalMetricFrame.EarthRadiusMeters;
 
     public static IReadOnlyList<MapFeature> CopyFeatures(IEnumerable<MapFeature> sourceFeatures) {
         ArgumentNullException.ThrowIfNull(sourceFeatures);
@@ -303,7 +303,7 @@ public static class MapEditService {
 
     private static GeoPoint RotatePoint(GeoPoint point, LocalMetricFrame frame, double sin, double cos) {
         var local = frame.Project(point);
-        return frame.Unproject(new OrthogonalPoint(
+        return frame.Unproject(new LocalPoint(
             local.X * cos - local.Y * sin,
             local.X * sin + local.Y * cos));
     }
@@ -379,8 +379,8 @@ public static class MapEditService {
             : new GeoPoint(longitude / count, latitude / count);
     }
 
-    private static OrthogonalPoint GetOrthogonalizedClosedVertex(
-        IReadOnlyList<OrthogonalPoint> points,
+    private static LocalPoint GetOrthogonalizedClosedVertex(
+        IReadOnlyList<LocalPoint> points,
         IReadOnlyList<OrthogonalSegment> segments,
         int pointIndex) {
         return IntersectOrthogonalSegments(
@@ -389,8 +389,8 @@ public static class MapEditService {
             points[pointIndex]);
     }
 
-    private static OrthogonalPoint GetOrthogonalizedOpenVertex(
-        IReadOnlyList<OrthogonalPoint> points,
+    private static LocalPoint GetOrthogonalizedOpenVertex(
+        IReadOnlyList<LocalPoint> points,
         IReadOnlyList<OrthogonalSegment> segments,
         int pointIndex) {
         if (pointIndex == 0) return ProjectEndpoint(points[pointIndex], segments[0]);
@@ -399,7 +399,7 @@ public static class MapEditService {
         return IntersectOrthogonalSegments(segments[pointIndex - 1], segments[pointIndex], points[pointIndex]);
     }
 
-    private static OrthogonalSegment CreateOrthogonalSegment(OrthogonalPoint start, OrthogonalPoint end) {
+    private static OrthogonalSegment CreateOrthogonalSegment(LocalPoint start, LocalPoint end) {
         var dx = end.X - start.X;
         var dy = end.Y - start.Y;
         var isHorizontal = Math.Abs(dx) >= Math.Abs(dy);
@@ -408,41 +408,41 @@ public static class MapEditService {
             : new OrthogonalSegment(false, (start.X + end.X) / 2.0);
     }
 
-    private static OrthogonalPoint ProjectEndpoint(OrthogonalPoint point, OrthogonalSegment segment) {
+    private static LocalPoint ProjectEndpoint(LocalPoint point, OrthogonalSegment segment) {
         return segment.IsHorizontal
             ? point with { Y = segment.Value }
             : point with { X = segment.Value };
     }
 
-    private static OrthogonalPoint IntersectOrthogonalSegments(
+    private static LocalPoint IntersectOrthogonalSegments(
         OrthogonalSegment incoming,
         OrthogonalSegment outgoing,
-        OrthogonalPoint fallback) {
-        if (incoming.IsHorizontal && !outgoing.IsHorizontal) return new OrthogonalPoint(outgoing.Value, incoming.Value);
-        if (!incoming.IsHorizontal && outgoing.IsHorizontal) return new OrthogonalPoint(incoming.Value, outgoing.Value);
-        if (incoming.IsHorizontal) return new OrthogonalPoint(fallback.X, (incoming.Value + outgoing.Value) / 2.0);
+        LocalPoint fallback) {
+        if (incoming.IsHorizontal && !outgoing.IsHorizontal) return new LocalPoint(outgoing.Value, incoming.Value);
+        if (!incoming.IsHorizontal && outgoing.IsHorizontal) return new LocalPoint(incoming.Value, outgoing.Value);
+        if (incoming.IsHorizontal) return new LocalPoint(fallback.X, (incoming.Value + outgoing.Value) / 2.0);
 
-        return new OrthogonalPoint((incoming.Value + outgoing.Value) / 2.0, fallback.Y);
+        return new LocalPoint((incoming.Value + outgoing.Value) / 2.0, fallback.Y);
     }
 
-    private static OrthogonalPoint ToLocal(
-        OrthogonalPoint point,
-        OrthogonalPoint origin,
+    private static LocalPoint ToLocal(
+        LocalPoint point,
+        LocalPoint origin,
         double angleRadians) {
         var x = point.X - origin.X;
         var y = point.Y - origin.Y;
         var sin = Math.Sin(angleRadians);
         var cos = Math.Cos(angleRadians);
-        return new OrthogonalPoint(x * cos + y * sin, -x * sin + y * cos);
+        return new LocalPoint(x * cos + y * sin, -x * sin + y * cos);
     }
 
-    private static OrthogonalPoint FromLocal(
-        OrthogonalPoint point,
-        OrthogonalPoint origin,
+    private static LocalPoint FromLocal(
+        LocalPoint point,
+        LocalPoint origin,
         double angleRadians) {
         var sin = Math.Sin(angleRadians);
         var cos = Math.Cos(angleRadians);
-        return new OrthogonalPoint(
+        return new LocalPoint(
             origin.X + point.X * cos - point.Y * sin,
             origin.Y + point.X * sin + point.Y * cos);
     }
@@ -453,40 +453,5 @@ public static class MapEditService {
         return radians;
     }
 
-    private readonly record struct OrthogonalPoint(double X, double Y);
-
     private readonly record struct OrthogonalSegment(bool IsHorizontal, double Value);
-
-    private readonly record struct LocalMetricFrame(
-        GeoPoint Origin,
-        double MetersPerDegreeLongitude,
-        double MetersPerDegreeLatitude) {
-        public static LocalMetricFrame Create(GeoPoint origin) {
-            var latitudeRadians = GeoConverter.ClampLatitude(origin.Latitude) * Math.PI / 180.0;
-            var metersPerDegreeLatitude = EarthRadiusMeters * Math.PI / 180.0;
-            var metersPerDegreeLongitude = metersPerDegreeLatitude * Math.Cos(latitudeRadians);
-            return new LocalMetricFrame(origin, metersPerDegreeLongitude, metersPerDegreeLatitude);
-        }
-
-        public OrthogonalPoint Project(GeoPoint point) {
-            return new OrthogonalPoint(
-                (point.Longitude - Origin.Longitude) * MetersPerDegreeLongitude,
-                (point.Latitude - Origin.Latitude) * MetersPerDegreeLatitude);
-        }
-
-        public GeoPoint Unproject(OrthogonalPoint point) {
-            var longitudeOffset = Math.Abs(MetersPerDegreeLongitude) <= double.Epsilon
-                ? 0
-                : point.X / MetersPerDegreeLongitude;
-            return new GeoPoint(
-                Math.Clamp(Origin.Longitude + longitudeOffset, -180.0, 180.0),
-                GeoConverter.ClampLatitude(Origin.Latitude + point.Y / MetersPerDegreeLatitude));
-        }
-
-        public OrthogonalPoint GetDelta(GeoPoint start, GeoPoint end) {
-            return new OrthogonalPoint(
-                (end.Longitude - start.Longitude) * MetersPerDegreeLongitude,
-                (end.Latitude - start.Latitude) * MetersPerDegreeLatitude);
-        }
-    }
 }

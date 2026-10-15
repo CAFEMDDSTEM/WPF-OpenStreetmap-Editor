@@ -30,6 +30,29 @@ public class TagPresetXmlParserTests {
     }
 
     [Fact]
+    public void Parse_HonoursComboDelimiterAndDisplayValues() {
+        const string xml = """
+            <presets xmlns="http://josm.openstreetmap.de/tagging-preset-1.0">
+                <item name="Street lamp" type="node">
+                    <key key="highway" value="street_lamp" />
+                    <combo key="lit" text="Lit" values="yes|no|06:00-20:00" delimiter="|" />
+                    <combo key="support" text="Support" values="pole,wall" display_values="Pole,Wall mounted" />
+                    <multiselect key="cuisine" text="Cuisine" values="pizza;burger;sushi" />
+                </item>
+            </presets>
+            """;
+
+        var preset = Assert.Single(TagPresetXmlParser.Parse(xml).Presets);
+
+        var lit = preset.Fields.Single(field => field.Key == "lit");
+        Assert.Equal(["yes", "no", "06:00-20:00"], lit.Choices!.Select(static choice => choice.Value));
+        var support = preset.Fields.Single(field => field.Key == "support");
+        Assert.Equal(["Pole", "Wall mounted"], support.Choices!.Select(static choice => choice.Label));
+        var cuisine = preset.Fields.Single(field => field.Key == "cuisine");
+        Assert.Equal(["pizza", "burger", "sushi"], cuisine.Choices!.Select(static choice => choice.Value));
+    }
+
+    [Fact]
     public void Parse_ExpandsChunkReferencesAndBuildsNestedGroupKeys() {
         const string xml = """
             <presets xmlns="http://josm.openstreetmap.de/tagging-preset-1.0">

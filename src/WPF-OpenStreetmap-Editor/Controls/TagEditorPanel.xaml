@@ -1,0 +1,166 @@
+<UserControl x:Class="WPF_OpenStreetmap_Editor.Controls.TagEditorPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:WPF_OpenStreetmap_Editor.Controls"
+             xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+             xmlns:iconPacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Lucide"
+             Foreground="{DynamicResource Theme.TextBrush}"
+             MinWidth="240">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="SummaryTextBlock"
+                   Grid.Row="0"
+                   FontWeight="SemiBold"
+                   TextTrimming="CharacterEllipsis"
+                   Margin="0,0,0,6" />
+
+        <DataGrid x:Name="TagsDataGrid"
+                  Grid.Row="1"
+                  MinHeight="72"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeRows="False"
+                  CanUserSortColumns="False"
+                  HeadersVisibility="Column"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  EnableRowVirtualization="True"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto"
+                  CellEditEnding="TagsDataGrid_CellEditEnding"
+                  PreviewKeyDown="TagsDataGrid_PreviewKeyDown"
+                  PreviewMouseLeftButtonDown="TagsDataGrid_PreviewMouseLeftButtonDown">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn x:Name="KeyColumn" Header="{services:Loc TagEditor.Key}" Width="2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Key}"
+                                       Margin="4,2"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <controls:AutoCompleteTextBox Text="{Binding Key, Mode=OneWay}"
+                                                          BorderThickness="0"
+                                                          Padding="2,0"
+                                                          VerticalContentAlignment="Center"
+                                                          Loaded="KeyEditor_Loaded" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="{services:Loc TagEditor.Value}" Width="3*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Margin="4,2" TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Text" Value="{Binding Value}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDifferent}" Value="True">
+                                                <Setter Property="Text" Value="{services:Loc TagEditor.Different}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource Theme.MutedTextBrush}" />
+                                                <Setter Property="FontStyle" Value="Italic" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <controls:AutoCompleteTextBox Text="{Binding Value, Mode=OneWay}"
+                                                          BorderThickness="0"
+                                                          Padding="2,0"
+                                                          VerticalContentAlignment="Center"
+                                                          Loaded="ValueEditor_Loaded" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="Auto" IsReadOnly="True" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Width="22"
+                                    Height="22"
+                                    Padding="0"
+                                    BorderThickness="0"
+                                    Background="Transparent"
+                                    Focusable="False"
+                                    ToolTip="{services:Loc TagEditor.RemoveTag}"
+                                    Click="RemoveTag_Click">
+                                <iconPacks:PackIconLucide Kind="Trash2" Width="13" Height="13" />
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid x:Name="AddTagPanel" Grid.Row="2" Margin="0,6,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <controls:AutoCompleteTextBox x:Name="NewKeyTextBox"
+                                          Grid.Column="0"
+                                          Height="26"
+                                          VerticalContentAlignment="Center"
+                                          ToolTip="{services:Loc TagEditor.NewKeyTooltip}"
+                                          KeyDown="NewKeyTextBox_KeyDown" />
+            <controls:AutoCompleteTextBox x:Name="NewValueTextBox"
+                                          Grid.Column="1"
+                                          Height="26"
+                                          Margin="6,0,0,0"
+                                          VerticalContentAlignment="Center"
+                                          ToolTip="{services:Loc TagEditor.NewValueTooltip}"
+                                          KeyDown="NewValueTextBox_KeyDown" />
+            <Button Grid.Column="2"
+                    Margin="6,0,0,0"
+                    Padding="10,2"
+                    Content="{services:Loc Common.Add}"
+                    Click="AddTag_Click" />
+        </Grid>
+
+        <Expander x:Name="MembershipsExpander"
+                  Grid.Row="3"
+                  Margin="0,6,0,0"
+                  IsExpanded="True"
+                  Visibility="Collapsed">
+            <ListBox x:Name="MembershipsListBox"
+                     MaxHeight="120"
+                     Margin="0,4,0,0"
+                     HorizontalContentAlignment="Stretch"
+                     MouseDoubleClick="MembershipsListBox_MouseDoubleClick">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="2,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding Title}"
+                                       ToolTip="{Binding Title}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Role}"
+                                       ToolTip="{services:Loc Osm.Relation.Role}"
+                                       Margin="8,0,0,0"
+                                       Foreground="{DynamicResource Theme.MutedTextBrush}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Expander>
+    </Grid>
+</UserControl>

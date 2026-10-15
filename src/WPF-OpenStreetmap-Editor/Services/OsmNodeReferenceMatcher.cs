@@ -58,7 +58,35 @@ internal static class OsmNodeReferenceMatcher {
             matches[i] = new OsmNodeReferenceMatch(originalNodes[originalIndex], originalIndex);
         }
 
+        MatchUnanchoredGaps(matches, originalNodes);
         return matches;
+    }
+
+    /// <summary>
+    /// Vertices that moved after the way also gained or lost vertices no longer match by coordinate.
+    /// Between two coordinate-matched anchors the untouched order is preserved, so when a gap holds
+    /// the same number of unmatched vertices and unmatched original references they are paired in
+    /// order; this keeps a dragged node a modification instead of a delete plus create. Gaps whose
+    /// counts differ (an insertion or removal happened there) are left unmatched.
+    /// </summary>
+    private static void MatchUnanchoredGaps(OsmNodeReferenceMatch?[] matches, IReadOnlyList<OsmNodeReference> originalNodes) {
+        var previousOriginal = -1;
+        var gapStart = 0;
+        for (var i = 0; i <= matches.Length; i++) {
+            if (i < matches.Length && matches[i] is null) continue;
+
+            var nextOriginal = i < matches.Length ? matches[i]!.Value.OriginalIndex : originalNodes.Count;
+            var unmatchedCount = i - gapStart;
+            if (unmatchedCount > 0 && unmatchedCount == nextOriginal - previousOriginal - 1) {
+                for (var offset = 0; offset < unmatchedCount; offset++) {
+                    var originalIndex = previousOriginal + 1 + offset;
+                    matches[gapStart + offset] = new OsmNodeReferenceMatch(originalNodes[originalIndex], originalIndex);
+                }
+            }
+
+            previousOriginal = nextOriginal;
+            gapStart = i + 1;
+        }
     }
 
     private static IReadOnlyList<OsmNodeReferenceMatch?>? TryMatchReorderedPoints(

@@ -143,7 +143,7 @@ public static class TagPresetXmlParser {
                             yield return expanded;
                         }
                     }
-                } else if (localName is "optional" or "checkgroup" or "multi_select" or "multiselect" or "conditional" or "set") {
+                } else if (localName is "optional" or "checkgroup" or "conditional" or "set") {
                     foreach (var expanded in GetEffectiveChildren(child, visited)) {
                         yield return expanded;
                     }
@@ -187,8 +187,17 @@ public static class TagPresetXmlParser {
 
             var values = (string?)element.Attribute("values");
             if (values is not null) {
-                foreach (var value in values.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) {
-                    choices.Add(new TagPresetChoice(value, value));
+                // JOSM combos split on "," and multiselects on ";" unless the element overrides the delimiter.
+                var defaultDelimiter = element.Name.LocalName == "combo" ? "," : ";";
+                var delimiter = (string?)element.Attribute("delimiter") is { Length: > 0 } custom ? custom : defaultDelimiter;
+                var parsedValues = values.Split(delimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var displayValues = ((string?)element.Attribute("display_values"))?
+                    .Split(delimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                for (var i = 0; i < parsedValues.Length; i++) {
+                    var display = displayValues is not null && displayValues.Length == parsedValues.Length
+                        ? displayValues[i]
+                        : parsedValues[i];
+                    choices.Add(new TagPresetChoice(parsedValues[i], display));
                 }
             }
             return choices;

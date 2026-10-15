@@ -44,10 +44,48 @@ above imagery. The editor toolbar supports:
 - pan mode
 - single selection and shift-add selection
 - box selection and shift-add box selection
-- drawing line features
-- adding a point at the current map center
+- drawing line and area features that snap to existing nodes and lines
+- adding a point at the current map center, or by a single click in draw mode
 - copying, pasting, duplicating, hiding, showing, and deleting selected features
 - moving, rotating, and orthogonalizing selected line or polygon features
+- inserting, dragging, and deleting individual vertices
+- splitting, combining, reversing, and simplifying lines; joining nodes to ways
+- aligning vertices in a circle or line, distributing them, mirroring, and
+  creating circles
+- editing tags of the selection in the **Tags** panel, with autocomplete from
+  the bundled JOSM presets and the current document
+
+### Topology
+
+WOSM keeps the OpenStreetMap network connected the way JOSM does:
+
+- While drawing, the pointer snaps to existing vertices (reusing that node) and
+  to line segments (inserting a shared node into that way). Clicking the first
+  vertex of the draft closes it into an area; clicking the last vertex, pressing
+  `Enter`, or double-clicking finishes it. A single click followed by `Enter`
+  creates a lone node. `Backspace` removes the last vertex, `Esc` discards the
+  draft.
+- Dragging a vertex moves every way that shares that node. Moving, rotating,
+  aligning, or orthogonalizing a feature moves the junction nodes it shares with
+  other ways along with it, so connected ways stretch instead of detaching.
+- Deleting a way, simplifying it, or deleting a vertex also removes nodes that
+  become unreferenced, as long as they carry no tags; pre-existing untagged
+  nodes that were never touched are left alone. The upload uses
+  `<delete if-unused="true">`, so the server keeps any node still used by data
+  outside the downloaded area.
+- Vertices of new features connect to existing data by exact coordinate (which
+  is what snapping produces); node identities are assigned when the document is
+  synchronized before upload, save, relation editing, or a topology command
+  that needs them. A vertex dragged after a vertex was inserted into or removed
+  from the same way keeps its node unless the two edits touch neighbouring
+  vertices, in which case the moved vertex becomes a new node.
+
+The status bar shows the length and area of the selection, and the length,
+bearing, and running total of the segment being drawn. **Tools > Data
+validator** checks the synchronized view an upload would send and reports
+duplicate nodes, untagged ways and nodes, highway end nodes that nearly touch
+another highway (unless tagged `noexit=yes` or on another level), and highways
+that cross without a shared node.
 
 Common editing shortcuts:
 
@@ -63,10 +101,20 @@ Common editing shortcuts:
 | `A` | Enter line drawing mode. Press `Enter` to finish the current line. |
 | `Shift+F` | Enter fast line drawing mode. |
 | `Ctrl+Shift+F` | Toggle viewport following while drawing lines. |
+| `Backspace` | Remove the last vertex of the draft while drawing. |
 | `R` | Rotate selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
 | `Shift+R` | Copy tags from the previously selected feature to the current selection. |
 | `M` | Move selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
 | `Q` | Orthogonalize selected line or polygon features. |
+| `Delete` | Delete the hovered vertex from every way that shares it, or the selected features when no vertex is hovered. |
+| Double-click a line | Insert a vertex at that point. |
+| `P` | Split the selected line at the hovered vertex. |
+| `C` | Combine two selected lines that share an endpoint. |
+| `J` | Join the selected point features to the nearest line or area. |
+| `O` / `Shift+O` | Align vertices of the selection in a circle / create a circle from the selection (refused while the way shares nodes with other features). |
+| `L` | Align vertices of an open line; the end vertices stay fixed. |
+| `Shift+B` | Distribute interior vertices evenly between the end vertices. |
+| `Shift+M` | Mirror the selection east–west. |
 | `` ` `` | Rotate imagery layer order for quick comparison. |
 
 In select mode, press and hold the left mouse button on an already-selected

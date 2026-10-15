@@ -7,6 +7,7 @@ public sealed class WorkbenchViewModel : INotifyPropertyChanged {
     private string _documentStatus = "";
     private string _editorModeStatus = "";
     private string _pointerStatus = "";
+    private string _measurementStatus = "";
     private string _featureCount = "0";
     private string _activeLayerStatus = "";
     private bool _isRightPanelVisible = true;
@@ -45,6 +46,11 @@ public sealed class WorkbenchViewModel : INotifyPropertyChanged {
     public string PointerStatus {
         get => _pointerStatus;
         set => SetField(ref _pointerStatus, value);
+    }
+
+    public string MeasurementStatus {
+        get => _measurementStatus;
+        set => SetField(ref _measurementStatus, value);
     }
 
     public string FeatureCount {

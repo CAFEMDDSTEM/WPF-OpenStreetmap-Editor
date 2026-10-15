@@ -164,6 +164,76 @@ public class MapEditServiceTests {
     }
 
     [Fact]
+    public void FinishDraftLine_ClosedRingCreatesPolygonAndClosesIt() {
+        var editor = new EditorSession();
+        editor.ReplaceDocument(new MapDocument());
+        var first = new GeoPoint(0, 0);
+        Assert.True(editor.AddDraftLinePoint(first));
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(1, 0)));
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(1, 1)));
+
+        var polygon = editor.FinishDraftLine(DraftCompletion.ClosedRing);
+
+        Assert.NotNull(polygon);
+        Assert.Equal(MapGeometryType.Polygon, polygon.GeometryType);
+        Assert.Equal(4, polygon.Parts[0].Count);
+        Assert.Equal(first, polygon.Parts[0][^1]);
+    }
+
+    [Fact]
+    public void FinishDraftLine_ClosedRingNeedsThreeDistinctVertices() {
+        var editor = new EditorSession();
+        editor.ReplaceDocument(new MapDocument());
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(0, 0)));
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(1, 0)));
+
+        Assert.Null(editor.FinishDraftLine(DraftCompletion.ClosedRing));
+        Assert.False(editor.HasDraftLine);
+        Assert.Empty(editor.Document!.Features);
+    }
+
+    [Fact]
+    public void FinishDraftLine_SinglePointKeepsLoneVertexAsPointFeature() {
+        var editor = new EditorSession();
+        editor.ReplaceDocument(new MapDocument());
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(3, 4)));
+
+        Assert.Null(new EditorSession().FinishDraftLine(DraftCompletion.SinglePoint));
+        var point = editor.FinishDraftLine(DraftCompletion.SinglePoint);
+
+        Assert.NotNull(point);
+        Assert.Equal(MapGeometryType.Point, point.GeometryType);
+        Assert.Equal([new GeoPoint(3, 4)], point.Parts[0]);
+        Assert.True(editor.Undo());
+        Assert.Empty(editor.Document!.Features);
+    }
+
+    [Fact]
+    public void FinishDraftLine_LineDiscardsSingleVertex() {
+        var editor = new EditorSession();
+        editor.ReplaceDocument(new MapDocument());
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(3, 4)));
+
+        Assert.Null(editor.FinishDraftLine());
+        Assert.Empty(editor.Document!.Features);
+    }
+
+    [Fact]
+    public void RemoveLastDraftLinePoint_PopsVertexWithoutEndingDraft() {
+        var editor = new EditorSession();
+        editor.ReplaceDocument(new MapDocument());
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(0, 0)));
+        Assert.True(editor.AddDraftLinePoint(new GeoPoint(1, 1)));
+
+        Assert.True(editor.RemoveLastDraftLinePoint());
+
+        Assert.True(editor.HasDraftLine);
+        Assert.Equal([new GeoPoint(0, 0)], editor.DraftLine!.Parts[0]);
+        Assert.True(editor.RemoveLastDraftLinePoint());
+        Assert.False(editor.RemoveLastDraftLinePoint());
+    }
+
+    [Fact]
     public void RotateParts_RotatesAroundCenter() {
         var feature = new MapFeature {
             GeometryType = MapGeometryType.LineString,

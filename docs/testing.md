@@ -18,3 +18,6 @@ The test project currently covers:
 - Theme package manifest, contrast, asset, archive, and install validation
 - Plugin manifest parsing, package installation, native trust fingerprints, process sandbox isolation, and JSON-RPC exchange
 - OSM account metadata/credential separation, API bounds validation, and change serialization
+- Topology editing: draw snapping, vertex insertion/removal, shared-vertex lookup and junction propagation, geometry alignment tools, measurement, node sharing and orphan-node cleanup during OSM synchronization
+- Tag editor model, tag autocomplete ranking, and multi-feature tag patch commands
+- Topology validation rules (duplicate nodes, untagged objects, highway connectivity)

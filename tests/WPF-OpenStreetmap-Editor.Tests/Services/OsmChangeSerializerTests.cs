@@ -226,10 +226,13 @@ public class OsmChangeSerializerTests {
         var result = OsmChangeSerializer.Build(document, 99);
         var xml = XDocument.Parse(result.Xml);
 
-        Assert.Equal(1, result.DeleteCount);
-        var deletedWay = Assert.Single(xml.Root!.Element("delete")!.Elements("way"));
+        Assert.Equal(3, result.DeleteCount);
+        var delete = xml.Root!.Element("delete")!;
+        var deletedWay = Assert.Single(delete.Elements("way"));
         Assert.Equal("10", deletedWay.Attribute("id")!.Value);
+        Assert.Equal(["1", "2"], delete.Elements("node").Select(node => node.Attribute("id")!.Value).Order());
         Assert.False(result.Dataset.Ways.ContainsKey(10));
+        Assert.Empty(result.Dataset.Nodes);
     }
 
     [Fact]

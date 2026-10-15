@@ -9,11 +9,14 @@ internal static class OsmDocumentSync {
 
         var dataset = document.Osm?.Clone() ?? new OsmDataset();
         dataset.NormalizeTemporaryIds();
+        var referencedBeforeEdits = GetReferencedNodeIdsBeforeEdits(document, dataset);
         ApplyDeletedFeatures(document, dataset);
-        foreach (var feature in document.Features) {
-            ApplyFeature(document, dataset, feature);
+        var nodeIndex = new NodeCoordinateIndex(dataset);
+        foreach (var feature in OrderFeaturesForSync(document)) {
+            ApplyFeature(document, dataset, nodeIndex, feature);
         }
         PruneUnreferencedTemporaryObjects(document, dataset);
+        PruneNodesDetachedByEdits(document, dataset, referencedBeforeEdits);
         dataset.NormalizeTemporaryIds();
         RefreshFeatureGeometries(document, dataset);
         document.Osm = dataset;
@@ -170,30 +173,63 @@ internal static class OsmDocumentSync {
         }
     }
 
-    private static void ApplyFeature(MapDocument document, OsmDataset dataset, MapFeature feature) {
+    // Nodes are positioned (and indexed) before any way can snap to them: existing node features first,
+    // then new POIs, so a vertex inserted into an existing way at a fresh POI joins the POI's node.
+    // Among existing ways, those whose vertex count is unchanged go first because their moved vertices
+    // are still matched by reference and re-index their nodes, which ways with inserted or removed
+    // vertices (matched by coordinate only) then find at the new location. New lines come last.
+    private static List<MapFeature> OrderFeaturesForSync(MapDocument document) {
+        return document.Features
+            .OrderBy(feature => (feature.Osm?.PrimitiveType, feature.GeometryType) switch {
+                (OsmPrimitiveType.Node, _) => 0,
+                (null, MapGeometryType.Point) => 1,
+                (OsmPrimitiveType.Way, _) => HasOriginalVertexCount(document, feature) ? 2 : 3,
+                (OsmPrimitiveType.Relation, _) => 4,
+                _ => 5
+            })
+            .ToList();
+    }
+
+    private static bool HasOriginalVertexCount(MapDocument document, MapFeature feature) {
+        if (!document.OriginalFeatures.TryGetValue(feature.Id, out var original) ||
+            original.Parts.Count != 1 ||
+            feature.Parts.Count != 1) {
+            return true;
+        }
+
+        return original.Parts[0].Count == feature.Parts[0].Count;
+    }
+
+    private static void ApplyFeature(
+        MapDocument document,
+        OsmDataset dataset,
+        NodeCoordinateIndex nodeIndex,
+        MapFeature feature) {
         if (feature.Osm is null) {
-            CreatePrimitiveForFeature(dataset, feature);
+            CreatePrimitiveForFeature(dataset, nodeIndex, feature);
             return;
         }
 
         switch (feature.Osm.PrimitiveType) {
             case OsmPrimitiveType.Node:
-                ApplyNodeFeature(dataset, feature);
+                ApplyNodeFeature(dataset, nodeIndex, feature);
                 break;
             case OsmPrimitiveType.Way:
-                ApplyWayFeature(document, dataset, feature);
+                ApplyWayFeature(document, dataset, nodeIndex, feature);
                 break;
             case OsmPrimitiveType.Relation:
-                ApplyRelationFeature(document, dataset, feature);
+                ApplyRelationFeature(document, dataset, nodeIndex, feature);
                 break;
         }
     }
 
-    private static void CreatePrimitiveForFeature(OsmDataset dataset, MapFeature feature) {
+    private static void CreatePrimitiveForFeature(OsmDataset dataset, NodeCoordinateIndex nodeIndex, MapFeature feature) {
         if (feature.Parts.Count != 1 || feature.Parts[0].Count == 0) return;
 
         if (feature.GeometryType == MapGeometryType.Point) {
+            // A POI owns its node even when another node already sits at the same coordinate.
             var nodeId = dataset.CreateNode(feature.Parts[0][0], feature.Attributes);
+            nodeIndex.Add(dataset.Nodes[nodeId]);
             feature.Osm = new OsmFeatureMetadata {
                 PrimitiveType = OsmPrimitiveType.Node,
                 Id = nodeId,
@@ -204,7 +240,7 @@ internal static class OsmDocumentSync {
 
         if (feature.Parts[0].Count < 2) return;
 
-        var nodeIds = CreateNodesForPart(dataset, feature.Parts[0]);
+        var nodeIds = CreateNodesForPart(dataset, nodeIndex, feature.Parts[0]);
         var wayId = dataset.CreateWay(nodeIds, feature.Attributes);
         feature.Osm = new OsmFeatureMetadata {
             PrimitiveType = OsmPrimitiveType.Way,
@@ -214,22 +250,30 @@ internal static class OsmDocumentSync {
         };
     }
 
-    private static void ApplyNodeFeature(OsmDataset dataset, MapFeature feature) {
+    private static void ApplyNodeFeature(OsmDataset dataset, NodeCoordinateIndex nodeIndex, MapFeature feature) {
         if (feature.Parts.Count != 1 || feature.Parts[0].Count == 0 || feature.Osm is null) return;
 
-        if (!dataset.Nodes.TryGetValue(feature.Osm.Id, out var node)) {
+        var point = feature.Parts[0][0];
+        if (dataset.Nodes.TryGetValue(feature.Osm.Id, out var node)) {
+            nodeIndex.Move(node, point);
+        } else {
             node = new OsmNode {
                 Id = feature.Osm.Id,
-                Version = feature.Osm.Version
+                Version = feature.Osm.Version,
+                Point = point
             };
             dataset.Nodes[node.Id] = node;
+            nodeIndex.Add(node);
         }
 
-        node.Point = feature.Parts[0][0];
         node.Tags = OsmDataset.CopyTags(feature.Attributes);
     }
 
-    private static void ApplyWayFeature(MapDocument document, OsmDataset dataset, MapFeature feature) {
+    private static void ApplyWayFeature(
+        MapDocument document,
+        OsmDataset dataset,
+        NodeCoordinateIndex nodeIndex,
+        MapFeature feature) {
         if (feature.Parts.Count != 1 || feature.Parts[0].Count < 2 || feature.Osm is null) return;
 
         if (!dataset.Ways.TryGetValue(feature.Osm.Id, out var way)) {
@@ -247,12 +291,16 @@ internal static class OsmDocumentSync {
                 ? feature.Osm.NodeReferences
                 : CreateNodeReferences(dataset, way.NodeIds);
         var originalPart = originalFeature?.Parts.Count == 1 ? originalFeature.Parts[0] : null;
-        way.NodeIds = ReconcileWayNodes(dataset, feature.Parts[0], originalPart, originalReferences);
+        way.NodeIds = ReconcileWayNodes(dataset, nodeIndex, feature.Parts[0], originalPart, originalReferences);
         way.Tags = OsmDataset.CopyTags(feature.Attributes);
         feature.Osm.NodeReferences = CreateNodeReferences(dataset, way.NodeIds);
     }
 
-    private static void ApplyRelationFeature(MapDocument document, OsmDataset dataset, MapFeature feature) {
+    private static void ApplyRelationFeature(
+        MapDocument document,
+        OsmDataset dataset,
+        NodeCoordinateIndex nodeIndex,
+        MapFeature feature) {
         if (feature.Osm is null) return;
 
         if (!dataset.Relations.TryGetValue(feature.Osm.Id, out var relation)) {
@@ -284,12 +332,13 @@ internal static class OsmDocumentSync {
                 ? originalFeature.Parts[i]
                 : null;
             var originalReferences = CreateNodeReferences(dataset, way.NodeIds);
-            way.NodeIds = ReconcileWayNodes(dataset, part, originalPart, originalReferences);
+            way.NodeIds = ReconcileWayNodes(dataset, nodeIndex, part, originalPart, originalReferences);
         }
     }
 
     private static List<long> ReconcileWayNodes(
         OsmDataset dataset,
+        NodeCoordinateIndex nodeIndex,
         IReadOnlyList<GeoPoint> points,
         IReadOnlyList<GeoPoint>? originalPoints,
         IReadOnlyList<OsmNodeReference> originalReferences) {
@@ -302,8 +351,9 @@ internal static class OsmDocumentSync {
                 continue;
             }
 
+            long nodeId;
             if (matchedNodes[i] is { } match) {
-                var nodeId = match.Reference.Id;
+                nodeId = match.Reference.Id;
                 if (!dataset.Nodes.TryGetValue(nodeId, out var node)) {
                     node = new OsmNode {
                         Id = nodeId,
@@ -311,20 +361,18 @@ internal static class OsmDocumentSync {
                         Point = match.Reference.Point
                     };
                     dataset.Nodes[nodeId] = node;
+                    nodeIndex.Add(node);
                 }
 
                 if (WasMatchedPointEdited(originalPoints, match, points[i])) {
-                    node.Point = points[i];
+                    nodeIndex.Move(node, points[i]);
                 }
-
-                firstNodeId ??= nodeId;
-                nodeIds.Add(nodeId);
-                continue;
+            } else {
+                nodeId = GetOrCreateNode(dataset, nodeIndex, points[i]);
             }
 
-            var createdNodeId = dataset.CreateNode(points[i]);
-            firstNodeId ??= createdNodeId;
-            nodeIds.Add(createdNodeId);
+            firstNodeId ??= nodeId;
+            nodeIds.Add(nodeId);
         }
 
         return nodeIds;
@@ -343,7 +391,10 @@ internal static class OsmDocumentSync {
         return match.Reference.Point != currentPoint;
     }
 
-    private static List<long> CreateNodesForPart(OsmDataset dataset, IReadOnlyList<GeoPoint> points) {
+    private static List<long> CreateNodesForPart(
+        OsmDataset dataset,
+        NodeCoordinateIndex nodeIndex,
+        IReadOnlyList<GeoPoint> points) {
         var nodeIds = new List<long>(points.Count);
         long? firstNodeId = null;
         for (var i = 0; i < points.Count; i++) {
@@ -352,12 +403,20 @@ internal static class OsmDocumentSync {
                 continue;
             }
 
-            var nodeId = dataset.CreateNode(points[i]);
+            var nodeId = GetOrCreateNode(dataset, nodeIndex, points[i]);
             firstNodeId ??= nodeId;
             nodeIds.Add(nodeId);
         }
 
         return nodeIds;
+    }
+
+    private static long GetOrCreateNode(OsmDataset dataset, NodeCoordinateIndex nodeIndex, GeoPoint point) {
+        if (nodeIndex.TryGetNodeId(point, out var nodeId)) return nodeId;
+
+        nodeId = dataset.CreateNode(point);
+        nodeIndex.Add(dataset.Nodes[nodeId]);
+        return nodeId;
     }
 
     private static void PruneUnreferencedTemporaryObjects(MapDocument document, OsmDataset dataset) {
@@ -374,18 +433,55 @@ internal static class OsmDocumentSync {
         }
 
         PruneMissingRelationMembers(dataset);
-        var referencedNodes = dataset.Ways.Values
-            .SelectMany(static way => way.NodeIds)
-            .Concat(dataset.Relations.Values
-                .SelectMany(static relation => relation.Members)
-                .Where(static member => member.Type == OsmRelationMemberType.Node)
-                .Select(static member => member.Id))
-            .ToHashSet();
+        var referencedNodes = GetReferencedNodeIds(dataset);
         foreach (var nodeId in dataset.Nodes.Keys
             .Where(id => id < 0 && !currentNodes.Contains(id) && !referencedNodes.Contains(id))
             .ToList()) {
             dataset.Nodes.Remove(nodeId);
         }
+    }
+
+    // Nodes that a way used at the clean baseline or when this sync began are the user's to clean up:
+    // once nothing references them they are removed like JOSM does when deleting a way. Relation-only
+    // members are not candidates because deleting a relation must never delete its member nodes.
+    // The baseline is included because topology commands shrink way.NodeIds in the dataset ahead of
+    // the sync, so by now those nodes already look unreferenced. Nodes that were unreferenced in both
+    // states are pre-existing orphans in the source data and are left alone.
+    private static HashSet<long> GetReferencedNodeIdsBeforeEdits(MapDocument document, OsmDataset dataset) {
+        var referenced = GetWayNodeIds(dataset);
+        if (document.OriginalOsm is { } baseline) referenced.UnionWith(GetWayNodeIds(baseline));
+        return referenced;
+    }
+
+    private static void PruneNodesDetachedByEdits(
+        MapDocument document,
+        OsmDataset dataset,
+        IReadOnlySet<long> referencedBeforeEdits) {
+        var currentNodes = GetCurrentFeatureIds(document, OsmPrimitiveType.Node);
+        var referencedNodes = GetReferencedNodeIds(dataset);
+        foreach (var nodeId in referencedBeforeEdits) {
+            if (referencedNodes.Contains(nodeId) ||
+                currentNodes.Contains(nodeId) ||
+                !dataset.Nodes.TryGetValue(nodeId, out var node) ||
+                node.Tags.Count > 0) {
+                continue;
+            }
+
+            dataset.Nodes.Remove(nodeId);
+        }
+    }
+
+    private static HashSet<long> GetWayNodeIds(OsmDataset dataset) {
+        return dataset.Ways.Values.SelectMany(static way => way.NodeIds).ToHashSet();
+    }
+
+    private static HashSet<long> GetReferencedNodeIds(OsmDataset dataset) {
+        var referenced = GetWayNodeIds(dataset);
+        referenced.UnionWith(dataset.Relations.Values
+            .SelectMany(static relation => relation.Members)
+            .Where(static member => member.Type == OsmRelationMemberType.Node)
+            .Select(static member => member.Id));
+        return referenced;
     }
 
     private static HashSet<long> GetCurrentFeatureIds(MapDocument document, OsmPrimitiveType type) {
@@ -502,5 +598,36 @@ internal static class OsmDocumentSync {
         }
 
         document.InvalidateSpatialIndex();
+    }
+
+    /// <summary>
+    /// Coordinate lookup that lets newly drawn or inserted way vertices join the node already sitting
+    /// at the exact same point. Points are compared bit-for-bit, so only snapped vertices connect.
+    /// </summary>
+    private sealed class NodeCoordinateIndex {
+        private readonly Dictionary<GeoPoint, long> _nodeIdsByPoint = [];
+
+        public NodeCoordinateIndex(OsmDataset dataset) {
+            // When the dataset already holds coincident nodes the first enumerated one keeps the coordinate.
+            foreach (var node in dataset.Nodes.Values) Add(node);
+        }
+
+        public bool TryGetNodeId(GeoPoint point, out long nodeId) {
+            return _nodeIdsByPoint.TryGetValue(point, out nodeId);
+        }
+
+        public void Add(OsmNode node) {
+            _nodeIdsByPoint.TryAdd(node.Point, node.Id);
+        }
+
+        /// <summary>Moves the node and keeps the lookup pointing at it, without displacing another node already at the target.</summary>
+        public void Move(OsmNode node, GeoPoint point) {
+            if (_nodeIdsByPoint.TryGetValue(node.Point, out var indexedNodeId) && indexedNodeId == node.Id) {
+                _nodeIdsByPoint.Remove(node.Point);
+            }
+
+            node.Point = point;
+            Add(node);
+        }
     }
 }

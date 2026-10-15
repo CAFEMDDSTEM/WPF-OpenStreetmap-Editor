@@ -2,6 +2,16 @@ using WPF_OpenStreetmap_Editor.Models;
 
 namespace WPF_OpenStreetmap_Editor.Services;
 
+/// <summary>How a draft line is turned into a feature when drawing ends.</summary>
+public enum DraftCompletion {
+    /// <summary>Keep an open line; drafts with fewer than two vertices are discarded.</summary>
+    Line,
+    /// <summary>Close the ring and create a polygon; needs three distinct vertices.</summary>
+    ClosedRing,
+    /// <summary>Like <see cref="Line"/>, but a single-vertex draft becomes a point feature (JOSM behaviour).</summary>
+    SinglePoint
+}
+
 public sealed class EditorSession {
     public EditorSession() {
         CommandStack = new EditCommandStack(Dataset);
@@ -53,19 +63,40 @@ public sealed class EditorSession {
         return Dataset.AppendPoint(DraftLine, 0, point, markDirty: false).HasValue;
     }
 
-    public MapFeature? FinishDraftLine() {
+    public MapFeature? FinishDraftLine(DraftCompletion completion = DraftCompletion.Line) {
         if (DraftLine is null) return null;
 
         var completedLine = DraftLine;
         DraftLine = null;
         var insertionIndex = Dataset.IndexOf(completedLine);
         Dataset.RemoveFeature(completedLine, markDirty: false);
+        if (completedLine.Parts.Count == 0) return null;
 
-        if (completedLine.Parts.Count == 0 || completedLine.Parts[0].Count < 2) return null;
+        var points = completedLine.Parts[0];
+        switch (completion) {
+            case DraftCompletion.SinglePoint when points.Count == 1:
+                completedLine.GeometryType = MapGeometryType.Point;
+                break;
+            case DraftCompletion.ClosedRing:
+                if (points.Distinct().Count() < 3) return null;
+                if (points[0] != points[^1]) points.Add(points[0]);
+                completedLine.GeometryType = MapGeometryType.Polygon;
+                completedLine.InvalidateGeometry();
+                break;
+            default:
+                if (points.Count < 2) return null;
+                break;
+        }
 
         return Execute(new AddFeatureCommand(completedLine, insertionIndex >= 0 ? insertionIndex : null))
             ? completedLine
             : null;
+    }
+
+    public bool RemoveLastDraftLinePoint() {
+        if (DraftLine is null || DraftLine.Parts.Count == 0 || DraftLine.Parts[0].Count == 0) return false;
+
+        return Dataset.RemovePointAt(DraftLine, 0, DraftLine.Parts[0].Count - 1, markDirty: false);
     }
 
     public bool CancelDraftLine() {

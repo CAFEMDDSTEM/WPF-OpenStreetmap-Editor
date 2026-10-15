@@ -293,12 +293,12 @@ internal static class ValidationRuleSupport {
             IsZero(cdB) && IsOnSegment(c, d, b);
     }
 
-    private static double Cross(GeoPoint a, GeoPoint b, GeoPoint c) {
+    public static double Cross(GeoPoint a, GeoPoint b, GeoPoint c) {
         return (b.Longitude - a.Longitude) * (c.Latitude - a.Latitude) -
             (b.Latitude - a.Latitude) * (c.Longitude - a.Longitude);
     }
 
-    private static bool OppositeSigns(double left, double right) =>
+    public static bool OppositeSigns(double left, double right) =>
         left > Epsilon && right < -Epsilon || left < -Epsilon && right > Epsilon;
 
     private static bool IsZero(double value) => Math.Abs(value) <= Epsilon;

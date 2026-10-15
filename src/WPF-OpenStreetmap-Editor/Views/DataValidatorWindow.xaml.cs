@@ -10,6 +10,7 @@ public partial class DataValidatorWindow : Window {
     private readonly IReadOnlyCollection<MapFeature> _selection;
     private readonly Action<MapFeature>? _navigate;
     private readonly ValidationService _validationService = new();
+    private MapDocument? _validatedSnapshot;
     private static LocalizationService L => LocalizationService.Instance;
 
     public DataValidatorWindow(
@@ -59,9 +60,25 @@ public partial class DataValidatorWindow : Window {
             return;
         }
 
-        var features = _selection.Count > 0 ? _selection : document.Features;
+        // Validate the synchronized view an upload would send: freshly drawn features get their OSM
+        // identities and moved vertices their final node positions, without touching the live document.
+        MapDocument snapshot;
+        try {
+            snapshot = document.CreateSnapshot();
+            OsmDocumentSync.Synchronize(snapshot);
+        } catch (Exception ex) {
+            IssueDataGrid.ItemsSource = Array.Empty<ValidationIssueItem>();
+            SummaryTextBlock.Text = ex.Message;
+            return;
+        }
+
+        _validatedSnapshot = snapshot;
+        var selectedIds = _selection.Select(static feature => feature.Id).ToHashSet(StringComparer.Ordinal);
+        var features = selectedIds.Count > 0
+            ? snapshot.Features.Where(feature => selectedIds.Contains(feature.Id)).ToList()
+            : snapshot.Features;
         var issues = _validationService
-            .Validate(new ValidationContext(features.ToList(), document.Osm))
+            .Validate(new ValidationContext(features.ToList(), snapshot.Osm))
             .Select(static issue => new ValidationIssueItem(issue))
             .ToList();
         IssueDataGrid.ItemsSource = issues;
@@ -76,11 +93,12 @@ public partial class DataValidatorWindow : Window {
         if (feature is not null) _navigate?.Invoke(feature);
     }
 
+    /// <summary>Resolves an issue target to the live document feature; OSM ids are looked up in the validated snapshot because new features only carry them there.</summary>
     private MapFeature? FindFeature(ValidationObjectReference target) {
         if (Document is not { } document) return null;
+        var documentFeatures = document.DataLayers.SelectMany(static layer => layer.Features);
         if (target.Type == ValidationObjectType.Feature) {
-            return document.DataLayers.SelectMany(static layer => layer.Features)
-                .FirstOrDefault(feature => feature.Id == target.Id);
+            return documentFeatures.FirstOrDefault(feature => feature.Id == target.Id);
         }
 
         if (!long.TryParse(target.Id, out var osmId)) return null;
@@ -90,10 +108,11 @@ public partial class DataValidatorWindow : Window {
             ValidationObjectType.Relation => OsmPrimitiveType.Relation,
             _ => (OsmPrimitiveType?)null
         };
-        return primitiveType is null
-            ? null
-            : document.DataLayers.SelectMany(static layer => layer.Features)
-                .FirstOrDefault(feature => feature.Osm?.PrimitiveType == primitiveType && feature.Osm.Id == osmId);
+        if (primitiveType is null) return null;
+
+        var snapshotFeatures = _validatedSnapshot?.DataLayers.SelectMany(static layer => layer.Features) ?? documentFeatures;
+        var match = snapshotFeatures.FirstOrDefault(feature => feature.Osm?.PrimitiveType == primitiveType && feature.Osm.Id == osmId);
+        return match is null ? null : documentFeatures.FirstOrDefault(feature => feature.Id == match.Id);
     }
 
     private static IEditCommand? CreateGeometryFix(

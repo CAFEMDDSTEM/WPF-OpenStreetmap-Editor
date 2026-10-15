@@ -35,6 +35,10 @@ Entpacke die ZIP-Datei und starte `WPF-OpenStreetmap-Editor.exe`, oder führe de
 - Wählt eine Standard-Quellprojektion für projizierte GeoJSON-, GML- und Shapefile-Daten ohne `.prj`; vorhandene Shapefile-`.prj`-Dateien werden beachtet.
 - Speichert bearbeitete Daten als GeoJSON, OpenStreetMap XML, GPX, KML oder GML. PBF, Shapefile und KMZ sind derzeit nur importierbar.
 - Wählt, rahmenwählt, blendet aus, löscht, kopiert, fügt ein, dupliziert, setzt Punkte, zeichnet Linien, dreht, verschiebt und orthogonalisiert Kartenobjekte über der Bildgrundlage.
+- Zeichnet mit Einrasten wie in JOSM: Neue Wege teilen vorhandene Knoten, ein Klick auf eine Linie fügt einen gemeinsamen Knoten ein, ein Klick auf den ersten Punkt schließt eine Fläche, und Kreuzungsknoten folgen, wenn verbundene Wege verschoben, gedreht oder ausgerichtet werden.
+- Fügt Punkte ein, zieht und löscht sie; teilt, vereinigt, kehrt um und vereinfacht Linien; verbindet Knoten mit Wegen; richtet Punkte kreisförmig oder in einer Linie aus, verteilt sie, spiegelt oder erstellt Kreise.
+- Bearbeitet Tags in einem dauerhaften Panel mit Autovervollständigung für Schlüssel und Werte aus den mitgelieferten JOSM-Vorlagen und dem aktuellen Dokument; die Statusleiste zeigt Länge und Fläche der Auswahl.
+- Prüft Daten auf ungültige Tags und Geometrien, doppelte Knoten, Objekte ohne Tags, fast verbundene Straßenenden und Straßen, die sich ohne gemeinsamen Knoten kreuzen.
 - Fordert BetterID AI-Tagvorschläge für ein ausgewähltes Objekt an und erzeugt vor dem Upload prüfbare Entwürfe für OSM-Änderungssatzkommentare.
 - Lädt OSM-Daten für einen ausgewählten Begrenzungsrahmen herunter und lädt geprüfte Erstellungs-, Änderungs- und Löschvorgänge hoch. Ein optionales First-Party-OpenStreetMap-Transfer-addon kann Symbolleisten- und Menüeinträge hinzufügen.
 - Nutzt `WPF-OpenStreetmap-Editor.exe` über die Befehlszeile, um importierte Kartendateien zusammenzufassen, unterstützte Vektorformate zu konvertieren, OSM-Daten für Begrenzungsrahmen herunterzuladen, `.osc`-Änderungssätze anzuzeigen, geschützte OSM-Uploads auszuführen und die GUI zu starten.

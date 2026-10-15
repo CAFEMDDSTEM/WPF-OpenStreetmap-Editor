@@ -46,5 +46,8 @@ public sealed class ValidationService {
         yield return new TagValidationRule();
         yield return new GeometryValidationRule();
         yield return new RelationValidationRule();
+        yield return new DuplicateNodeValidationRule();
+        yield return new UntaggedObjectValidationRule();
+        yield return new HighwayConnectivityValidationRule();
     }
 }
