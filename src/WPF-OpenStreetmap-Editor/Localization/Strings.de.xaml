@@ -648,4 +648,17 @@ Vor dem Hochladen können Sie Objekte im aktuellen Dokument auswählen und deren
     <sys:String x:Key="TagEditor.NewKeyTooltip">Schlüssel des neuen Tags</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">Wert des neuen Tags</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">Mitgliedschaften ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">Zeichenstift (Bézierkurven)</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">Zauberstab</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">Schnellauswahl-Pinsel</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">Zeichenstift: Klick für Ecken, Ziehen für Kurven (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">Zauberstab: verbundene Objekte mit gleichem Tag auswählen (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">Schnellauswahl: Objekte zum Auswählen überstreichen (Umschalt+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">Zeichenstift (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">Zauberstab (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">Schnellauswahl (Umschalt+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">Klick setzt eine Ecke · Ziehen erzeugt eine Kurve · Klick auf den ersten Anker schließt eine Fläche · Eingabe oder Doppelklick beendet · Rücktaste entfernt den letzten Anker</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">Ziehen nimmt überstrichene Objekte in die Auswahl auf · Alt+Ziehen entfernt · [ und ] ändern die Pinselgröße</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B aktiviert den Zeichenstift: Ein Klick setzt einen Eckanker, Drücken und Ziehen zieht Bézier-Griffe heraus, und beim Beenden mit Eingabe oder Doppelklick wird die Kurve in Knoten umgewandelt.</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W wählt alle verbundenen Objekte mit dem Haupt-Tag des angeklickten Objekts aus (Strg ignoriert Verbindungen, Umschalt ergänzt); Umschalt+W nimmt überstrichene Objekte mit einem Pinsel in die Auswahl auf (Alt entfernt, [ und ] ändern die Größe).</sys:String>
 </ResourceDictionary>

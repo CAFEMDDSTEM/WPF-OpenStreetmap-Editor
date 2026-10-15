@@ -165,9 +165,8 @@ public static class GeometryAlignService {
             // Two vertices span a diameter.
             center = new LocalPoint((distinct[0].X + distinct[1].X) / 2.0, (distinct[0].Y + distinct[1].Y) / 2.0);
             radius = Distance(distinct[0], distinct[1]) / 2.0;
-        } else {
-            center = GetCentroid(distinct);
-            radius = distinct.Average(point => Distance(point, center));
+        } else if (!TryFitCircle(distinct, out center, out radius)) {
+            return PartResult.Failure("The vertices are collinear, so no circle passes through them.");
         }
 
         if (distinct.Any(point => Distance(point, center) <= double.Epsilon)) {
@@ -241,6 +240,52 @@ public static class GeometryAlignService {
             sum += current.X * next.Y - next.X * current.Y;
         }
         return sum / 2.0;
+    }
+
+    /// <summary>
+    /// Algebraic (Kåsa) least-squares circle through the points: minimizes Σ(x² + y² + Dx + Ey + F)².
+    /// Exact for three points, and unlike a centroid it recovers the circle an arc lies on, so a
+    /// partial road curve or a few surveyed points can be completed into a full circle.
+    /// Returns false for collinear input, where the normal equations are singular.
+    /// </summary>
+    private static bool TryFitCircle(IReadOnlyList<LocalPoint> points, out LocalPoint center, out double radius) {
+        double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, sxz = 0, syz = 0, sz = 0;
+        foreach (var point in points) {
+            var z = point.X * point.X + point.Y * point.Y;
+            sx += point.X;
+            sy += point.Y;
+            sxx += point.X * point.X;
+            syy += point.Y * point.Y;
+            sxy += point.X * point.Y;
+            sxz += point.X * z;
+            syz += point.Y * z;
+            sz += z;
+        }
+
+        var n = points.Count;
+        // Normal equations for (D, E, F) solved with Cramer's rule.
+        var determinant = Determinant(sxx, sxy, sx, sxy, syy, sy, sx, sy, n);
+        var scale = Math.Max(sxx + syy, double.Epsilon);
+        center = default;
+        radius = 0;
+        if (Math.Abs(determinant) <= 1e-9 * scale * scale) return false;
+
+        var d = Determinant(-sxz, sxy, sx, -syz, syy, sy, -sz, sy, n) / determinant;
+        var e = Determinant(sxx, -sxz, sx, sxy, -syz, sy, sx, -sz, n) / determinant;
+        var f = Determinant(sxx, sxy, -sxz, sxy, syy, -syz, sx, sy, -sz) / determinant;
+        center = new LocalPoint(-d / 2.0, -e / 2.0);
+        var radiusSquared = center.X * center.X + center.Y * center.Y - f;
+        if (radiusSquared <= double.Epsilon) return false;
+
+        radius = Math.Sqrt(radiusSquared);
+        return true;
+    }
+
+    private static double Determinant(
+        double a, double b, double c,
+        double d, double e, double f,
+        double g, double h, double i) {
+        return a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
     }
 
     private static LocalPoint GetPointOnCircle(LocalPoint center, double radius, double angle) {

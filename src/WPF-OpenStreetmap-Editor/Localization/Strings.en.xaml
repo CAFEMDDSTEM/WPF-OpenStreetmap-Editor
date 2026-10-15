@@ -648,4 +648,17 @@ Before uploading, you can select objects in the current document and edit their 
     <sys:String x:Key="TagEditor.NewKeyTooltip">New tag key</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">New tag value</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">Memberships ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">Pen tool (Bézier curves)</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">Magic wand</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">Quick selection brush</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">Pen tool: click for corners, drag for curves (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">Magic wand: select connected features with the same tag (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">Quick selection: paint over features to select them (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">Pen mode (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">Magic wand (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">Quick selection (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">Click places a corner · drag pulls out a curve · click the first anchor to close an area · Enter or double-click finishes · Backspace removes the last anchor</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">Drag to paint features into the selection · Alt+drag removes · [ and ] change the brush size</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B enters pen mode: a click places a corner anchor, press-and-drag pulls out Bézier handles, and the curve is converted to nodes when you finish with Enter or a double-click.</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W selects every connected feature sharing the clicked feature's main tag (Ctrl ignores connectivity, Shift adds); Shift+W paints features into the selection with a brush (Alt removes, [ and ] resize).</sys:String>
 </ResourceDictionary>

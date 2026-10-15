@@ -133,6 +133,83 @@ public class VectorMapInteractionTests {
     }
 
     [Fact]
+    public void FindNear_ReturnsFeatureWithVertexWithinTolerance() {
+        var line = CreateHorizontalLine();
+        var viewport = new Size(800, 600);
+        var vertex = VectorMapInteraction.GeoToScreen(line.Parts[0][1], 20, 10, 12, viewport);
+
+        var near = VectorMapInteraction.FindNear([line], vertex + new Vector(5, 5), 20, 10, 12, viewport);
+
+        Assert.Equal([line], near);
+    }
+
+    [Fact]
+    public void FindNear_ReturnsFeatureHitOnlyAlongSegment() {
+        var line = CreateHorizontalLine();
+        var viewport = new Size(800, 600);
+        var start = VectorMapInteraction.GeoToScreen(line.Parts[0][0], 20, 10, 12, viewport);
+        var end = VectorMapInteraction.GeoToScreen(line.Parts[0][1], 20, 10, 12, viewport);
+        var pointer = new Point((start.X + end.X) / 2.0, start.Y + 6);
+        Assert.True((pointer - start).Length > 100 && (pointer - end).Length > 100);
+
+        var near = VectorMapInteraction.FindNear([line], pointer, 20, 10, 12, viewport);
+
+        Assert.Equal([line], near);
+    }
+
+    [Fact]
+    public void FindNear_ReturnsPolygonContainingPointer() {
+        var polygon = CreateSquare(0.01);
+        var viewport = new Size(800, 600);
+        var pointer = VectorMapInteraction.GeoToScreen(new GeoPoint(0, 0), 0, 0, 16, viewport);
+
+        var near = VectorMapInteraction.FindNear([polygon], pointer, 0, 0, 16, viewport);
+
+        Assert.Equal([polygon], near);
+    }
+
+    [Fact]
+    public void FindNear_IgnoresFeaturesBeyondTolerance() {
+        var line = CreateHorizontalLine();
+        var viewport = new Size(800, 600);
+        var start = VectorMapInteraction.GeoToScreen(line.Parts[0][0], 20, 10, 12, viewport);
+        var end = VectorMapInteraction.GeoToScreen(line.Parts[0][1], 20, 10, 12, viewport);
+        var pointer = new Point((start.X + end.X) / 2.0, start.Y + 20);
+
+        var near = VectorMapInteraction.FindNear([line], pointer, 20, 10, 12, viewport);
+
+        Assert.Empty(near);
+    }
+
+    [Fact]
+    public void FindNear_ExcludesHiddenFeatures() {
+        var line = CreateHorizontalLine();
+        line.IsHidden = true;
+        var viewport = new Size(800, 600);
+        var vertex = VectorMapInteraction.GeoToScreen(line.Parts[0][0], 20, 10, 12, viewport);
+
+        var near = VectorMapInteraction.FindNear([line], vertex, 20, 10, 12, viewport);
+
+        Assert.Empty(near);
+    }
+
+    [Fact]
+    public void FindNear_ReturnsFeatureOnceInInputOrderWhenHitAtSeveralPlaces() {
+        // The square is small enough that every ring segment and its interior are all within tolerance.
+        var tinySquare = CreateSquare(0.00005);
+        var line = new MapFeature {
+            GeometryType = MapGeometryType.LineString,
+            Parts = [[new GeoPoint(-0.01, 0), new GeoPoint(0.01, 0)]]
+        };
+        var viewport = new Size(800, 600);
+        var pointer = VectorMapInteraction.GeoToScreen(new GeoPoint(0, 0), 0, 0, 16, viewport);
+
+        var near = VectorMapInteraction.FindNear([tinySquare, line], pointer, 0, 0, 16, viewport);
+
+        Assert.Equal([tinySquare, line], near);
+    }
+
+    [Fact]
     public void ScreenRectToGeoBounds_NormalizesDraggedCorners() {
         var bounds = VectorMapInteraction.ScreenRectToGeoBounds(
             new Rect(new Point(600, 450), new Point(200, 150)),
@@ -179,5 +256,26 @@ public class VectorMapInteractionTests {
 
         Assert.Equal(before.Longitude, after.Longitude, 8);
         Assert.Equal(before.Latitude, after.Latitude, 8);
+    }
+
+    /// <summary>A line along latitude 20 so its screen segment is exactly horizontal and about 290 px long at zoom 12.</summary>
+    private static MapFeature CreateHorizontalLine() {
+        return new MapFeature {
+            GeometryType = MapGeometryType.LineString,
+            Parts = [[new GeoPoint(10, 20), new GeoPoint(10.1, 20)]]
+        };
+    }
+
+    private static MapFeature CreateSquare(double halfSize) {
+        return new MapFeature {
+            GeometryType = MapGeometryType.Polygon,
+            Parts = [[
+                new GeoPoint(-halfSize, -halfSize),
+                new GeoPoint(halfSize, -halfSize),
+                new GeoPoint(halfSize, halfSize),
+                new GeoPoint(-halfSize, halfSize),
+                new GeoPoint(-halfSize, -halfSize)
+            ]]
+        };
     }
 }

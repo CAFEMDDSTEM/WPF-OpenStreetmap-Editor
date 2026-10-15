@@ -58,6 +58,8 @@ public partial class MainWindow : Window {
             _vertexMove = null;
             _segmentExtrude = null;
             _keyboardEditCommand = "";
+            ResetPenPath();
+            EndQuickSelectStroke(hideBrush: true);
             Editor.ReplaceDocument(value);
             SynchronizeActiveDataLayer();
             _featureClipboard = [];
@@ -1694,6 +1696,8 @@ public partial class MainWindow : Window {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Back && Editor.HasDraftLine && RemoveLastDraftVertex()) {
             e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.Back && _editorMode == EditorMode.Pen && RemoveLastPenAnchor()) {
+            e.Handled = true;
         } else if (modifiers == ModifierKeys.None && HandleKeyboardEditCommandKey(e)) {
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.S) {
@@ -1703,6 +1707,21 @@ public partial class MainWindow : Window {
         } else if (modifiers == ModifierKeys.None && e.Key == Key.V) {
             ClearKeyboardEditCommand(updateUi: false);
             SetEditorMode(EditorMode.BoxSelect);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.B) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SetEditorMode(EditorMode.Pen);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key == Key.W) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SetEditorMode(EditorMode.MagicWand);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.Shift && e.Key == Key.W) {
+            ClearKeyboardEditCommand(updateUi: false);
+            SetEditorMode(EditorMode.QuickSelect);
+            e.Handled = true;
+        } else if (modifiers == ModifierKeys.None && e.Key is Key.OemOpenBrackets or Key.OemCloseBrackets && _editorMode == EditorMode.QuickSelect) {
+            AdjustQuickSelectBrush(e.Key == Key.OemCloseBrackets ? 1 : -1);
             e.Handled = true;
         } else if (modifiers == ModifierKeys.None && e.Key == Key.Insert) {
             ClearKeyboardEditCommand(updateUi: false);
@@ -1854,6 +1873,10 @@ public partial class MainWindow : Window {
         }
         if (_editorMode == EditorMode.DrawLine) {
             FinishDraftLine();
+            return true;
+        }
+        if (_editorMode == EditorMode.Pen) {
+            FinishPenPath();
             return true;
         }
 
@@ -2013,6 +2036,21 @@ public partial class MainWindow : Window {
             e.Handled = true;
             return;
         }
+        if (_editorMode == EditorMode.Pen) {
+            HandlePenMouseDown(position, e.ClickCount);
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.MagicWand) {
+            SelectSimilarAt(position, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), contiguous: !Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.QuickSelect) {
+            BeginQuickSelectStroke(position, subtract: Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+            e.Handled = true;
+            return;
+        }
         if (_editorMode == EditorMode.Extrude) {
             if (TryBeginSegmentExtrude(position)) {
                 e.Handled = true;
@@ -2050,7 +2088,7 @@ public partial class MainWindow : Window {
             e.Handled = true;
             return;
         }
-        if (_boxSelectionStart is not null || _isPanning) {
+        if (_boxSelectionStart is not null || _isPanning || _penDragging || _quickSelectStroking) {
             e.Handled = true;
             return;
         }
@@ -2106,8 +2144,20 @@ public partial class MainWindow : Window {
             return;
         }
         if (!_isPanning) {
-            if (_editorMode == EditorMode.DrawLine) UpdateDrawHover(pointerPosition);
-            else UpdateMapHover(pointerPosition);
+            switch (_editorMode) {
+                case EditorMode.DrawLine:
+                    UpdateDrawHover(pointerPosition);
+                    break;
+                case EditorMode.Pen:
+                    UpdatePenHover(pointerPosition, e.LeftButton == MouseButtonState.Pressed);
+                    break;
+                case EditorMode.QuickSelect:
+                    UpdateQuickSelectStroke(pointerPosition);
+                    break;
+                default:
+                    UpdateMapHover(pointerPosition);
+                    break;
+            }
             return;
         }
         ClearMapHover();
@@ -2158,6 +2208,14 @@ public partial class MainWindow : Window {
             SelectionRectangle.Visibility = Visibility.Collapsed;
             MapViewport.ReleaseMouseCapture();
             ApplyBoxSelection(rect, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.Pen && EndPenDrag(e.GetPosition(MapViewport))) {
+            e.Handled = true;
+            return;
+        }
+        if (_editorMode == EditorMode.QuickSelect && EndQuickSelectStroke(hideBrush: false)) {
             e.Handled = true;
             return;
         }
@@ -2648,12 +2706,20 @@ public partial class MainWindow : Window {
             FinishDraftLine();
             ClearDrawHover();
         }
+        if (_editorMode == EditorMode.Pen && mode != EditorMode.Pen) {
+            FinishPenPath();
+            ClearPenHover();
+        }
+        if (_editorMode == EditorMode.QuickSelect && mode != EditorMode.QuickSelect) EndQuickSelectStroke(hideBrush: true);
         _editorMode = mode;
         PanToolButton.ClearValue(Control.BackgroundProperty);
         SelectToolButton.ClearValue(Control.BackgroundProperty);
         BoxSelectToolButton.ClearValue(Control.BackgroundProperty);
         DrawLineToolButton.ClearValue(Control.BackgroundProperty);
         ExtrudeToolButton.ClearValue(Control.BackgroundProperty);
+        PenToolButton.ClearValue(Control.BackgroundProperty);
+        MagicWandToolButton.ClearValue(Control.BackgroundProperty);
+        QuickSelectToolButton.ClearValue(Control.BackgroundProperty);
         var activeButton = mode switch {
             EditorMode.Pan => PanToolButton,
             EditorMode.Select => SelectToolButton,
@@ -2663,6 +2729,9 @@ public partial class MainWindow : Window {
             EditorMode.Move => SelectToolButton,
             EditorMode.VertexMove => SelectToolButton,
             EditorMode.Extrude => ExtrudeToolButton,
+            EditorMode.Pen => PenToolButton,
+            EditorMode.MagicWand => MagicWandToolButton,
+            EditorMode.QuickSelect => QuickSelectToolButton,
             _ => SelectToolButton
         };
         activeButton.SetResourceReference(Control.BackgroundProperty, "Theme.SelectionBrush");
@@ -2675,6 +2744,9 @@ public partial class MainWindow : Window {
             EditorMode.Move => L.GetString("Main.Mode.Move"),
             EditorMode.VertexMove => L.GetString("Main.Mode.Move"),
             EditorMode.Extrude => L.GetString("Main.Mode.Extrude"),
+            EditorMode.Pen => L.GetString("Main.Mode.Pen"),
+            EditorMode.MagicWand => L.GetString("Main.Mode.MagicWand"),
+            EditorMode.QuickSelect => L.GetString("Main.Mode.QuickSelect"),
             _ => ""
         };
         Cursor = GetEditorModeCursor();
@@ -2690,6 +2762,9 @@ public partial class MainWindow : Window {
             EditorMode.Move => Cursors.SizeAll,
             EditorMode.VertexMove => Cursors.SizeAll,
             EditorMode.Extrude => Cursors.SizeAll,
+            EditorMode.Pen => Cursors.Pen,
+            EditorMode.MagicWand => Cursors.Cross,
+            EditorMode.QuickSelect => Cursors.Cross,
             _ => Cursors.Arrow
         };
     }
@@ -2762,6 +2837,7 @@ public partial class MainWindow : Window {
 
     private void ClearMapHover() {
         ClearDrawHover();
+        ClearPenHover();
         if (_hoveredFeature is null && _hoveredVertex is null) return;
 
         _hoveredFeature = null;
@@ -3805,6 +3881,11 @@ public partial class MainWindow : Window {
             UpdateDocumentUi();
             return;
         }
+        if (_editorMode == EditorMode.Pen && !_penPath.IsEmpty) {
+            // Like the draft line, an unfinished pen path is discarded before document history is touched.
+            CancelPenPath();
+            return;
+        }
 
         if (!Editor.Undo()) return;
         PruneSelectionToDocument();
@@ -4117,6 +4198,7 @@ public partial class MainWindow : Window {
             _hoveredFeature,
             _hoveredVertex);
         UpdateDrawPreviewLayer();
+        UpdatePenPreviewLayer();
     }
 
     private MapImageLayer? GetVectorDataLayer() {
@@ -4236,6 +4318,7 @@ public partial class MainWindow : Window {
             RefreshFeatureList();
             UpdateVectorLayer();
         }
+        CancelPenPath();
         SetEditorMode(EditorMode.Select);
     }
 
@@ -4726,7 +4809,10 @@ public partial class MainWindow : Window {
         Rotate,
         Move,
         VertexMove,
-        Extrude
+        Extrude,
+        Pen,
+        MagicWand,
+        QuickSelect
     }
 
     private enum SegmentExtrudeConstraint {

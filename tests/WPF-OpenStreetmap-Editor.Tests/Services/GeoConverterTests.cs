@@ -27,6 +27,13 @@ public class GeoConverterTests {
     }
 
     [Fact]
+    public void GetMetersPerPixel_MatchesWebMercatorGroundResolution() {
+        Assert.Equal(156543.03, GeoConverter.GetMetersPerPixel(0, 0), 0.01);
+        Assert.Equal(156543.03 / 2.0, GeoConverter.GetMetersPerPixel(60, 0), 0.01);
+        Assert.Equal(156543.03 / Math.Pow(2, 18), GeoConverter.GetMetersPerPixel(0, 18), 1e-6);
+    }
+
+    [Fact]
     public void PixelConversion_RoundTripsCoordinate() {
         const double lat = 1.3521;
         const double lon = 103.8198;

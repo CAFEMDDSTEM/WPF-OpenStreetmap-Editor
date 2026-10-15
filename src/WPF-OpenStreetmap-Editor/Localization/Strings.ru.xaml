@@ -647,4 +647,17 @@
     <sys:String x:Key="TagEditor.NewKeyTooltip">Ключ нового тега</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">Значение нового тега</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">Участие в отношениях ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">Перо (кривые Безье)</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">Волшебная палочка</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">Кисть быстрого выделения</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">Перо: щелчок ставит угол, перетаскивание создаёт кривую (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">Волшебная палочка: выделить связанные объекты с тем же тегом (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">Быстрое выделение: проведите кистью по объектам, чтобы выделить их (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">Режим пера (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">Волшебная палочка (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">Быстрое выделение (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">Щелчок ставит угол · перетаскивание создаёт кривую · щелчок по первой опорной точке замыкает полигон · Enter или двойной щелчок завершает · Backspace удаляет последнюю опорную точку</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">Перетаскивание добавляет задетые объекты в выделение · Alt+перетаскивание убирает · [ и ] меняют размер кисти</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B включает режим пера: щелчок ставит угловую опорную точку, нажатие с перетаскиванием вытягивает рычаги Безье, а при завершении через Enter или двойной щелчок кривая превращается в узлы.</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W выделяет все связанные объекты с тем же основным тегом, что у выбранного (Ctrl игнорирует связность, Shift добавляет); Shift+W добавляет объекты в выделение кистью (Alt убирает, [ и ] меняют размер).</sys:String>
 </ResourceDictionary>

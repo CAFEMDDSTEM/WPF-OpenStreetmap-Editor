@@ -54,6 +54,8 @@ above imagery. The editor toolbar supports:
   creating circles
 - editing tags of the selection in the **Tags** panel, with autocomplete from
   the bundled JOSM presets and the current document
+- drawing Bézier curves with the pen tool, and selecting with the magic wand
+  (connected features sharing a main tag) or the quick-selection brush
 
 ### Topology
 
@@ -101,7 +103,10 @@ Common editing shortcuts:
 | `A` | Enter line drawing mode. Press `Enter` to finish the current line. |
 | `Shift+F` | Enter fast line drawing mode. |
 | `Ctrl+Shift+F` | Toggle viewport following while drawing lines. |
-| `Backspace` | Remove the last vertex of the draft while drawing. |
+| `Backspace` | Remove the last vertex of the draft while drawing, or the last anchor in pen mode. |
+| `B` | Pen tool: click places a corner anchor, press-and-drag pulls out Bézier handles, clicking the first anchor closes an area, `Enter` or a double-click converts the curve to nodes (about 1.5 px tolerance at the current zoom). |
+| `W` | Magic wand: click a feature to select every connected feature with the same main tag (`highway=residential`, `building=yes`, …); `Shift` adds to the selection, `Ctrl` ignores connectivity. |
+| `Shift+W` | Quick selection brush: drag to paint features into the selection, `Alt`+drag removes them, `[` and `]` change the brush size. |
 | `R` | Rotate selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
 | `Shift+R` | Copy tags from the previously selected feature to the current selection. |
 | `M` | Move selected features with the mouse. Press `Enter` or left-click to apply; right-click or `Esc` cancels. |
@@ -111,7 +116,7 @@ Common editing shortcuts:
 | `P` | Split the selected line at the hovered vertex. |
 | `C` | Combine two selected lines that share an endpoint. |
 | `J` | Join the selected point features to the nearest line or area. |
-| `O` / `Shift+O` | Align vertices of the selection in a circle / create a circle from the selection (refused while the way shares nodes with other features). |
+| `O` / `Shift+O` | Align vertices of the selection in a circle / create a circle from the selection: a full ring, an arc (the circle is fitted through its vertices), or two points used as a diameter (refused while the way shares nodes with other features). |
 | `L` | Align vertices of an open line; the end vertices stay fixed. |
 | `Shift+B` | Distribute interior vertices evenly between the end vertices. |
 | `Shift+M` | Mirror the selection east–west. |

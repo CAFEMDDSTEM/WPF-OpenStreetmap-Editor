@@ -256,6 +256,66 @@ public static class VectorMapInteraction {
             .ToList();
     }
 
+    /// <summary>
+    /// Every visible feature within <paramref name="tolerance"/> screen pixels of the pointer: a vertex
+    /// or segment within tolerance, or a polygon ring containing the point. Input order, no duplicates.
+    /// </summary>
+    public static IReadOnlyList<MapFeature> FindNear(
+        IEnumerable<MapFeature> features,
+        Point screenPoint,
+        double centerLatitude,
+        double centerLongitude,
+        int zoom,
+        Size viewport,
+        double tolerance = 12,
+        MapDisplayTransform? displayTransform = null,
+        double panOffsetX = 0,
+        double panOffsetY = 0) {
+        var projection = GeoViewportProjection.Create(
+            centerLatitude,
+            centerLongitude,
+            zoom,
+            viewport,
+            panOffsetX,
+            panOffsetY,
+            displayTransform: displayTransform);
+        var result = new List<MapFeature>();
+        var seen = new HashSet<MapFeature>();
+        foreach (var feature in features) {
+            if (feature.IsHidden || !seen.Add(feature) || !IsWithinBounds(feature)) continue;
+            if (feature.Parts.Any(part => IsPartNear(feature.GeometryType, part))) result.Add(feature);
+        }
+        return result;
+
+        // The brush calls this many times per pointer move, so reject features by their cached bounds first.
+        bool IsWithinBounds(MapFeature feature) {
+            var bounds = feature.Bounds;
+            if (!bounds.IsValid) return true;
+
+            var rect = Rect.Empty;
+            rect.Union(projection.GeoToScreen(new GeoPoint(bounds.MinLongitude, bounds.MinLatitude)));
+            rect.Union(projection.GeoToScreen(new GeoPoint(bounds.MinLongitude, bounds.MaxLatitude)));
+            rect.Union(projection.GeoToScreen(new GeoPoint(bounds.MaxLongitude, bounds.MinLatitude)));
+            rect.Union(projection.GeoToScreen(new GeoPoint(bounds.MaxLongitude, bounds.MaxLatitude)));
+            rect.Inflate(tolerance, tolerance);
+            return rect.Contains(screenPoint);
+        }
+
+        bool IsPartNear(MapGeometryType geometryType, List<GeoPoint> part) {
+            if (geometryType == MapGeometryType.Point) {
+                return part.Any(point => (projection.GeoToScreen(point) - screenPoint).Length <= tolerance);
+            }
+
+            for (var i = 1; i < part.Count; i++) {
+                var start = projection.GeoToScreen(part[i - 1]);
+                var end = projection.GeoToScreen(part[i]);
+                if (DistanceToSegment(screenPoint, start, end) <= tolerance) return true;
+            }
+
+            return geometryType == MapGeometryType.Polygon && IsPointInPolygon(screenPoint, part, projection);
+        }
+    }
+
     public static VertexHit? HitTestVertex(
         IEnumerable<MapFeature> features,
         Point screenPoint,

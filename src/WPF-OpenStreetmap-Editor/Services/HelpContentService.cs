@@ -61,6 +61,8 @@ internal static class HelpContentService {
                     l.GetString("Help.Keyboard.Modes"),
                     l.GetString("Help.Keyboard.JosmDrawing"),
                     l.GetString("Help.Keyboard.Snapping"),
+                    l.GetString("Help.Keyboard.PenTool"),
+                    l.GetString("Help.Keyboard.SelectionTools"),
                     l.GetString("Help.Keyboard.Vertices"),
                     l.GetString("Help.Keyboard.Transform"),
                     l.GetString("Help.Keyboard.Topology"),

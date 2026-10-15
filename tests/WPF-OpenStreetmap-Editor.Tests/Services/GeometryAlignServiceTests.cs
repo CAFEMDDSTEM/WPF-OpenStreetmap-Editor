@@ -214,6 +214,38 @@ public sealed class GeometryAlignServiceTests {
     }
 
     [Fact]
+    public void CreateCircle_FromArcRecoversTheFullCircle() {
+        // A quarter arc of a 50 m circle: the centroid of these points is nowhere near the true center.
+        var origin = new GeoPoint(10, 50);
+        var frame = LocalMetricFrame.Create(origin);
+        var trueCenter = new LocalPoint(0, 0);
+        var arc = new[] { 0.0, 30.0, 60.0, 90.0 }
+            .Select(degrees => degrees * Math.PI / 180.0)
+            .Select(angle => frame.Unproject(new LocalPoint(50 * Math.Cos(angle), 50 * Math.Sin(angle))))
+            .ToList();
+
+        var result = GeometryAlignService.CreateCircle([arc]);
+
+        Assert.True(result.IsSuccess, result.Error);
+        var ring = Assert.Single(result.Parts!);
+        Assert.Equal(ring[0], ring[^1]);
+        Assert.True(ring.Count >= 17);
+        Assert.All(ring, point => Assert.Equal(50, Distance(frame.Project(point), trueCenter), 1e-3));
+        Assert.Equal(0, Distance(frame.Project(arc[0]), frame.Project(ring[0])), 1e-3);
+        foreach (var arcPoint in arc) {
+            Assert.Contains(ring, point => Distance(frame.Project(point), frame.Project(arcPoint)) < 1e-3);
+        }
+    }
+
+    [Fact]
+    public void CreateCircle_RejectsCollinearVertices() {
+        var result = GeometryAlignService.CreateCircle([[new GeoPoint(10, 50), new GeoPoint(10.001, 50), new GeoPoint(10.002, 50)]]);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("collinear", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void CreateCircle_FromTwoVerticesUsesThemAsDiameter() {
         var first = new GeoPoint(10.0000, 50.0000);
         var second = new GeoPoint(10.0014, 50.0000);

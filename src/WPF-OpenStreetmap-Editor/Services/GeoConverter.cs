@@ -34,6 +34,13 @@ public static class GeoConverter {
         return (px, py);
     }
 
+    /// <summary>某纬度、某 zoom 下一个屏幕像素对应的地面距离（米），即 Web Mercator 地面分辨率。</summary>
+    public static double GetMetersPerPixel(double lat, int zoom) {
+        const double EquatorialCircumferenceMeters = 2.0 * Math.PI * 6378137.0;
+        var latRad = ClampLatitude(lat) * Math.PI / 180.0;
+        return EquatorialCircumferenceMeters * Math.Cos(latRad) / (TileSize * (double)GetTileCount(zoom));
+    }
+
     /// <summary>世界像素坐标 → 经纬度</summary>
     public static (double Lat, double Lon) PixelXYToLatLon(double pixelX, double pixelY, int zoom) {
         var n = GetTileCount(zoom);

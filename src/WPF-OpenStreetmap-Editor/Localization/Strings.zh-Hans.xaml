@@ -647,4 +647,17 @@
     <sys:String x:Key="TagEditor.NewKeyTooltip">新标签的键</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">新标签的值</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">所属关系 ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">钢笔工具（贝塞尔曲线）</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">魔棒</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">快速选择画笔</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">钢笔工具：单击放置拐角，拖动拉出曲线 (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">魔棒：选中相连且主标签相同的要素 (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">快速选择：用画笔刷过要素即选中 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">钢笔模式 (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">魔棒 (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">快速选择 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">单击放置拐角 · 拖动拉出曲线 · 单击起始锚点闭合成面 · Enter 或双击结束 · Backspace 撤销上一个锚点</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">拖动即把刷到的要素加入选择 · Alt+拖动移除 · [ 和 ] 调整画笔大小</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B 进入钢笔模式：单击放置拐角锚点，按住拖动拉出贝塞尔控制柄，按 Enter 或双击结束时曲线会转换为节点。</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W 选中与所点要素主标签相同且相连的所有要素（Ctrl 忽略连通性，Shift 追加）；Shift+W 用画笔把要素刷入选择（Alt 移除，[ 和 ] 调整大小）。</sys:String>
 </ResourceDictionary>

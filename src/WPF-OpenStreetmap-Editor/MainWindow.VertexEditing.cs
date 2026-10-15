@@ -152,20 +152,29 @@ public partial class MainWindow {
             return;
         }
 
-        GeoPoint point;
-        if (snap is null) {
-            point = _drawPointerGeo ?? CreateViewportProjection().ScreenToGeo(position);
-        } else if (snap.Kind == SnapTargetKind.Vertex) {
-            point = snap.Point;
-        } else {
-            // Joining onto a segment inserts a new vertex into that way first so both ways share it.
-            if (!InsertVertexIntoFeature(snap.Feature, snap.PartIndex, snap.PointIndex, snap.Point)) return;
-            point = snap.Point;
-        }
+        if (!TryResolveSnapPoint(snap, position, out var point)) return;
 
         if (!Editor.HasDraftLine) _draftFirstVertexSnapped = snap is not null;
         AddDraftPoint(point);
         UpdateDrawHover(position);
+    }
+
+    /// <summary>
+    /// Turns a click into the document coordinate a new vertex should take: the snapped vertex, a new
+    /// shared vertex inserted into the snapped segment, or the raw pointer position. Shared by draw and pen mode.
+    /// </summary>
+    private bool TryResolveSnapPoint(SnapTarget? snap, Point position, out GeoPoint point) {
+        if (snap is null) {
+            point = CreateViewportProjection().ScreenToGeo(position);
+        } else if (snap.Kind == SnapTargetKind.Vertex) {
+            point = snap.Point;
+        } else {
+            // Joining onto a segment inserts a new vertex into that way first so both ways share it.
+            point = snap.Point;
+            if (!InsertVertexIntoFeature(snap.Feature, snap.PartIndex, snap.PointIndex, snap.Point)) return false;
+        }
+
+        return point.IsValid;
     }
 
     private void UpdateDrawStatus(MapFeature? draft, GeoPoint pointer) {
@@ -418,6 +427,14 @@ public partial class MainWindow {
         if (_editorMode == EditorMode.DrawLine) {
             // Draw hover owns the status while a draft exists; otherwise explain how drawing works.
             if (!Editor.HasDraftLine) _viewModel.MeasurementStatus = L.GetString("Main.Measure.DrawHint");
+            return;
+        }
+        if (_editorMode == EditorMode.Pen) {
+            _viewModel.MeasurementStatus = L.GetString("Main.Measure.PenHint");
+            return;
+        }
+        if (_editorMode == EditorMode.QuickSelect) {
+            _viewModel.MeasurementStatus = L.GetString("Main.Status.QuickSelectHint");
             return;
         }
 

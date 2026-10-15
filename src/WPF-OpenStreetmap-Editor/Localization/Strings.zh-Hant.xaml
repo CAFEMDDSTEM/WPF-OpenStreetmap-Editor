@@ -647,4 +647,17 @@
     <sys:String x:Key="TagEditor.NewKeyTooltip">新標籤的鍵</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">新標籤的值</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">所屬關係 ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">鋼筆工具（貝茲曲線）</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">魔術棒</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">快速選取筆刷</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">鋼筆工具：按一下放置轉角，拖曳拉出曲線 (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">魔術棒：選取相連且主標籤相同的圖徵 (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">快速選取：用筆刷刷過圖徵即選取 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">鋼筆模式 (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">魔術棒 (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">快速選取 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">按一下放置轉角 · 拖曳拉出曲線 · 按一下起始錨點閉合成面 · Enter 或連按兩下結束 · Backspace 移除上一個錨點</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">拖曳即把刷到的圖徵加入選取 · Alt+拖曳移除 · [ 與 ] 調整筆刷大小</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B 進入鋼筆模式：按一下放置轉角錨點，按住拖曳拉出貝茲控制桿，按 Enter 或連按兩下結束時曲線會轉換為節點。</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W 選取與所點圖徵主標籤相同且相連的所有圖徵（Ctrl 忽略連通性，Shift 加入）；Shift+W 用筆刷把圖徵刷入選取（Alt 移除，[ 與 ] 調整大小）。</sys:String>
 </ResourceDictionary>

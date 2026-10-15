@@ -648,4 +648,17 @@
     <sys:String x:Key="TagEditor.NewKeyTooltip">新しいタグのキー</sys:String>
     <sys:String x:Key="TagEditor.NewValueTooltip">新しいタグの値</sys:String>
     <sys:String x:Key="TagEditor.MembershipsFormat">所属リレーション ({0:N0})</sys:String>
+    <sys:String x:Key="Main.Menu.PenTool">ペンツール（ベジェ曲線）</sys:String>
+    <sys:String x:Key="Main.Menu.MagicWand">自動選択</sys:String>
+    <sys:String x:Key="Main.Menu.QuickSelect">クイック選択ブラシ</sys:String>
+    <sys:String x:Key="Main.Tooltip.Pen">ペンツール: クリックで角、ドラッグで曲線 (B)</sys:String>
+    <sys:String x:Key="Main.Tooltip.MagicWand">自動選択: 同じタグでつながった地物を選択 (W)</sys:String>
+    <sys:String x:Key="Main.Tooltip.QuickSelect">クイック選択: ブラシでなぞった地物を選択 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Mode.Pen">ペンモード (B)</sys:String>
+    <sys:String x:Key="Main.Mode.MagicWand">自動選択 (W)</sys:String>
+    <sys:String x:Key="Main.Mode.QuickSelect">クイック選択 (Shift+W)</sys:String>
+    <sys:String x:Key="Main.Measure.PenHint">クリックで角を配置 · ドラッグで曲線を引く · 最初のアンカーをクリックしてエリアを閉じる · Enter またはダブルクリックで終了 · Backspace で直前のアンカーを削除</sys:String>
+    <sys:String x:Key="Main.Status.QuickSelectHint">ドラッグでなぞった地物を選択に追加 · Alt+ドラッグで除外 · [ と ] でブラシサイズを変更</sys:String>
+    <sys:String x:Key="Help.Keyboard.PenTool">B でペンモードに入ります。クリックで角のアンカーを配置し、押したままドラッグでベジェのハンドルを引き出し、Enter またはダブルクリックで終了すると曲線がノードに変換されます。</sys:String>
+    <sys:String x:Key="Help.Keyboard.SelectionTools">W はクリックした地物と主タグが同じでつながった地物をすべて選択します（Ctrl で接続を無視、Shift で追加）。Shift+W はブラシでなぞった地物を選択に加えます（Alt で除外、[ と ] でサイズ変更）。</sys:String>
 </ResourceDictionary>
