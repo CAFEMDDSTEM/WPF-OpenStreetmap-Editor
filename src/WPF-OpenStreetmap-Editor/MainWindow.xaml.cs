@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,6 +94,7 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _tileSourceCts;
     private CancellationTokenSource? _autosaveCts;
     private readonly DispatcherTimer _autosaveTimer = new();
+    private readonly DispatcherTimer _uploadNotificationTimer = new() { Interval = TimeSpan.FromSeconds(6) };
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
     private MapLayer? _stagingLayer;
@@ -144,6 +146,10 @@ public partial class MainWindow : Window {
         _startupPluginActions = startupPluginActions ?? [];
         _startupUpdateCheck = startupUpdateCheck;
         InitializeComponent();
+        _uploadNotificationTimer.Tick += (_, _) => {
+            _uploadNotificationTimer.Stop();
+            UploadNotificationBorder.Visibility = Visibility.Collapsed;
+        };
         DataContext = _viewModel;
         ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
@@ -171,6 +177,7 @@ public partial class MainWindow : Window {
             _nonTextInputImeGuard?.Dispose();
             _nonTextInputImeGuard = null;
             _autosaveTimer.Stop();
+            _uploadNotificationTimer.Stop();
             _autosaveCts?.Cancel();
             _tileSourceCts?.Cancel();
             _aiTagCts?.Cancel();
@@ -4452,17 +4459,37 @@ public partial class MainWindow : Window {
                 CancellationToken.None);
             var changes = OsmChangeSerializer.Build(_document, changesetId.Value);
             _viewModel.DocumentStatus = L.Format("Main.OsmUpload.UploadingChanges", changes.TotalCount);
-            var response = await api.UploadChangesAsync(
+            var response = await OsmChangeUploadCoordinator.UploadAsync(
+                api,
                 account.ApiBaseUrl,
                 credential,
                 changesetId.Value,
-                changes.Xml);
+                _document,
+                changes,
+                uploadWindow.UploadStrategy,
+                uploadWindow.ChunkSize);
             OsmChangeSerializer.ApplyDiffResult(_document, changes, response);
             Editor.CommandStack.Clear();
             RefreshFeatureList();
             UpdateVectorLayer();
             UpdateDocumentUi();
-            MessageBox.Show(L.Format("Main.OsmUpload.Completed", changesetId.Value), L.GetString("Main.OsmUpload.CompletedTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            var completedMessage = L.Format("Main.OsmUpload.Completed", changesetId.Value);
+            _viewModel.DocumentStatus = completedMessage;
+            ShowUploadNotification(completedMessage, isError: false);
+        } catch (OsmApiException ex) {
+            Logger.Error("OSM upload was rejected by the API", ex);
+            _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.Failed");
+            ShowUploadNotification(L.Format("Main.OsmUpload.FailedWithStatus", (int)ex.ResponseStatusCode), isError: true);
+            IsEnabled = true;
+            if (ex.IsInsufficientWritePermission) {
+                new Views.OsmUploadErrorWindow(L.GetString("Main.OsmUpload.WritePermissionRequired")) { Owner = this }.ShowDialog();
+            } else if (ex.ResponseStatusCode == HttpStatusCode.Unauthorized) {
+                new Views.OsmUploadErrorWindow(L.GetString("Main.OsmUpload.AuthenticationFailed")) { Owner = this }.ShowDialog();
+            }
+        } catch (Exception ex) {
+            Logger.Error("OSM upload failed", ex);
+            _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.Failed");
+            ShowUploadNotification(L.GetString("Main.OsmUpload.Failed"), isError: true);
         } finally {
             if (changesetId.HasValue) {
                 try {
@@ -4473,6 +4500,19 @@ public partial class MainWindow : Window {
             }
             IsEnabled = true;
         }
+    }
+
+    private void ShowUploadNotification(string message, bool isError) {
+        UploadNotificationTextBlock.Text = message;
+        UploadNotificationTextBlock.Foreground = isError
+            ? (Brush)FindResource("Theme.ErrorBrush")
+            : (Brush)FindResource("Theme.TextBrush");
+        UploadNotificationBorder.BorderBrush = isError
+            ? (Brush)FindResource("Theme.ErrorBrush")
+            : (Brush)FindResource("Theme.AccentBrush");
+        UploadNotificationBorder.Visibility = Visibility.Visible;
+        _uploadNotificationTimer.Stop();
+        _uploadNotificationTimer.Start();
     }
 
     private void RefreshRenderedLayerFromStack(MapImageLayer? selectedLayer = null) {

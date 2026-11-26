@@ -161,7 +161,16 @@ public sealed class CliApplication {
         try {
             changesetId = await api.CreateChangesetAsync(apiBaseUrl, credential, command.Comment, ct);
             var changes = BuildChanges(document, changesetId.Value);
-            var response = await api.UploadChangesAsync(apiBaseUrl, credential, changesetId.Value, changes.Xml, ct);
+            var response = await OsmChangeUploadCoordinator.UploadAsync(
+                api,
+                apiBaseUrl,
+                credential,
+                changesetId.Value,
+                document,
+                changes,
+                OsmUploadStrategy.SingleRequest,
+                OsmChangeUploadCoordinator.DefaultChunkSize,
+                ct);
             OsmChangeSerializer.ApplyDiffResult(document, changes, response);
             WriteChangeSummary(changes, $"Uploaded OSM changes to changeset {changesetId.Value.ToString(CultureInfo.InvariantCulture)}.");
         } finally {

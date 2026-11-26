@@ -203,6 +203,10 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">{0:N0} Änderungen werden hochgeladen...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">In OSM-Änderungssatz {0} hochgeladen.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Upload abgeschlossen</sys:String>
+    <sys:String x:Key="Main.OsmUpload.Failed">OSM-Upload fehlgeschlagen.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.FailedWithStatus">OSM-Upload fehlgeschlagen (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM hat die Zugangsdaten abgelehnt. Prüfen Sie die gespeicherten Zugangsdaten oder verbinden Sie das Konto erneut.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">Dieses Konto darf nicht in OSM schreiben. Verbinden Sie es erneut und erteilen Sie die Berechtigung write_api.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Karte 0-{0} / Bilddaten 0-{1}</sys:String>
 
     <sys:String x:Key="Settings.Title">Einstellungen</sys:String>
@@ -536,6 +540,11 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Osm.Upload.Source">Quelle</sys:String>
     <sys:String x:Key="Osm.Upload.EditRawId">Raw-ID bearbeiten</sys:String>
     <sys:String x:Key="Osm.Upload.UploadChanges">Änderungen hochladen</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy">Upload-Strategie</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Single">Alle Objekte in einer Anfrage hochladen</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Chunked">In Blöcken hochladen</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Individual">Jedes Objekt einzeln hochladen</sys:String>
+    <sys:String x:Key="Osm.Upload.InvalidChunkSize">Die Blockgröße muss eine positive ganze Zahl sein.</sys:String>
     <sys:String x:Key="Osm.Upload.AccountFormat">Hochladen zu "{0}"    Konto: {1}    Authentifizierung: {2}</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Update">OpenStreetMap-Daten aktualisieren</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Fix">Kartenfeatures korrigieren</sys:String>

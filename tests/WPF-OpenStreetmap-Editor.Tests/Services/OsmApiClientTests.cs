@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -40,10 +41,19 @@ public class OsmApiClientTests {
     }
 
     [Fact]
-    public async Task CreateChangesetAsync_UsesOAuthBearerHeader() {
+    public async Task CreateChangesetAsync_UsesOAuthBearerHeaderAndVersionedCreatedByTag() {
         var handler = new CapturingHttpHandler(request => {
             Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
             Assert.Equal("token", request.Headers.Authorization?.Parameter);
+            var tags = XDocument.Parse(request.Content!.ReadAsStringAsync().GetAwaiter().GetResult())
+                .Descendants("tag")
+                .ToDictionary(
+                    tag => tag.Attribute("k")!.Value,
+                    tag => tag.Attribute("v")!.Value,
+                    StringComparer.Ordinal);
+            Assert.Equal(
+                $"WPF-OpenStreetmap-Editor+{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}",
+                tags["created_by"]);
             return new HttpResponseMessage(HttpStatusCode.OK) {
                 Content = new StringContent("123")
             };
@@ -53,6 +63,83 @@ public class OsmApiClientTests {
         var changesetId = await api.CreateChangesetAsync("http://127.0.0.1/", "token", "test");
 
         Assert.Equal(123, changesetId);
+    }
+
+    [Fact]
+    public async Task UploadChangesAsync_RetriesOversizedDiffAsGzip() {
+        var requestCount = 0;
+        var handler = new CapturingHttpHandler(request => {
+            requestCount++;
+            if (requestCount == 1) {
+                Assert.Empty(request.Content!.Headers.ContentEncoding);
+                return new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge) {
+                    Content = new StringContent("Request too large")
+                };
+            }
+
+            Assert.Equal("gzip", Assert.Single(request.Content!.Headers.ContentEncoding));
+            using var compressed = new MemoryStream(request.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult());
+            using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+            using var reader = new StreamReader(gzip, Encoding.UTF8);
+            Assert.Equal("<osmChange />", reader.ReadToEnd());
+            return new HttpResponseMessage(HttpStatusCode.OK) {
+                Content = new StringContent("<diffResult />")
+            };
+        });
+        var api = new OsmApiClient(new HttpClient(handler));
+
+        var response = await api.UploadChangesAsync("http://127.0.0.1/", "token", 123, "<osmChange />");
+
+        Assert.Equal("<diffResult />", response);
+        Assert.Equal(2, requestCount);
+    }
+
+    [Fact]
+    public async Task UploadChangesAsync_ReportsOriginal413WhenServerRejectsGzip() {
+        var requestCount = 0;
+        var handler = new CapturingHttpHandler(request => {
+            requestCount++;
+            return requestCount == 1
+                ? new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge) {
+                    Content = new StringContent("Request too large")
+                }
+                : new HttpResponseMessage(HttpStatusCode.UnsupportedMediaType);
+        });
+        var api = new OsmApiClient(new HttpClient(handler));
+
+        var exception = await Assert.ThrowsAsync<OsmApiException>(() => api.UploadChangesAsync(
+            "http://127.0.0.1/",
+            "token",
+            123,
+            "<osmChange />"));
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, exception.ResponseStatusCode);
+        Assert.Equal("Request too large", exception.ResponseBody);
+        Assert.Equal(2, requestCount);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, "Invalid access token", false)]
+    [InlineData(HttpStatusCode.Unauthorized, "Missing write_api permission", true)]
+    [InlineData(HttpStatusCode.Forbidden, "Not authorized", true)]
+    public async Task UploadChangesAsync_PreservesAuthorizationFailureDetails(
+        HttpStatusCode statusCode,
+        string responseBody,
+        bool expectedWritePermissionFailure) {
+        var handler = new CapturingHttpHandler(_ => new HttpResponseMessage(statusCode) {
+            Content = new StringContent(responseBody)
+        });
+        var api = new OsmApiClient(new HttpClient(handler));
+
+        var exception = await Assert.ThrowsAsync<OsmApiException>(() => api.UploadChangesAsync(
+            "http://127.0.0.1/",
+            "token",
+            123,
+            "<osmChange />"));
+
+        Assert.Equal(statusCode, exception.ResponseStatusCode);
+        Assert.Equal(responseBody, exception.ResponseBody);
+        Assert.Equal(expectedWritePermissionFailure, exception.IsInsufficientWritePermission);
     }
 
     [Fact]

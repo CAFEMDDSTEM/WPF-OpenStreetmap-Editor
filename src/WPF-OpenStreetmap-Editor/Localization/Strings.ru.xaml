@@ -202,6 +202,10 @@
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">Загрузка {0:N0} изменений...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">Загружено в набор изменений OSM {0}.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Загрузка завершена</sys:String>
+    <sys:String x:Key="Main.OsmUpload.Failed">Не удалось загрузить данные в OSM.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.FailedWithStatus">Не удалось загрузить данные в OSM (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM отклонил данные учётной записи. Проверьте сохранённые данные или подключите аккаунт повторно.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">У этой учётной записи нет права записи в OSM. Подключите её повторно, предоставив разрешение write_api.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Карта 0-{0} / изображения 0-{1}</sys:String>
 
     <sys:String x:Key="Settings.Title">Настройки</sys:String>
@@ -547,6 +551,11 @@
     <sys:String x:Key="Osm.Upload.Source">Источник</sys:String>
     <sys:String x:Key="Osm.Upload.EditRawId">Редактировать сырой ID</sys:String>
     <sys:String x:Key="Osm.Upload.UploadChanges">Загрузить изменения</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy">Способ загрузки</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Single">Загрузить все объекты одним запросом</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Chunked">Загружать частями</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Individual">Загружать каждый объект отдельно</sys:String>
+    <sys:String x:Key="Osm.Upload.InvalidChunkSize">Размер части должен быть положительным целым числом.</sys:String>
     <sys:String x:Key="Osm.Upload.AccountFormat">Загрузка в "{0}"    Учётная запись: {1}    Аутентификация: {2}</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Update">Обновление данных OpenStreetMap</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Fix">Исправление объектов карты</sys:String>

@@ -192,6 +192,10 @@
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">正在上傳 {0:N0} 個變更...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">已上傳到 OSM 變更集 {0}。</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">上傳完成</sys:String>
+    <sys:String x:Key="Main.OsmUpload.Failed">上傳到 OSM 失敗。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.FailedWithStatus">上傳到 OSM 失敗（HTTP {0}）。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM 拒絕了帳戶憑證。請檢查已儲存的憑證或重新連線帳戶，然後再試一次。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">此帳戶沒有寫入 OSM 的權限。請重新連線帳戶並授予 write_api 權限後再試一次。</sys:String>
     <sys:String x:Key="Main.ZoomLimit">地圖 0-{0} / 影像 0-{1}</sys:String>
 
     <sys:String x:Key="Settings.Title">設定</sys:String>
@@ -363,6 +367,11 @@
     <sys:String x:Key="Osm.Upload.ChangesetComment">變更集註解</sys:String>
     <sys:String x:Key="Osm.Upload.GenerateAi">使用 AI 產生</sys:String>
     <sys:String x:Key="Osm.Upload.UploadChanges">上傳變更</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy">上傳策略</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Single">一次請求上傳所有物件</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Chunked">分批上傳</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Individual">逐一上傳物件</sys:String>
+    <sys:String x:Key="Osm.Upload.InvalidChunkSize">分批大小必須是正整數。</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Update">更新 OpenStreetMap 資料</sys:String>
     <sys:String x:Key="Osm.Upload.CommentRequired">請輸入變更集註解。</sys:String>
     <sys:String x:Key="Osm.Upload.NoChanges">沒有可上傳的變更。</sys:String>

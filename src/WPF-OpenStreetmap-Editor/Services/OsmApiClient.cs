@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Xml.Linq;
 using WPF_OpenStreetmap_Editor.Models;
@@ -123,9 +125,10 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         string? source = null,
         bool reviewRequested = false,
         CancellationToken ct = default) {
+        var createdBy = $"WPF-OpenStreetmap-Editor+{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}";
         var changeset = new XElement(
             "changeset",
-            new XElement("tag", new XAttribute("k", "created_by"), new XAttribute("v", "WPF-OpenStreetmap-Editor")),
+            new XElement("tag", new XAttribute("k", "created_by"), new XAttribute("v", createdBy)),
             new XElement("tag", new XAttribute("k", "comment"), new XAttribute("v", comment)));
         if (!string.IsNullOrWhiteSpace(source)) {
             changeset.Add(new XElement("tag", new XAttribute("k", "source"), new XAttribute("v", source.Trim())));
@@ -137,7 +140,7 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         var body = new XDocument(new XElement("osm", changeset)).ToString();
         using var request = CreateAuthorizedRequest(HttpMethod.Put, apiBaseUrl, "api/0.6/changeset/create", credential, body);
         using var response = await httpClient.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessStatusCodeAsync(response, ct);
         var text = (await response.Content.ReadAsStringAsync(ct)).Trim();
         return long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
             ? id
@@ -164,15 +167,23 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         long changesetId,
         string changeXml,
         CancellationToken ct = default) {
-        using var request = CreateAuthorizedRequest(
-            HttpMethod.Post,
-            apiBaseUrl,
-            $"api/0.6/changeset/{changesetId}/upload",
-            credential,
-            changeXml);
+        var relativePath = $"api/0.6/changeset/{changesetId}/upload";
+        using var request = CreateAuthorizedRequest(HttpMethod.Post, apiBaseUrl, relativePath, credential, changeXml);
         using var response = await httpClient.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(ct);
+        if (response.StatusCode != HttpStatusCode.RequestEntityTooLarge) {
+            await EnsureSuccessStatusCodeAsync(response, ct);
+            return await response.Content.ReadAsStringAsync(ct);
+        }
+
+        var originalErrorBody = await response.Content.ReadAsStringAsync(ct);
+        using var compressedRequest = await CreateCompressedUploadRequestAsync(apiBaseUrl, relativePath, credential, changeXml, ct);
+        using var compressedResponse = await httpClient.SendAsync(compressedRequest, ct);
+        if (compressedResponse.StatusCode is HttpStatusCode.UnsupportedMediaType or HttpStatusCode.NotImplemented) {
+            throw new OsmApiException(response.StatusCode, originalErrorBody);
+        }
+
+        await EnsureSuccessStatusCodeAsync(compressedResponse, ct);
+        return await compressedResponse.Content.ReadAsStringAsync(ct);
     }
 
     public async Task CloseChangesetAsync(
@@ -241,6 +252,32 @@ public sealed class OsmApiClient(HttpClient httpClient) {
             HttpStatusCode.RequestUriTooLong;
     }
 
+    private static async Task EnsureSuccessStatusCodeAsync(HttpResponseMessage response, CancellationToken ct) {
+        if (response.IsSuccessStatusCode) return;
+
+        var responseBody = await response.Content.ReadAsStringAsync(ct);
+        throw new OsmApiException(response.StatusCode, responseBody);
+    }
+
+    private static async Task<HttpRequestMessage> CreateCompressedUploadRequestAsync(
+        string apiBaseUrl,
+        string relativePath,
+        OsmAccountCredential credential,
+        string changeXml,
+        CancellationToken ct) {
+        await using var compressedBody = new MemoryStream();
+        await using (var gzip = new GZipStream(compressedBody, CompressionLevel.Optimal, leaveOpen: true)) {
+            var bytes = Encoding.UTF8.GetBytes(changeXml);
+            await gzip.WriteAsync(bytes, ct);
+        }
+
+        var request = CreateAuthorizedRequest(HttpMethod.Post, apiBaseUrl, relativePath, credential);
+        request.Content = new ByteArrayContent(compressedBody.ToArray());
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("text/xml") { CharSet = "utf-8" };
+        request.Content.Headers.ContentEncoding.Add("gzip");
+        return request;
+    }
+
     private static HttpRequestMessage CreateAuthorizedRequest(
         HttpMethod method,
         string apiBaseUrl,
@@ -271,4 +308,20 @@ public enum OsmDownloadStage {
 public sealed class OsmDownloadFallbackException(Exception standardApiError, Exception fallbackError)
     : Exception("OSM 标准接口和 Overpass 回退接口均未能下载该区域。", fallbackError) {
     public Exception StandardApiError { get; } = standardApiError;
+}
+
+public sealed class OsmApiException(HttpStatusCode statusCode, string responseBody)
+    : HttpRequestException($"OSM API returned HTTP {(int)statusCode}.", null, statusCode) {
+    public HttpStatusCode ResponseStatusCode { get; } = statusCode;
+    public string ResponseBody { get; } = responseBody;
+
+    public bool IsInsufficientWritePermission => ResponseStatusCode == HttpStatusCode.Forbidden ||
+        ResponseBody.Contains("write_api", StringComparison.OrdinalIgnoreCase) ||
+        (ResponseBody.Contains("write", StringComparison.OrdinalIgnoreCase) &&
+            (ResponseBody.Contains("permission", StringComparison.OrdinalIgnoreCase) ||
+             ResponseBody.Contains("scope", StringComparison.OrdinalIgnoreCase) ||
+             ResponseBody.Contains("access", StringComparison.OrdinalIgnoreCase))) ||
+        (ResponseBody.Contains("insufficient", StringComparison.OrdinalIgnoreCase) &&
+            (ResponseBody.Contains("permission", StringComparison.OrdinalIgnoreCase) ||
+             ResponseBody.Contains("scope", StringComparison.OrdinalIgnoreCase)));
 }

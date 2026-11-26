@@ -203,6 +203,10 @@ Open the download page?</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">Uploading {0:N0} changes...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">Uploaded to OSM changeset {0}.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Upload complete</sys:String>
+    <sys:String x:Key="Main.OsmUpload.Failed">OSM upload failed.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.FailedWithStatus">OSM upload failed (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM rejected the account credentials. Check the saved credentials or reconnect the account, then try again.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">This account does not have permission to write to OSM. Reconnect it and grant the write_api permission before retrying.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Map 0-{0} / imagery 0-{1}</sys:String>
 
     <sys:String x:Key="Settings.Title">Settings</sys:String>
@@ -548,6 +552,11 @@ Open the download page?</sys:String>
     <sys:String x:Key="Osm.Upload.Source">Source</sys:String>
     <sys:String x:Key="Osm.Upload.EditRawId">Edit raw ID</sys:String>
     <sys:String x:Key="Osm.Upload.UploadChanges">Upload changes</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy">Upload strategy</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Single">Upload all objects in one request</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Chunked">Upload in chunks</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Individual">Upload each object individually</sys:String>
+    <sys:String x:Key="Osm.Upload.InvalidChunkSize">Chunk size must be a positive whole number.</sys:String>
     <sys:String x:Key="Osm.Upload.AccountFormat">Upload to "{0}"    Account: {1}    Authentication: {2}</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Update">Update OpenStreetMap data</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Fix">Fix map features</sys:String>

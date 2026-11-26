@@ -30,6 +30,12 @@ public static class Logger {
         AppendToFile(AppPaths.StartupLogFile, line);
     }
 
+    public static void Info(string message) {
+        var line = RedactSensitiveData($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] INFO: {message}");
+        Debug.WriteLine(line);
+        AppendToFile(AppPaths.TileRequestsLogFile, line);
+    }
+
     public static void Error(string message, Exception? ex = null) {
         var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {message}";
         if (ex is not null) {

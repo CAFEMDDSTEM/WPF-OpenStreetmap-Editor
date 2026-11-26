@@ -1,0 +1,34 @@
+<Window x:Class="WPF_OpenStreetmap_Editor.Views.OsmUploadErrorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:services="clr-namespace:WPF_OpenStreetmap_Editor.Services"
+        Title="{services:Loc Main.OsmUpload.Title}"
+        Width="440"
+        SizeToContent="Height"
+        MinWidth="360"
+        MaxWidth="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource Theme.WindowBrush}"
+        Foreground="{DynamicResource Theme.TextBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="MessageTextBlock"
+                   Grid.Row="0"
+                   Margin="0,0,0,20"
+                   Foreground="{DynamicResource Theme.ErrorBrush}"
+                   TextWrapping="Wrap"
+                   FontSize="14" />
+
+        <Button Grid.Row="1"
+                Content="{services:Loc Common.Close}"
+                MinWidth="88"
+                HorizontalAlignment="Right"
+                IsDefault="True"
+                IsCancel="True" />
+    </Grid>
+</Window>

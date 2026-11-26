@@ -59,8 +59,28 @@ public static class OsmChangeSerializer {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(build);
 
+        var diffMappings = ParseDiffMappings(responseXml);
+        var submittedChanges = XDocument.Parse(build.Xml).Root ?? throw new InvalidDataException("OSM change document has no root element.");
+        foreach (var primitive in submittedChanges.Descendants().Where(static element => element.Name.LocalName is "node" or "way" or "relation")) {
+            var type = primitive.Name.LocalName;
+            var id = ParseLongAttribute(primitive, "id") ?? throw new InvalidDataException("OSM change object is missing an ID.");
+            if (!diffMappings.ContainsKey((type, id))) {
+                throw new InvalidDataException($"OSM API diffResult did not include {type} {id}; changes were not marked as uploaded.");
+            }
+        }
+
+        var dataset = build.Dataset.Clone();
+        ApplyMappingsToDataset(dataset, diffMappings);
+        EnsureNoUnmappedTemporaryIds(dataset);
+        document.Osm = dataset;
+        ApplyBuildReferencesToFeatures(build, dataset, diffMappings);
+        UpdateFeatureMetadata(document, dataset, diffMappings);
+        document.MarkClean();
+    }
+
+    internal static Dictionary<(string Type, long OldId), (long Id, int Version)> ParseDiffMappings(string responseXml) {
         var response = XDocument.Parse(responseXml, LoadOptions.None);
-        var diffMappings = response.Root?.Elements()
+        return response.Root?.Elements()
             .Select(element => new {
                 Type = element.Name.LocalName,
                 OldId = ParseLongAttribute(element, "old_id"),
@@ -71,14 +91,72 @@ public static class OsmChangeSerializer {
             .ToDictionary(
                 item => (item.Type, item.OldId!.Value),
                 item => (Id: item.NewId!.Value, Version: item.NewVersion!.Value)) ?? [];
+    }
 
-        var dataset = build.Dataset.Clone();
-        ApplyMappingsToDataset(dataset, diffMappings);
-        EnsureNoUnmappedTemporaryIds(dataset);
-        document.Osm = dataset;
-        ApplyBuildReferencesToFeatures(build, dataset, diffMappings);
-        UpdateFeatureMetadata(document, dataset, diffMappings);
-        document.MarkClean();
+    internal static void ApplyPartialDiffResult(
+        MapDocument document,
+        OsmChangeBuildResult build,
+        string batchXml,
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        var batch = XDocument.Parse(batchXml).Root ?? throw new InvalidDataException("OSM upload batch has no root element.");
+        var operation = batch.Elements().Single();
+        var target = build.Dataset.Clone();
+        ApplyMappingsToDataset(target, mappings);
+
+        var original = document.OriginalOsm?.Clone() ??
+            OsmDocumentSync.CreateDatasetFromFeatures(document.OriginalFeatures.Values);
+        var current = document.Osm?.Clone() ?? original.Clone();
+        var deletedObjects = new HashSet<(OsmPrimitiveType Type, long Id)>();
+        var batchKeys = new HashSet<(string Type, long OldId)>();
+        foreach (var primitive in operation.Elements()) {
+            var typeName = primitive.Name.LocalName;
+            var id = ParseLongAttribute(primitive, "id") ?? throw new InvalidDataException("OSM upload batch contains an object without an ID.");
+            batchKeys.Add((typeName, id));
+            var mappedId = mappings.TryGetValue((typeName, id), out var mapping) ? mapping.Id : id;
+            var primitiveType = ParsePrimitiveType(typeName);
+            if (operation.Name.LocalName == "delete") {
+                RemovePrimitive(current, primitiveType, mappedId);
+                RemovePrimitive(original, primitiveType, mappedId);
+                deletedObjects.Add((primitiveType, mappedId));
+            } else {
+                CopyPrimitive(target, current, primitiveType, mappedId);
+                CopyPrimitive(target, original, primitiveType, mappedId);
+            }
+        }
+
+        var references = build.References
+            .Where(reference => batchKeys.Contains((reference.Type, reference.OldId)))
+            .ToList();
+        var partialBuild = build with {
+            References = references,
+            WayNodePlans = build.WayNodePlans.Where(plan => references.Any(reference => ReferenceEquals(reference.Feature, plan.Feature))).ToList()
+        };
+        ApplyBuildReferencesToFeatures(partialBuild, target, mappings);
+        var updatedFeatures = references.Select(static reference => reference.Feature).Distinct().ToList();
+        UpdateFeatureMetadata(document, target, mappings, updatedFeatures.ToHashSet());
+        document.ApplyPartialOsmUploadHistory(current, original, updatedFeatures, deletedObjects);
+    }
+
+    private static void CopyPrimitive(OsmDataset source, OsmDataset destination, OsmPrimitiveType type, long id) {
+        switch (type) {
+            case OsmPrimitiveType.Node when source.Nodes.TryGetValue(id, out var node):
+                destination.Nodes[id] = node.Clone();
+                break;
+            case OsmPrimitiveType.Way when source.Ways.TryGetValue(id, out var way):
+                destination.Ways[id] = way.Clone();
+                break;
+            case OsmPrimitiveType.Relation when source.Relations.TryGetValue(id, out var relation):
+                destination.Relations[id] = relation.Clone();
+                break;
+        }
+    }
+
+    private static void RemovePrimitive(OsmDataset dataset, OsmPrimitiveType type, long id) {
+        switch (type) {
+            case OsmPrimitiveType.Node: dataset.Nodes.Remove(id); break;
+            case OsmPrimitiveType.Way: dataset.Ways.Remove(id); break;
+            case OsmPrimitiveType.Relation: dataset.Relations.Remove(id); break;
+        }
     }
 
     private static OsmDataset GetOriginalDataset(MapDocument document) {
@@ -325,8 +403,10 @@ public static class OsmChangeSerializer {
     private static void UpdateFeatureMetadata(
         MapDocument document,
         OsmDataset dataset,
-        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings) {
+        IReadOnlyDictionary<(string Type, long OldId), (long Id, int Version)> mappings,
+        IReadOnlySet<MapFeature>? featuresToUpdate = null) {
         foreach (var feature in document.Features) {
+            if (featuresToUpdate is not null && !featuresToUpdate.Contains(feature)) continue;
             if (feature.Osm is null) continue;
 
             var typeName = FormatPrimitiveType(feature.Osm.PrimitiveType);

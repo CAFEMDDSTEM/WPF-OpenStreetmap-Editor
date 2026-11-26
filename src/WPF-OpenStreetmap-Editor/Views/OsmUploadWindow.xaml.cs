@@ -54,6 +54,12 @@ public partial class OsmUploadWindow : Window {
             "Bing aerial imagery",
             "OpenStreetMap"
         };
+        UploadStrategyComboBox.ItemsSource = new[] {
+            new UploadStrategyOption(OsmUploadStrategy.SingleRequest, L.GetString("Osm.Upload.Strategy.Single")),
+            new UploadStrategyOption(OsmUploadStrategy.Chunked, L.GetString("Osm.Upload.Strategy.Chunked")),
+            new UploadStrategyOption(OsmUploadStrategy.IndividualObjects, L.GetString("Osm.Upload.Strategy.Individual"))
+        };
+        UploadStrategyComboBox.SelectedValue = OsmUploadStrategy.Chunked;
         AiSummaryButton.IsEnabled = _document is not null && _aiClient is not null;
         AiSummaryButton.ToolTip = AiSummaryButton.IsEnabled
             ? L.GetString("Osm.Upload.AiAvailable")
@@ -65,6 +71,12 @@ public partial class OsmUploadWindow : Window {
     public string Comment => CommentComboBox.Text.Trim();
     public string Source => SourceComboBox.Text.Trim();
     public bool ReviewRequested => ReviewRequestedCheckBox.IsChecked == true;
+    public OsmUploadStrategy UploadStrategy => UploadStrategyComboBox.SelectedValue is OsmUploadStrategy strategy
+        ? strategy
+        : OsmUploadStrategy.SingleRequest;
+    public int ChunkSize => int.TryParse(ChunkSizeTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+        ? value
+        : 0;
     public bool MetadataChanged { get; private set; }
 
     private void Upload_Click(object sender, RoutedEventArgs e) {
@@ -76,9 +88,22 @@ public partial class OsmUploadWindow : Window {
             MessageBox.Show(L.GetString("Osm.Upload.NoChanges"), L.GetString("Osm.Upload.Title"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        if (UploadStrategy == OsmUploadStrategy.Chunked && ChunkSize <= 0) {
+            MessageBox.Show(L.GetString("Osm.Upload.InvalidChunkSize"), L.GetString("Osm.Upload.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         DialogResult = true;
     }
+
+    private void UploadStrategyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+        if (ChunkSizeTextBox is null) return;
+        var isChunked = UploadStrategyComboBox.SelectedValue is OsmUploadStrategy.Chunked;
+        ChunkSizeTextBox.IsEnabled = isChunked;
+        ChunkSizeTextBox.Visibility = isChunked ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private sealed record UploadStrategyOption(OsmUploadStrategy Strategy, string Label);
 
     private void EditMetadata_Click(object sender, RoutedEventArgs e) {
         if (GetSelectedChangeItem()?.Feature is not { } feature) {

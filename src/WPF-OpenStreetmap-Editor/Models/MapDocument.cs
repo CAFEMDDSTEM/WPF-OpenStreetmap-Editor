@@ -101,6 +101,24 @@ public sealed class MapDataLayer {
             StringComparer.Ordinal);
         _originalOsm = Osm?.Clone();
     }
+
+    internal void ApplyPartialOsmUploadHistory(
+        OsmDataset currentOsm,
+        OsmDataset originalOsm,
+        IEnumerable<MapFeature> updatedFeatures,
+        IReadOnlySet<(OsmPrimitiveType Type, long Id)> deletedObjects) {
+        Osm = currentOsm;
+        _originalOsm = originalOsm.Clone();
+        foreach (var feature in _originalFeatures.Values.ToList()) {
+            if (feature.Osm is not null && deletedObjects.Contains((feature.Osm.PrimitiveType, feature.Osm.Id))) {
+                _originalFeatures.Remove(feature.Id);
+            }
+        }
+        foreach (var feature in updatedFeatures) {
+            _originalFeatures[feature.Id] = feature.Clone();
+        }
+        IsDirty = true;
+    }
 }
 
 public sealed class MapDocument {
@@ -213,6 +231,15 @@ public sealed class MapDocument {
 
     public void ClearOsmHistory() {
         ActiveDataLayer.ClearOsmHistory();
+    }
+
+    internal void ApplyPartialOsmUploadHistory(
+        OsmDataset currentOsm,
+        OsmDataset originalOsm,
+        IEnumerable<MapFeature> updatedFeatures,
+        IReadOnlySet<(OsmPrimitiveType Type, long Id)> deletedObjects) {
+        ActiveDataLayer.ApplyPartialOsmUploadHistory(currentOsm, originalOsm, updatedFeatures, deletedObjects);
+        InvalidateSpatialIndex();
     }
 
     internal MapDocument CreateSnapshot() {

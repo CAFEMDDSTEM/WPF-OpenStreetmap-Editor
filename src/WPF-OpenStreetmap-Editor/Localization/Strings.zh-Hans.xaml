@@ -199,6 +199,10 @@
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">正在上传 {0:N0} 个变更...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">已上传到 OSM 变更集 {0}。</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">上传完成</sys:String>
+    <sys:String x:Key="Main.OsmUpload.Failed">上传到 OSM 失败。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.FailedWithStatus">上传到 OSM 失败（HTTP {0}）。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM 拒绝了账号凭据。请检查已保存的凭据或重新连接账号，然后重试。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">此账号没有写入 OSM 的权限。请重新连接账号并授予 write_api 权限后重试。</sys:String>
     <sys:String x:Key="Main.ZoomLimit">地图 0-{0} / 影像 0-{1}</sys:String>
 
     <sys:String x:Key="Settings.Title">设置</sys:String>
@@ -492,6 +496,11 @@
     <sys:String x:Key="Osm.Upload.Source">来源</sys:String>
     <sys:String x:Key="Osm.Upload.EditRawId">编辑原始 ID</sys:String>
     <sys:String x:Key="Osm.Upload.UploadChanges">上传变更</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy">上传策略</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Single">一次请求上传全部对象</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Chunked">分包上传</sys:String>
+    <sys:String x:Key="Osm.Upload.Strategy.Individual">逐个对象上传</sys:String>
+    <sys:String x:Key="Osm.Upload.InvalidChunkSize">分包大小必须为正整数。</sys:String>
     <sys:String x:Key="Osm.Upload.AccountFormat">上传到“{0}”    账号: {1}    认证: {2}</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Update">更新 OpenStreetMap 数据</sys:String>
     <sys:String x:Key="Osm.Upload.DefaultComment.Fix">修正地图要素</sys:String>
