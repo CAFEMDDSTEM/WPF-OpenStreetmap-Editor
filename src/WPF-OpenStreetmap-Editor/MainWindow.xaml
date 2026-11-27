@@ -63,6 +63,10 @@
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.View}">
                 <MenuItem Header="{services:Loc Main.Menu.FitData}" Click="FitDocument_Click" />
+                <MenuItem x:Name="DownloadedAreaMenuItem"
+                          Header="{services:Loc Main.Menu.DownloadedArea}"
+                          IsCheckable="True"
+                          Click="DownloadedArea_Click" />
                 <MenuItem Header="{services:Loc Main.Menu.TogglePanels}" Click="ToggleRightPanel_Click" />
             </MenuItem>
             <MenuItem Header="{services:Loc Main.Menu.Selection}">
@@ -730,19 +734,24 @@
                 Grid.Row="2"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
-                MaxWidth="440"
+                MaxWidth="620"
+                MaxHeight="280"
                 Margin="12"
                 Padding="12,8"
                 Background="{DynamicResource Theme.SurfaceBrush}"
                 BorderBrush="{DynamicResource Theme.AccentBrush}"
-                BorderThickness="1"
-                CornerRadius="3"
-                Visibility="Collapsed"
-                IsHitTestVisible="False"
-                AutomationProperties.LiveSetting="Polite">
-            <TextBlock x:Name="UploadNotificationTextBlock"
-                       Foreground="{DynamicResource Theme.TextBrush}"
-                       TextWrapping="Wrap" />
+                     BorderThickness="1"
+                     CornerRadius="3"
+                     Visibility="Collapsed"
+                     IsHitTestVisible="True"
+                     AutomationProperties.LiveSetting="Polite">
+                <ScrollViewer MaxHeight="260"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <TextBlock x:Name="UploadNotificationTextBlock"
+                               Foreground="{DynamicResource Theme.TextBrush}"
+                               TextWrapping="Wrap" />
+                </ScrollViewer>
         </Border>
     </Grid>
 </Window>

@@ -26,8 +26,18 @@ public sealed class VectorLayerElement : FrameworkElement {
     private MapDisplayTransform _displayTransform = MapDisplayTransform.Identity;
     private MapFeature? _hoveredFeature;
     private VertexHit? _hoveredVertex;
+    private bool _showDownloadedArea = true;
 
     public VectorRenderPlan? LastPlan { get; private set; }
+
+    public bool ShowDownloadedArea {
+        get => _showDownloadedArea;
+        set {
+            if (_showDownloadedArea == value) return;
+            _showDownloadedArea = value;
+            InvalidateVisual();
+        }
+    }
 
     internal bool RequiresDrawingRefresh(
         MapDocument? document,
@@ -144,6 +154,9 @@ public sealed class VectorLayerElement : FrameworkElement {
             _drawPanOffsetY,
             _displayTransform);
         LastPlan = VectorRenderPlanner.Create(_document, GetBufferedViewportBounds(viewport));
+        if (ShowDownloadedArea && _document.ActiveDataLayer.DownloadBounds is { IsValid: true } downloadBounds) {
+            DrawOutsideDownloadedArea(drawingContext, projection, downloadBounds, viewport);
+        }
 
         var palette = VectorRenderPalette.Create(key => TryFindResource(key));
         var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
@@ -176,6 +189,91 @@ public sealed class VectorLayerElement : FrameworkElement {
             Math.Min(topLeft.Latitude, bottomRight.Latitude),
             Math.Max(topLeft.Longitude, bottomRight.Longitude),
             Math.Max(topLeft.Latitude, bottomRight.Latitude));
+    }
+
+    private void DrawOutsideDownloadedArea(
+        DrawingContext drawingContext,
+        GeoViewportProjection projection,
+        GeoBounds bounds,
+        Size viewport) {
+        var downloadedArea = CreateBoundsGeometry(bounds, projection);
+        var viewportGeometry = new RectangleGeometry(new Rect(viewport));
+        var outsideArea = new CombinedGeometry(GeometryCombineMode.Exclude, viewportGeometry, downloadedArea);
+        var brush = CreateHatchBrush();
+
+        drawingContext.PushClip(outsideArea);
+        drawingContext.DrawRectangle(brush, null, new Rect(viewport));
+        drawingContext.Pop();
+
+        var outlineBrush = (TryFindResource("Theme.DownloadedAreaBrush") as Brush ?? SystemColors.HighlightBrush).CloneCurrentValue();
+        var outlinePen = new Pen(outlineBrush, 2.0) { LineJoin = PenLineJoin.Round };
+        outlinePen.Freeze();
+        drawingContext.DrawGeometry(null, outlinePen, downloadedArea);
+    }
+
+    private static Geometry CreateBoundsGeometry(GeoBounds bounds, GeoViewportProjection projection) {
+        const int edgeSegments = 24;
+        var points = new List<Point>(edgeSegments * 4 + 1);
+        for (var index = 0; index <= edgeSegments; index++) {
+            var fraction = (double)index / edgeSegments;
+            points.Add(projection.GeoToScreen(new GeoPoint(
+                bounds.MinLongitude + (bounds.MaxLongitude - bounds.MinLongitude) * fraction,
+                bounds.MaxLatitude)));
+        }
+        for (var index = 1; index <= edgeSegments; index++) {
+            var fraction = (double)index / edgeSegments;
+            points.Add(projection.GeoToScreen(new GeoPoint(
+                bounds.MaxLongitude,
+                bounds.MaxLatitude - (bounds.MaxLatitude - bounds.MinLatitude) * fraction)));
+        }
+        for (var index = 1; index <= edgeSegments; index++) {
+            var fraction = (double)index / edgeSegments;
+            points.Add(projection.GeoToScreen(new GeoPoint(
+                bounds.MaxLongitude - (bounds.MaxLongitude - bounds.MinLongitude) * fraction,
+                bounds.MinLatitude)));
+        }
+        for (var index = 1; index < edgeSegments; index++) {
+            var fraction = (double)index / edgeSegments;
+            points.Add(projection.GeoToScreen(new GeoPoint(
+                bounds.MinLongitude,
+                bounds.MinLatitude + (bounds.MaxLatitude - bounds.MinLatitude) * fraction)));
+        }
+
+        var geometry = new StreamGeometry();
+        using (var context = geometry.Open()) {
+            context.BeginFigure(points[0], isFilled: true, isClosed: true);
+            context.PolyLineTo(points.Skip(1).ToArray(), isStroked: true, isSmoothJoin: false);
+        }
+        geometry.Freeze();
+        return geometry;
+    }
+
+    private Brush CreateHatchBrush() {
+        var brush = (TryFindResource("Theme.DownloadedAreaBrush") as Brush ?? SystemColors.HighlightBrush).CloneCurrentValue();
+        brush.Opacity *= 0.45;
+        brush.Freeze();
+        var pen = new Pen(brush, 1.0);
+        pen.Freeze();
+        var group = new DrawingGroup();
+        const double spacing = 14;
+        for (var index = -1; index <= 1; index++) {
+            var start = index * spacing;
+            group.Children.Add(new GeometryDrawing(null, pen, new LineGeometry(
+                new Point(start, spacing),
+                new Point(start + spacing, 0))));
+        }
+        group.Freeze();
+
+        var hatch = new DrawingBrush(group) {
+            TileMode = TileMode.Tile,
+            Viewport = new Rect(0, 0, spacing, spacing),
+            ViewportUnits = BrushMappingMode.Absolute,
+            Viewbox = new Rect(0, 0, spacing, spacing),
+            ViewboxUnits = BrushMappingMode.Absolute,
+            Stretch = Stretch.Fill
+        };
+        hatch.Freeze();
+        return hatch;
     }
 
     private void ApplyPanTransform() {

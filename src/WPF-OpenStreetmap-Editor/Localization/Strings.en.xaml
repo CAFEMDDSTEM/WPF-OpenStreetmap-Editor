@@ -48,6 +48,7 @@
     <sys:String x:Key="Main.Menu.ShowAll">Show all features</sys:String>
     <sys:String x:Key="Main.Menu.View">View</sys:String>
     <sys:String x:Key="Main.Menu.FitData">Zoom to map data</sys:String>
+    <sys:String x:Key="Main.Menu.DownloadedArea">Draw boundaries of downloaded data</sys:String>
     <sys:String x:Key="Main.Menu.TogglePanels">Toggle workspace panels</sys:String>
     <sys:String x:Key="Main.Menu.Selection">Selection</sys:String>
     <sys:String x:Key="Main.Menu.Show">Show</sys:String>
@@ -202,9 +203,13 @@ Open the download page?</sys:String>
     <sys:String x:Key="Main.OsmUpload.CreatingChangeset">Creating OSM changeset...</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">Uploading {0:N0} changes...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">Uploaded to OSM changeset {0}.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.CompletedMultiple">Uploaded to OSM changesets {0}.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Upload complete</sys:String>
     <sys:String x:Key="Main.OsmUpload.Failed">OSM upload failed.</sys:String>
     <sys:String x:Key="Main.OsmUpload.FailedWithStatus">OSM upload failed (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.BatchFailureDetails">Failed batch: {0}; operation: {1}; objects: {2}; count: {3}; request XML: {4} bytes; previously successful: {5}</sys:String>
+    <sys:String x:Key="Main.OsmUpload.NoSuccessfulBatches">none</sys:String>
+    <sys:String x:Key="Main.OsmUpload.ServerResponse">Server response: {0}</sys:String>
     <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM rejected the account credentials. Check the saved credentials or reconnect the account, then try again.</sys:String>
     <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">This account does not have permission to write to OSM. Reconnect it and grant the write_api permission before retrying.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Map 0-{0} / imagery 0-{1}</sys:String>

@@ -48,6 +48,7 @@
     <sys:String x:Key="Main.Menu.ShowAll">すべてのフィーチャを表示</sys:String>
     <sys:String x:Key="Main.Menu.View">表示</sys:String>
     <sys:String x:Key="Main.Menu.FitData">地図データ全体を表示</sys:String>
+    <sys:String x:Key="Main.Menu.DownloadedArea">ダウンロード範囲の境界を表示</sys:String>
     <sys:String x:Key="Main.Menu.TogglePanels">ワークスペースパネルを切り替え</sys:String>
     <sys:String x:Key="Main.Menu.Selection">選択</sys:String>
     <sys:String x:Key="Main.Menu.Show">表示</sys:String>
@@ -202,9 +203,13 @@
     <sys:String x:Key="Main.OsmUpload.CreatingChangeset">OSM 変更セットを作成しています...</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">{0:N0} 件の変更をアップロードしています...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">OSM 変更セット {0} にアップロードしました。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.CompletedMultiple">OSM 変更セット {0} にアップロードしました。</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">アップロード完了</sys:String>
     <sys:String x:Key="Main.OsmUpload.Failed">OSM へのアップロードに失敗しました。</sys:String>
     <sys:String x:Key="Main.OsmUpload.FailedWithStatus">OSM へのアップロードに失敗しました (HTTP {0})。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.BatchFailureDetails">失敗したバッチ: {0}; 操作: {1}; オブジェクト: {2}; 件数: {3}; XML リクエスト: {4} バイト; それ以前に成功: {5}</sys:String>
+    <sys:String x:Key="Main.OsmUpload.NoSuccessfulBatches">なし</sys:String>
+    <sys:String x:Key="Main.OsmUpload.ServerResponse">サーバー応答: {0}</sys:String>
     <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM が認証情報を拒否しました。保存済みの認証情報を確認するか、アカウントを再接続してください。</sys:String>
     <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">このアカウントには OSM への書き込み権限がありません。write_api 権限を許可して再接続してください。</sys:String>
     <sys:String x:Key="Main.ZoomLimit">地図 0-{0} / 画像 0-{1}</sys:String>

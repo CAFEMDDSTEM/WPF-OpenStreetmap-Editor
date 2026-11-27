@@ -48,6 +48,7 @@
     <sys:String x:Key="Main.Menu.ShowAll">Alle Features anzeigen</sys:String>
     <sys:String x:Key="Main.Menu.View">Ansicht</sys:String>
     <sys:String x:Key="Main.Menu.FitData">Auf Kartendaten zoomen</sys:String>
+    <sys:String x:Key="Main.Menu.DownloadedArea">Grenzen der heruntergeladenen Daten anzeigen</sys:String>
     <sys:String x:Key="Main.Menu.TogglePanels">Arbeitsbereich-Panels umschalten</sys:String>
     <sys:String x:Key="Main.Menu.Selection">Auswahl</sys:String>
     <sys:String x:Key="Main.Menu.Show">Anzeigen</sys:String>
@@ -202,9 +203,13 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Main.OsmUpload.CreatingChangeset">OSM-Änderungssatz wird erstellt...</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">{0:N0} Änderungen werden hochgeladen...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">In OSM-Änderungssatz {0} hochgeladen.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.CompletedMultiple">In OSM-Änderungssätze {0} hochgeladen.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Upload abgeschlossen</sys:String>
     <sys:String x:Key="Main.OsmUpload.Failed">OSM-Upload fehlgeschlagen.</sys:String>
     <sys:String x:Key="Main.OsmUpload.FailedWithStatus">OSM-Upload fehlgeschlagen (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.BatchFailureDetails">Fehlgeschlagener Block: {0}; Vorgang: {1}; Objekte: {2}; Anzahl: {3}; XML-Anfrage: {4} Bytes; zuvor erfolgreich: {5}</sys:String>
+    <sys:String x:Key="Main.OsmUpload.NoSuccessfulBatches">keine</sys:String>
+    <sys:String x:Key="Main.OsmUpload.ServerResponse">Serverantwort: {0}</sys:String>
     <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM hat die Zugangsdaten abgelehnt. Prüfen Sie die gespeicherten Zugangsdaten oder verbinden Sie das Konto erneut.</sys:String>
     <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">Dieses Konto darf nicht in OSM schreiben. Verbinden Sie es erneut und erteilen Sie die Berechtigung write_api.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Karte 0-{0} / Bilddaten 0-{1}</sys:String>

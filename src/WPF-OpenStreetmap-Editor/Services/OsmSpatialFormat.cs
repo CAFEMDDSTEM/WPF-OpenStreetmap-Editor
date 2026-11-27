@@ -14,9 +14,12 @@ internal static class OsmSpatialFormat {
         SpatialImportOptions options,
         IProgress<SpatialImportProgress>? progress,
         CancellationToken ct) {
+        var downloadBounds = ReadDownloadBounds(path);
         using var stream = File.OpenRead(path);
         using var source = new XmlOsmStreamSource(stream);
-        return Read(source, options, progress, ct, "正在读取 OSM XML");
+        var document = Read(source, options, progress, ct, "正在读取 OSM XML");
+        document.ActiveDataLayer.DownloadBounds = downloadBounds;
+        return document;
     }
 
     public static MapDocument ReadPbf(
@@ -41,6 +44,14 @@ internal static class OsmSpatialFormat {
         writer.WriteStartElement("osm");
         writer.WriteAttributeString("version", "0.6");
         writer.WriteAttributeString("generator", "WPF-OpenStreetmap-Editor");
+        if (document.ActiveDataLayer.DownloadBounds is { IsValid: true } bounds) {
+            writer.WriteStartElement("bounds");
+            writer.WriteAttributeString("minlat", bounds.MinLatitude.ToString("R", CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("minlon", bounds.MinLongitude.ToString("R", CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("maxlat", bounds.MaxLatitude.ToString("R", CultureInfo.InvariantCulture));
+            writer.WriteAttributeString("maxlon", bounds.MaxLongitude.ToString("R", CultureInfo.InvariantCulture));
+            writer.WriteEndElement();
+        }
 
         foreach (var node in dataset.Nodes.Values.OrderBy(static node => node.Id)) {
             ct.ThrowIfCancellationRequested();
@@ -130,6 +141,34 @@ internal static class OsmSpatialFormat {
         }
         dataset.NormalizeTemporaryIds();
         return document;
+    }
+
+    private static GeoBounds? ReadDownloadBounds(string path) {
+        var settings = new XmlReaderSettings {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null
+        };
+        using var stream = File.OpenRead(path);
+        using var reader = XmlReader.Create(stream, settings);
+        while (reader.Read()) {
+            if (reader.NodeType != XmlNodeType.Element) continue;
+            if (reader.LocalName is "node" or "way" or "relation") break;
+            if (reader.LocalName != "bounds") continue;
+
+            var attributes = new[] { "minlon", "minlat", "maxlon", "maxlat" }
+                .Select(name => reader.GetAttribute(name))
+                .ToArray();
+            if (attributes.Any(static value => value is null)) return null;
+            if (!double.TryParse(attributes[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var minLongitude) ||
+                !double.TryParse(attributes[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var minLatitude) ||
+                !double.TryParse(attributes[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var maxLongitude) ||
+                !double.TryParse(attributes[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var maxLatitude)) return null;
+
+            var bounds = new GeoBounds(minLongitude, minLatitude, maxLongitude, maxLatitude);
+            return bounds.IsValid ? bounds : null;
+        }
+
+        return null;
     }
 
     private static Dictionary<string, string> ReadTags(OsmSharp.Tags.TagsCollectionBase? tags) {

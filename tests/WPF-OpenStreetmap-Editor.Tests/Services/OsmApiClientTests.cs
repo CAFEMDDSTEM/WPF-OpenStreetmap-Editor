@@ -52,7 +52,7 @@ public class OsmApiClientTests {
                     tag => tag.Attribute("v")!.Value,
                     StringComparer.Ordinal);
             Assert.Equal(
-                $"WPF-OpenStreetmap-Editor+{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}",
+                $"WPF-OpenStreetmap-Editor-{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}",
                 tags["created_by"]);
             return new HttpResponseMessage(HttpStatusCode.OK) {
                 Content = new StringContent("123")

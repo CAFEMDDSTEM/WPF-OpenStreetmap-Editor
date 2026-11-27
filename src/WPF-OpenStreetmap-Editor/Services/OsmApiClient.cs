@@ -125,7 +125,7 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         string? source = null,
         bool reviewRequested = false,
         CancellationToken ct = default) {
-        var createdBy = $"WPF-OpenStreetmap-Editor+{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}";
+        var createdBy = $"WPF-OpenStreetmap-Editor-{HelpContentService.GetVersionText(typeof(OsmApiClient).Assembly)}";
         var changeset = new XElement(
             "changeset",
             new XElement("tag", new XAttribute("k", "created_by"), new XAttribute("v", createdBy)),
@@ -176,14 +176,19 @@ public sealed class OsmApiClient(HttpClient httpClient) {
         }
 
         var originalErrorBody = await response.Content.ReadAsStringAsync(ct);
+        Logger.Error($"OSM upload request returned HTTP 413 before gzip retry; responseBody={originalErrorBody}");
         using var compressedRequest = await CreateCompressedUploadRequestAsync(apiBaseUrl, relativePath, credential, changeXml, ct);
         using var compressedResponse = await httpClient.SendAsync(compressedRequest, ct);
+        var compressedResponseBody = await compressedResponse.Content.ReadAsStringAsync(ct);
+        Logger.Info($"OSM gzip upload retry returned HTTP {(int)compressedResponse.StatusCode}; responseBody={compressedResponseBody}");
         if (compressedResponse.StatusCode is HttpStatusCode.UnsupportedMediaType or HttpStatusCode.NotImplemented) {
             throw new OsmApiException(response.StatusCode, originalErrorBody);
         }
 
-        await EnsureSuccessStatusCodeAsync(compressedResponse, ct);
-        return await compressedResponse.Content.ReadAsStringAsync(ct);
+        if (!compressedResponse.IsSuccessStatusCode) {
+            throw new OsmApiException(compressedResponse.StatusCode, compressedResponseBody);
+        }
+        return compressedResponseBody;
     }
 
     public async Task CloseChangesetAsync(
@@ -314,6 +319,30 @@ public sealed class OsmApiException(HttpStatusCode statusCode, string responseBo
     : HttpRequestException($"OSM API returned HTTP {(int)statusCode}.", null, statusCode) {
     public HttpStatusCode ResponseStatusCode { get; } = statusCode;
     public string ResponseBody { get; } = responseBody;
+    public string? UploadBatchLabel { get; private set; }
+    public string? UploadBatchOperation { get; private set; }
+    public string? UploadBatchObjects { get; private set; }
+    public int? UploadBatchObjectCount { get; private set; }
+    public int? UploadBatchXmlBytes { get; private set; }
+    public string? UploadSuccessfulBatches { get; private set; }
+    public bool IsChangesetBoundingBoxLimitExceeded =>
+        ResponseStatusCode == HttpStatusCode.RequestEntityTooLarge &&
+        ResponseBody.Contains("Changeset bounding box size limit exceeded", StringComparison.OrdinalIgnoreCase);
+
+    internal void SetUploadBatchContext(
+        string label,
+        string operation,
+        string objects,
+        int objectCount,
+        int xmlBytes,
+        string successfulBatches = "") {
+        UploadBatchLabel = label;
+        UploadBatchOperation = operation;
+        UploadBatchObjects = objects;
+        UploadBatchObjectCount = objectCount;
+        UploadBatchXmlBytes = xmlBytes;
+        UploadSuccessfulBatches = successfulBatches;
+    }
 
     public bool IsInsufficientWritePermission => ResponseStatusCode == HttpStatusCode.Forbidden ||
         ResponseBody.Contains("write_api", StringComparison.OrdinalIgnoreCase) ||

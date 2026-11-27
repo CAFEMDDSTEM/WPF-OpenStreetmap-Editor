@@ -47,6 +47,7 @@
     <sys:String x:Key="Main.Menu.ShowAll">Показать все объекты</sys:String>
     <sys:String x:Key="Main.Menu.View">Вид</sys:String>
     <sys:String x:Key="Main.Menu.FitData">Масштабировать к данным</sys:String>
+    <sys:String x:Key="Main.Menu.DownloadedArea">Показывать границы загруженных данных</sys:String>
     <sys:String x:Key="Main.Menu.TogglePanels">Переключить панели</sys:String>
     <sys:String x:Key="Main.Menu.Selection">Выделение</sys:String>
     <sys:String x:Key="Main.Menu.Show">Показать</sys:String>
@@ -201,9 +202,13 @@
     <sys:String x:Key="Main.OsmUpload.CreatingChangeset">Создание набора изменений OSM...</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">Загрузка {0:N0} изменений...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">Загружено в набор изменений OSM {0}.</sys:String>
+    <sys:String x:Key="Main.OsmUpload.CompletedMultiple">Загружено в наборы изменений OSM {0}.</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">Загрузка завершена</sys:String>
     <sys:String x:Key="Main.OsmUpload.Failed">Не удалось загрузить данные в OSM.</sys:String>
     <sys:String x:Key="Main.OsmUpload.FailedWithStatus">Не удалось загрузить данные в OSM (HTTP {0}).</sys:String>
+    <sys:String x:Key="Main.OsmUpload.BatchFailureDetails">Неудачный пакет: {0}; операция: {1}; объекты: {2}; количество: {3}; XML-запрос: {4} байт; ранее успешно: {5}</sys:String>
+    <sys:String x:Key="Main.OsmUpload.NoSuccessfulBatches">нет</sys:String>
+    <sys:String x:Key="Main.OsmUpload.ServerResponse">Ответ сервера: {0}</sys:String>
     <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM отклонил данные учётной записи. Проверьте сохранённые данные или подключите аккаунт повторно.</sys:String>
     <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">У этой учётной записи нет права записи в OSM. Подключите её повторно, предоставив разрешение write_api.</sys:String>
     <sys:String x:Key="Main.ZoomLimit">Карта 0-{0} / изображения 0-{1}</sys:String>

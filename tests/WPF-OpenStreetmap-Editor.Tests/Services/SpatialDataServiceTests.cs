@@ -282,6 +282,32 @@ public class SpatialDataServiceTests {
     }
 
     [Fact]
+    public async Task OsmXmlRoundTrip_PreservesDownloadedBounds() {
+        var root = CreateTestDirectory();
+        var path = Path.Combine(root, "map.osm");
+        var outputPath = Path.Combine(root, "roundtrip.osm");
+        try {
+            File.WriteAllText(path, """
+                <osm version="0.6">
+                  <bounds minlat="1.2" minlon="103.7" maxlat="1.4" maxlon="104.0" />
+                  <node id="1" lat="1.3" lon="103.8" version="1"><tag k="amenity" v="bench" /></node>
+                </osm>
+                """);
+
+            var document = await SpatialDataService.ImportAsync(path);
+            var expected = new GeoBounds(103.7, 1.2, 104.0, 1.4);
+            Assert.Equal(expected, document.ActiveDataLayer.DownloadBounds);
+
+            await SpatialDataService.SaveAsync(document, outputPath);
+            var reloaded = await SpatialDataService.ImportAsync(outputPath);
+
+            Assert.Equal(expected, reloaded.ActiveDataLayer.DownloadBounds);
+        } finally {
+            DeleteTestDirectory(root);
+        }
+    }
+
+    [Fact]
     public async Task ImportAsync_OsmXmlResolvesWayGeometryWhenNodesAppearAfterWay() {
         var root = CreateTestDirectory();
         var path = Path.Combine(root, "map.osm");

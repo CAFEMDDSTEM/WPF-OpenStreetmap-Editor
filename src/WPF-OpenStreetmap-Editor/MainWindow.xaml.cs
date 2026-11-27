@@ -153,6 +153,8 @@ public partial class MainWindow : Window {
         DataContext = _viewModel;
         ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
+        DownloadedAreaToggle.IsChecked = _settings.ShowDownloadedArea;
+        VectorLayer.ShowDownloadedArea = _settings.ShowDownloadedArea;
         _viewModel.RightPanelWidth = _settings.WorkbenchLayout.RightPanelWidth;
         _viewModel.IsRightPanelVisible = _settings.WorkbenchLayout.IsRightPanelVisible;
         RightPanelColumn.Width = _settings.WorkbenchLayout.IsRightPanelVisible
@@ -2296,7 +2298,22 @@ public partial class MainWindow : Window {
 
     private void ExtrudeTool_Click(object sender, RoutedEventArgs e) => SetEditorMode(EditorMode.Extrude);
 
+    private MenuItem DownloadedAreaToggle => (MenuItem)FindName("DownloadedAreaMenuItem");
+
     private void FitDocument_Click(object sender, RoutedEventArgs e) => FitDocumentToViewport();
+
+    private void DownloadedArea_Click(object sender, RoutedEventArgs e) {
+        var previousValue = _settings.ShowDownloadedArea;
+        var isEnabled = DownloadedAreaToggle.IsChecked;
+        _settings.ShowDownloadedArea = isEnabled;
+        if (!_settingsWriter.Save(_settings, this)) {
+            _settings.ShowDownloadedArea = previousValue;
+            DownloadedAreaToggle.IsChecked = previousValue;
+            return;
+        }
+
+        VectorLayer.ShowDownloadedArea = isEnabled;
+    }
 
     private async void OsmDownload_Click(object sender, RoutedEventArgs e) => await DownloadOsmSelectionAsync();
 
@@ -4379,6 +4396,7 @@ public partial class MainWindow : Window {
             await File.WriteAllBytesAsync(temporaryPath, bytes, ct);
             var document = await SpatialDataService.ImportAsync(temporaryPath);
             document.Name = L.Format("Main.OsmDownloadDocumentName", DateTime.Now);
+            document.ActiveDataLayer.DownloadBounds = bounds;
             document.SourcePath = null;
             document.SourceFormat = SpatialFileFormat.OsmXml;
             document.MarkClean(compactOsmHistory: true);
@@ -4446,40 +4464,75 @@ public partial class MainWindow : Window {
         if (!uploadConfirmed) return;
 
         var api = new OsmApiClient(OsmHttpClient);
-        long? changesetId = null;
+        var changesetIds = new List<long>();
         try {
             IsEnabled = false;
             _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.CreatingChangeset");
-            changesetId = await api.CreateChangesetAsync(
+            var changesetId = await api.CreateChangesetAsync(
                 account.ApiBaseUrl,
                 credential,
                 uploadWindow.Comment,
                 uploadWindow.Source,
                 uploadWindow.ReviewRequested,
                 CancellationToken.None);
-            var changes = OsmChangeSerializer.Build(_document, changesetId.Value);
+            changesetIds.Add(changesetId);
+            var changes = OsmChangeSerializer.Build(_document, changesetId);
             _viewModel.DocumentStatus = L.Format("Main.OsmUpload.UploadingChanges", changes.TotalCount);
             var response = await OsmChangeUploadCoordinator.UploadAsync(
                 api,
                 account.ApiBaseUrl,
                 credential,
-                changesetId.Value,
+                changesetId,
                 _document,
                 changes,
                 uploadWindow.UploadStrategy,
-                uploadWindow.ChunkSize);
+                uploadWindow.ChunkSize,
+                CancellationToken.None,
+                async token => {
+                    _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.CreatingChangeset");
+                    var nextChangesetId = await api.CreateChangesetAsync(
+                        account.ApiBaseUrl,
+                        credential,
+                        uploadWindow.Comment,
+                        uploadWindow.Source,
+                        uploadWindow.ReviewRequested,
+                        token);
+                    changesetIds.Add(nextChangesetId);
+                    return nextChangesetId;
+                });
             OsmChangeSerializer.ApplyDiffResult(_document, changes, response);
             Editor.CommandStack.Clear();
             RefreshFeatureList();
             UpdateVectorLayer();
             UpdateDocumentUi();
-            var completedMessage = L.Format("Main.OsmUpload.Completed", changesetId.Value);
+            var completedMessage = changesetIds.Count == 1
+                ? L.Format("Main.OsmUpload.Completed", changesetIds[0])
+                : L.Format("Main.OsmUpload.CompletedMultiple", string.Join(", ", changesetIds));
             _viewModel.DocumentStatus = completedMessage;
             ShowUploadNotification(completedMessage, isError: false);
         } catch (OsmApiException ex) {
             Logger.Error("OSM upload was rejected by the API", ex);
+            RefreshFeatureList();
+            UpdateVectorLayer();
+            UpdateDocumentUi();
             _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.Failed");
-            ShowUploadNotification(L.Format("Main.OsmUpload.FailedWithStatus", (int)ex.ResponseStatusCode), isError: true);
+            var notification = L.Format("Main.OsmUpload.FailedWithStatus", (int)ex.ResponseStatusCode);
+            if (ex.UploadBatchLabel is not null) {
+                notification += Environment.NewLine + L.Format(
+                    "Main.OsmUpload.BatchFailureDetails",
+                    ex.UploadBatchLabel,
+                    ex.UploadBatchOperation,
+                    ex.UploadBatchObjects,
+                    ex.UploadBatchObjectCount,
+                    ex.UploadBatchXmlBytes,
+                    string.IsNullOrEmpty(ex.UploadSuccessfulBatches)
+                        ? L.GetString("Main.OsmUpload.NoSuccessfulBatches")
+                        : ex.UploadSuccessfulBatches);
+            }
+            if (!string.IsNullOrWhiteSpace(ex.ResponseBody)) {
+                notification += Environment.NewLine + L.Format("Main.OsmUpload.ServerResponse", ex.ResponseBody.Trim());
+            }
+            ShowUploadNotification(notification, isError: true);
             IsEnabled = true;
             if (ex.IsInsufficientWritePermission) {
                 new Views.OsmUploadErrorWindow(L.GetString("Main.OsmUpload.WritePermissionRequired")) { Owner = this }.ShowDialog();
@@ -4491,11 +4544,11 @@ public partial class MainWindow : Window {
             _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.Failed");
             ShowUploadNotification(L.GetString("Main.OsmUpload.Failed"), isError: true);
         } finally {
-            if (changesetId.HasValue) {
+            foreach (var changesetId in changesetIds) {
                 try {
-                    await api.CloseChangesetAsync(account.ApiBaseUrl, credential, changesetId.Value, CancellationToken.None);
+                    await api.CloseChangesetAsync(account.ApiBaseUrl, credential, changesetId, CancellationToken.None);
                 } catch (Exception ex) {
-                    Logger.Error($"Failed to close OSM changeset {changesetId.Value}", ex);
+                    Logger.Error($"Failed to close OSM changeset {changesetId}", ex);
                 }
             }
             IsEnabled = true;
@@ -4511,6 +4564,7 @@ public partial class MainWindow : Window {
             ? (Brush)FindResource("Theme.ErrorBrush")
             : (Brush)FindResource("Theme.AccentBrush");
         UploadNotificationBorder.Visibility = Visibility.Visible;
+        _uploadNotificationTimer.Interval = isError ? TimeSpan.FromSeconds(30) : TimeSpan.FromSeconds(6);
         _uploadNotificationTimer.Stop();
         _uploadNotificationTimer.Start();
     }

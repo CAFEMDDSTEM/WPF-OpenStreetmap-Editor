@@ -157,25 +157,31 @@ public sealed class CliApplication {
         }
 
         var api = new OsmApiClient(_httpClient);
-        long? changesetId = null;
+        var changesetIds = new List<long>();
         try {
-            changesetId = await api.CreateChangesetAsync(apiBaseUrl, credential, command.Comment, ct);
-            var changes = BuildChanges(document, changesetId.Value);
+            var changesetId = await api.CreateChangesetAsync(apiBaseUrl, credential, command.Comment, ct);
+            changesetIds.Add(changesetId);
+            var changes = BuildChanges(document, changesetId);
             var response = await OsmChangeUploadCoordinator.UploadAsync(
                 api,
                 apiBaseUrl,
                 credential,
-                changesetId.Value,
+                changesetId,
                 document,
                 changes,
                 OsmUploadStrategy.SingleRequest,
                 OsmChangeUploadCoordinator.DefaultChunkSize,
-                ct);
+                ct,
+                async token => {
+                    var nextChangesetId = await api.CreateChangesetAsync(apiBaseUrl, credential, command.Comment, token);
+                    changesetIds.Add(nextChangesetId);
+                    return nextChangesetId;
+                });
             OsmChangeSerializer.ApplyDiffResult(document, changes, response);
-            WriteChangeSummary(changes, $"Uploaded OSM changes to changeset {changesetId.Value.ToString(CultureInfo.InvariantCulture)}.");
+            WriteChangeSummary(changes, $"Uploaded OSM changes to changeset(s) {string.Join(", ", changesetIds)}.");
         } finally {
-            if (changesetId.HasValue) {
-                await api.CloseChangesetAsync(apiBaseUrl, credential, changesetId.Value, CancellationToken.None);
+            foreach (var changesetId in changesetIds) {
+                await api.CloseChangesetAsync(apiBaseUrl, credential, changesetId, CancellationToken.None);
             }
         }
 

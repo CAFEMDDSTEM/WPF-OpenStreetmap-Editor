@@ -26,6 +26,7 @@ public sealed class MapDataLayer {
     public bool IsVisible { get; set; } = true;
     public double Opacity { get; set; } = 1.0;
     public bool IsDirty { get; set; }
+    public GeoBounds? DownloadBounds { get; set; }
 
     public GeoBounds Bounds => _cachedBounds ??= GeoBounds.FromPoints(Features.SelectMany(static feature => feature.Points));
     public IReadOnlyDictionary<string, MapFeature> OriginalFeatures => _originalFeatures;
@@ -52,7 +53,8 @@ public sealed class MapDataLayer {
             Osm = clonedOsm,
             IsVisible = IsVisible,
             Opacity = Opacity,
-            IsDirty = IsDirty
+            IsDirty = IsDirty,
+            DownloadBounds = DownloadBounds
         };
         clone.Features.AddRange(Features.Select(static feature => feature.Clone()));
         clone._originalFeatures = _originalFeatures.ToDictionary(

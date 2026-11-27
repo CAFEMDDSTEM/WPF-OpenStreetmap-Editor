@@ -80,6 +80,7 @@ public sealed class AppSettings {
     public double GpsHeatmapOverlayAdjustment { get; set; }
     public bool GpsHeatmapUseTargetColor { get; set; }
     public bool ShowThirdPartyIcons { get; set; } = true;
+    public bool ShowDownloadedArea { get; set; } = true;
     public bool AutosaveEnabled { get; set; } = true;
     public int AutosaveIntervalSeconds { get; set; } = DefaultAutosaveIntervalSeconds;
     public int AutosaveFilesPerLayer { get; set; } = DefaultAutosaveFilesPerLayer;
@@ -136,6 +137,7 @@ public sealed class AppSettings {
             GpsHeatmapOverlayAdjustment = GpsHeatmapOverlayAdjustment,
             GpsHeatmapUseTargetColor = GpsHeatmapUseTargetColor,
             ShowThirdPartyIcons = ShowThirdPartyIcons,
+            ShowDownloadedArea = ShowDownloadedArea,
             AutosaveEnabled = AutosaveEnabled,
             AutosaveIntervalSeconds = AutosaveIntervalSeconds,
             AutosaveFilesPerLayer = AutosaveFilesPerLayer,

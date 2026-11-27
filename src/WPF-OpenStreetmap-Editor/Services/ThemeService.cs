@@ -134,6 +134,7 @@ public static class ThemeService {
         resources["Theme.MutedTextBrush"] = SystemColors.GrayTextBrush;
         resources["Theme.BorderBrush"] = SystemColors.ActiveBorderBrush;
         resources["Theme.AccentBrush"] = SystemColors.HighlightBrush;
+        resources["Theme.DownloadedAreaBrush"] = SystemColors.HighlightBrush;
         resources["Theme.AccentTextBrush"] = SystemColors.HighlightTextBrush;
         resources["Theme.SelectionBrush"] = SystemColors.HighlightBrush;
         resources["Theme.SelectionTextBrush"] = SystemColors.HighlightTextBrush;

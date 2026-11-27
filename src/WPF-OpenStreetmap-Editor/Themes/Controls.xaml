@@ -8,6 +8,7 @@
     <SolidColorBrush x:Key="Theme.MutedTextBrush" Color="#5B6470" />
     <SolidColorBrush x:Key="Theme.BorderBrush" Color="#B8C0CA" />
     <SolidColorBrush x:Key="Theme.AccentBrush" Color="#0067C0" />
+    <SolidColorBrush x:Key="Theme.DownloadedAreaBrush" Color="#F08A24" />
     <SolidColorBrush x:Key="Theme.AccentTextBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="Theme.SelectionBrush" Color="#CCE8FF" />
     <SolidColorBrush x:Key="Theme.SelectionTextBrush" Color="#171A1F" />

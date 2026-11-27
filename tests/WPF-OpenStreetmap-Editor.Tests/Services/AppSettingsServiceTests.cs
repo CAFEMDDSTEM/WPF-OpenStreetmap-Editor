@@ -14,6 +14,15 @@ public class AppSettingsServiceTests {
     }
 
     [Fact]
+    public void Clone_PreservesDownloadedAreaDisplaySetting() {
+        var settings = new AppSettings { ShowDownloadedArea = false };
+
+        var clone = settings.Clone();
+
+        Assert.False(clone.ShowDownloadedArea);
+    }
+
+    [Fact]
     public void Clone_PreservesTileCacheSettings() {
         var settings = new AppSettings {
             TilePerformanceMode = TilePerformanceMode.MemorySaver,

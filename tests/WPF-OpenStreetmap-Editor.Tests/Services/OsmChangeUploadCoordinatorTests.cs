@@ -56,8 +56,13 @@ public class OsmChangeUploadCoordinatorTests {
         var handler = new CapturingHttpHandler(async request => {
             requestCount++;
             if (requestCount == 2) {
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError) {
-                    Content = new StringContent("temporary server failure")
+                return new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge) {
+                    Content = new StringContent("Size limit exceeded")
+                };
+            }
+            if (requestCount == 3) {
+                return new HttpResponseMessage(HttpStatusCode.UnsupportedMediaType) {
+                    Content = new StringContent("Gzip is not supported")
                 };
             }
 
@@ -70,7 +75,7 @@ public class OsmChangeUploadCoordinatorTests {
         });
         var api = new OsmApiClient(new HttpClient(handler));
 
-        await Assert.ThrowsAsync<OsmApiException>(() => OsmChangeUploadCoordinator.UploadAsync(
+        var exception = await Assert.ThrowsAsync<OsmApiException>(() => OsmChangeUploadCoordinator.UploadAsync(
             api,
             "http://127.0.0.1/",
             new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", "token"),
@@ -80,6 +85,15 @@ public class OsmChangeUploadCoordinatorTests {
             OsmUploadStrategy.IndividualObjects,
             OsmChangeUploadCoordinator.DefaultChunkSize));
 
+        Assert.Equal(3, requestCount);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, exception.ResponseStatusCode);
+        Assert.Equal("2/3", exception.UploadBatchLabel);
+        Assert.Equal("create", exception.UploadBatchOperation);
+        Assert.Equal("Size limit exceeded", exception.ResponseBody);
+        Assert.Equal(1, exception.UploadBatchObjectCount);
+        Assert.True(exception.UploadBatchXmlBytes > 0);
+        Assert.Equal("1/3", exception.UploadSuccessfulBatches);
+        Assert.Contains("node", exception.UploadBatchObjects);
         Assert.Contains(100, document.Osm!.Nodes.Keys);
         Assert.True(document.IsDirty);
         var retry = OsmChangeSerializer.Build(document, 11);
@@ -134,6 +148,104 @@ public class OsmChangeUploadCoordinatorTests {
         Assert.Equal(7, requestCount);
         Assert.Equal([1, 1, 1], successfulBatchSizes);
         Assert.False(document.IsDirty);
+    }
+
+    [Fact]
+    public async Task UploadAsync_WhenChangesetBoundingBoxLimitIsReached_RetriesInFreshChangeset() {
+        var document = new MapDocument();
+        document.Features.Add(new MapFeature {
+            Id = "new-node",
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(1, 1)]],
+            Attributes = new Dictionary<string, string> { ["amenity"] = "bench" }
+        });
+        var build = OsmChangeSerializer.Build(document, 10);
+        var uploadPaths = new List<string>();
+        var retriedChangeset = 0L;
+        var handler = new CapturingHttpHandler(async request => {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/changeset/create", StringComparison.Ordinal)) {
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("11") };
+            }
+
+            uploadPaths.Add(request.RequestUri.AbsolutePath);
+            if (request.RequestUri.AbsolutePath.EndsWith("/changeset/10/upload", StringComparison.Ordinal)) {
+                return new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge) {
+                    Content = new StringContent("Changeset bounding box size limit exceeded.")
+                };
+            }
+
+            var change = XDocument.Parse(await request.Content!.ReadAsStringAsync());
+            var node = Assert.Single(change.Root!.Element("create")!.Elements("node"));
+            retriedChangeset = long.Parse(node.Attribute("changeset")!.Value);
+            var oldId = node.Attribute("id")!.Value;
+            return new HttpResponseMessage(HttpStatusCode.OK) {
+                Content = new StringContent($"<diffResult><node old_id='{oldId}' new_id='100' new_version='1' /></diffResult>")
+            };
+        });
+        var api = new OsmApiClient(new HttpClient(handler));
+
+        var response = await OsmChangeUploadCoordinator.UploadAsync(
+            api,
+            "http://127.0.0.1/",
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", "token"),
+            10,
+            document,
+            build,
+            OsmUploadStrategy.IndividualObjects,
+            OsmChangeUploadCoordinator.DefaultChunkSize,
+            createChangesetAfterBoundingBoxLimit: token =>
+                api.CreateChangesetAsync("http://127.0.0.1/", new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", "token"), "continued", token));
+        OsmChangeSerializer.ApplyDiffResult(document, build, response);
+
+        Assert.Equal(3, uploadPaths.Count);
+        Assert.Equal("/api/0.6/changeset/10/upload", uploadPaths[0]);
+        Assert.Equal("/api/0.6/changeset/10/upload", uploadPaths[1]);
+        Assert.Equal("/api/0.6/changeset/11/upload", uploadPaths[2]);
+        Assert.Equal(11, retriedChangeset);
+        Assert.Equal(100, document.Features.Single().Osm!.Id);
+        Assert.False(document.IsDirty);
+    }
+
+    [Fact]
+    public async Task UploadAsync_WhenFreshChangesetAlsoRejectsSingleObject_DoesNotRotateAgain() {
+        var document = new MapDocument();
+        document.Features.Add(new MapFeature {
+            Id = "new-node",
+            GeometryType = MapGeometryType.Point,
+            Parts = [[new GeoPoint(1, 1)]],
+            Attributes = new Dictionary<string, string> { ["amenity"] = "bench" }
+        });
+        document.IsDirty = true;
+        var build = OsmChangeSerializer.Build(document, 10);
+        var changesetCreationCount = 0;
+        var uploadRequestCount = 0;
+        var handler = new CapturingHttpHandler(_ => {
+            uploadRequestCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.RequestEntityTooLarge) {
+                Content = new StringContent("Changeset bounding box size limit exceeded.")
+            });
+        });
+        var api = new OsmApiClient(new HttpClient(handler));
+
+        var exception = await Assert.ThrowsAsync<OsmApiException>(() => OsmChangeUploadCoordinator.UploadAsync(
+            api,
+            "http://127.0.0.1/",
+            new OsmAccountCredential(OsmAuthenticationMethod.OAuth2, "", "token"),
+            10,
+            document,
+            build,
+            OsmUploadStrategy.IndividualObjects,
+            OsmChangeUploadCoordinator.DefaultChunkSize,
+            createChangesetAfterBoundingBoxLimit: _ => {
+                changesetCreationCount++;
+                return Task.FromResult(11L);
+            }));
+
+        Assert.Equal(1, changesetCreationCount);
+        Assert.Equal(4, uploadRequestCount);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, exception.ResponseStatusCode);
+        Assert.Equal("1/1", exception.UploadBatchLabel);
+        Assert.True(document.IsDirty);
     }
 
     [Fact]

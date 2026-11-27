@@ -45,6 +45,7 @@
     <sys:String x:Key="Main.Menu.ShowAll">显示全部对象</sys:String>
     <sys:String x:Key="Main.Menu.View">视图</sys:String>
     <sys:String x:Key="Main.Menu.FitData">缩放至地图数据</sys:String>
+    <sys:String x:Key="Main.Menu.DownloadedArea">显示已下载数据的边界</sys:String>
     <sys:String x:Key="Main.Menu.TogglePanels">切换工作区面板</sys:String>
     <sys:String x:Key="Main.Menu.Selection">选择</sys:String>
     <sys:String x:Key="Main.Menu.Show">显示</sys:String>
@@ -198,9 +199,13 @@
     <sys:String x:Key="Main.OsmUpload.CreatingChangeset">正在创建 OSM 变更集...</sys:String>
     <sys:String x:Key="Main.OsmUpload.UploadingChanges">正在上传 {0:N0} 个变更...</sys:String>
     <sys:String x:Key="Main.OsmUpload.Completed">已上传到 OSM 变更集 {0}。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.CompletedMultiple">已上传到多个 OSM 变更集：{0}。</sys:String>
     <sys:String x:Key="Main.OsmUpload.CompletedTitle">上传完成</sys:String>
     <sys:String x:Key="Main.OsmUpload.Failed">上传到 OSM 失败。</sys:String>
     <sys:String x:Key="Main.OsmUpload.FailedWithStatus">上传到 OSM 失败（HTTP {0}）。</sys:String>
+    <sys:String x:Key="Main.OsmUpload.BatchFailureDetails">失败批次：{0}；操作：{1}；对象：{2}；数量：{3}；请求 XML：{4} 字节；此前成功：{5}</sys:String>
+    <sys:String x:Key="Main.OsmUpload.NoSuccessfulBatches">无</sys:String>
+    <sys:String x:Key="Main.OsmUpload.ServerResponse">服务器返回：{0}</sys:String>
     <sys:String x:Key="Main.OsmUpload.AuthenticationFailed">OSM 拒绝了账号凭据。请检查已保存的凭据或重新连接账号，然后重试。</sys:String>
     <sys:String x:Key="Main.OsmUpload.WritePermissionRequired">此账号没有写入 OSM 的权限。请重新连接账号并授予 write_api 权限后重试。</sys:String>
     <sys:String x:Key="Main.ZoomLimit">地图 0-{0} / 影像 0-{1}</sys:String>
