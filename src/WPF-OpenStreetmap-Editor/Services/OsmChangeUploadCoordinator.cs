@@ -12,6 +12,13 @@ public enum OsmUploadStrategy {
     IndividualObjects
 }
 
+public sealed record OsmUploadProgress(
+    string BatchLabel,
+    string Operation,
+    int BatchObjectCount,
+    int CompletedObjectCount,
+    int TotalObjectCount);
+
 public static class OsmChangeUploadCoordinator {
     public const int DefaultChunkSize = 1000;
 
@@ -25,7 +32,8 @@ public static class OsmChangeUploadCoordinator {
         OsmUploadStrategy strategy,
         int chunkSize,
         CancellationToken ct = default,
-        Func<CancellationToken, Task<long>>? createChangesetAfterBoundingBoxLimit = null) {
+        Func<CancellationToken, Task<long>>? createChangesetAfterBoundingBoxLimit = null,
+        Action<OsmUploadProgress>? progress = null) {
         ArgumentNullException.ThrowIfNull(api);
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(build);
@@ -38,6 +46,7 @@ public static class OsmChangeUploadCoordinator {
 
         var buildRoot = XDocument.Parse(build.Xml).Root ?? throw new InvalidDataException("OSM change document has no root element.");
         var totalObjects = CountPrimitives(buildRoot);
+        var progressReporter = new UploadProgressReporter(totalObjects, progress);
         var uploadState = new UploadState(changesetId, createChangesetAfterBoundingBoxLimit);
         Logger.Info($"OSM upload started: strategy={strategy}; objects={totalObjects}; chunkSize={chunkSize}.");
         if (strategy == OsmUploadStrategy.SingleRequest) {
@@ -46,6 +55,7 @@ public static class OsmChangeUploadCoordinator {
             try {
                 var response = await api.UploadChangesAsync(apiBaseUrl, credential, changesetId, build.Xml, ct);
                 ValidateResponseCoversBatch(buildRoot, OsmChangeSerializer.ParseDiffMappings(response));
+                progressReporter.Report("1/1", "single request", totalObjects);
                 Logger.Info($"OSM upload single request succeeded: status=200; objects={totalObjects}; xmlBytes={xmlBytes}; responseBody={FormatLogBody(response)}");
                 return response;
             } catch (OsmApiException ex) {
@@ -58,6 +68,7 @@ public static class OsmChangeUploadCoordinator {
                     try {
                         var response = await api.UploadChangesAsync(apiBaseUrl, credential, nextChangesetId, retryXml, ct);
                         ValidateResponseCoversBatch(XDocument.Parse(retryXml).Root!, OsmChangeSerializer.ParseDiffMappings(response));
+                        progressReporter.Report("1/1", "single request", totalObjects);
                         Logger.Info($"OSM upload single request succeeded after changeset rotation: changeset={nextChangesetId}; objectCount={totalObjects}; responseBody={FormatLogBody(response)}");
                         return response;
                     } catch (OsmApiException retryException) {
@@ -101,6 +112,7 @@ public static class OsmChangeUploadCoordinator {
                 mappings,
                 diffResults,
                 successfulBatches,
+                progressReporter,
                 ct);
         }
 
@@ -119,6 +131,7 @@ public static class OsmChangeUploadCoordinator {
         Dictionary<(string Type, long OldId), (long Id, int Version)> mappings,
         List<XElement> diffResults,
         List<string> successfulBatches,
+        UploadProgressReporter progressReporter,
         CancellationToken ct,
         bool allowChangesetRotation = true) {
         var batchXml = batch.ToString();
@@ -136,6 +149,7 @@ public static class OsmChangeUploadCoordinator {
             diffResults.AddRange(XDocument.Parse(responseBody).Root?.Elements().Select(static element => new XElement(element)) ?? []);
             OsmChangeSerializer.ApplyPartialDiffResult(document, build, batchXml, mappings);
             successfulBatches.Add(batchLabel);
+            progressReporter.Report(batchLabel, operation, objectCount);
             Logger.Info($"OSM upload batch succeeded: batch={batchLabel}; status=200; operation={operation}; objectCount={objectCount}; objects={objectIds}; xmlBytes={byteCount}; responseBody={FormatLogBody(responseBody)}");
             return responseBody;
         } catch (OsmApiException ex) {
@@ -147,7 +161,7 @@ public static class OsmChangeUploadCoordinator {
                 var nextChangesetId = await uploadState.CreateNextChangesetAsync(ct);
                 Logger.Info($"OSM changeset bbox limit reached: batch={batchLabel}; oldChangeset={previousChangesetId}; retryChangeset={nextChangesetId}; objectCount={objectCount}.");
                 var retryBatch = ChangeChangesetId(batch, nextChangesetId);
-                return await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, retryBatch, batchLabel, mappings, diffResults, successfulBatches, ct, allowChangesetRotation: false);
+                return await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, retryBatch, batchLabel, mappings, diffResults, successfulBatches, progressReporter, ct, allowChangesetRotation: false);
             }
             if (ex.ResponseStatusCode != System.Net.HttpStatusCode.RequestEntityTooLarge || objectCount <= 1) throw;
 
@@ -158,9 +172,9 @@ public static class OsmChangeUploadCoordinator {
             var middle = operations.Count / 2;
             var left = CreateBatchLike(batch, operations.Take(middle));
             var right = CreateBatchLike(batch, operations.Skip(middle));
-            await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, left, $"{batchLabel}.1", mappings, diffResults, successfulBatches, ct);
+            await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, left, $"{batchLabel}.1", mappings, diffResults, successfulBatches, progressReporter, ct);
             var remappedRight = ChangeChangesetId(RemapReferences(right, mappings), uploadState.CurrentChangesetId);
-            return await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, remappedRight, $"{batchLabel}.2", mappings, diffResults, successfulBatches, ct);
+            return await UploadBatchAsync(api, apiBaseUrl, credential, uploadState, document, build, remappedRight, $"{batchLabel}.2", mappings, diffResults, successfulBatches, progressReporter, ct);
         } catch (Exception ex) {
             Logger.Error($"OSM upload batch failed before a valid diffResult was applied: batch={batchLabel}; operation={operation}; objectCount={objectCount}; objects={objectIds}; xmlBytes={byteCount}; responseBody={FormatLogBody(responseBody)}; error={ex.Message}", ex);
             throw;
@@ -185,6 +199,24 @@ public static class OsmChangeUploadCoordinator {
 
     private static string FormatLogBody(string body) {
         return body.Replace('\r', ' ').Replace('\n', ' ');
+    }
+
+    private sealed class UploadProgressReporter(int totalObjectCount, Action<OsmUploadProgress>? progress) {
+        private int _completedObjectCount;
+
+        public void Report(string batchLabel, string operation, int objectCount) {
+            _completedObjectCount += objectCount;
+            try {
+                progress?.Invoke(new OsmUploadProgress(
+                    batchLabel,
+                    operation,
+                    objectCount,
+                    _completedObjectCount,
+                    totalObjectCount));
+            } catch (Exception ex) {
+                Logger.Error("OSM upload progress callback failed", ex);
+            }
+        }
     }
 
     private sealed class UploadState(

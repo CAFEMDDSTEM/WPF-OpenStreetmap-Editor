@@ -11,7 +11,19 @@ public static class TagPresetCatalog {
         ("gravel", "Gravel"), ("dirt", "Dirt"), ("ground", "Ground"));
     private static readonly IReadOnlyList<TagPreset> Presets = Array.AsReadOnly(new[] {
         Preset("road.residential", "Residential Road", TagPresetCategory.Road, TagPresetGeometry.Line,
-            Tags(("highway", "residential")), [Name(), Field("maxspeed", "Speed limit", TagPresetFieldKind.Number), Choice("surface", "Surface", SurfaceChoices)],
+            Tags(("highway", "residential")), [
+                Name(),
+                Field("maxspeed", "Speed limit", TagPresetFieldKind.Number),
+                Field("lanes", "Lanes", TagPresetFieldKind.Number),
+                Field("ref", "Reference", TagPresetFieldKind.Text),
+                Checkbox("bridge", "Bridge"),
+                Checkbox("tunnel", "Tunnel"),
+                Checkbox("ford", "Ford"),
+                Checkbox("embankment", "Embankment"),
+                Checkbox("cutting", "Cutting"),
+                Choice("layer", "Layer", Choices(("5", "5"), ("4", "4"), ("3", "3"), ("2", "2"), ("1", "1"), ("-1", "-1"), ("-2", "-2"), ("-3", "-3"), ("-4", "-4"), ("-5", "-5"))),
+                Choice("surface", "Surface", SurfaceChoices)
+            ],
             "street", "highway"),
         Preset("road.service", "Service Road", TagPresetCategory.Road, TagPresetGeometry.Line,
             Tags(("highway", "service")), [Name(), Choice("access", "Access", AccessChoices), Choice("surface", "Surface", SurfaceChoices)],
@@ -74,11 +86,19 @@ public static class TagPresetCatalog {
     public static IReadOnlyList<TagPreset> All => Presets;
 
     public static IReadOnlyList<TagPreset> Search(string? query, MapGeometryType? geometry = null) {
+        return Search(Presets, query, geometry);
+    }
+
+    public static IReadOnlyList<TagPreset> Search(
+        IEnumerable<TagPreset> source,
+        string? query,
+        MapGeometryType? geometry = null) {
+        ArgumentNullException.ThrowIfNull(source);
         var terms = string.IsNullOrWhiteSpace(query)
             ? []
             : query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        return Presets
+        return source
             .Where(preset => geometry is null || SupportsGeometry(preset, geometry.Value))
             .Where(preset => terms.All(term => Matches(preset, term)))
             .OrderBy(static preset => preset.Category)

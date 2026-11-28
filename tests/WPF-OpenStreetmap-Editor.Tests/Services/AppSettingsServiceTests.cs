@@ -42,7 +42,8 @@ public class AppSettingsServiceTests {
             AutosaveIntervalSeconds = 42,
             AutosaveFilesPerLayer = 3,
             KeepBackupFileOnSave = true,
-            NotifyOnEverySave = true
+            NotifyOnEverySave = true,
+            DebugMode = true
         };
 
         var clone = settings.Clone();
@@ -52,6 +53,7 @@ public class AppSettingsServiceTests {
         Assert.Equal(3, clone.AutosaveFilesPerLayer);
         Assert.True(clone.KeepBackupFileOnSave);
         Assert.True(clone.NotifyOnEverySave);
+        Assert.True(clone.DebugMode);
     }
 
     [Fact]

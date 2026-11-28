@@ -41,6 +41,27 @@ public class TagPresetCatalogTests {
         Assert.Equal(TagPresetFieldKind.Choice, surface.Kind);
         Assert.NotEmpty(surface.Choices!);
         Assert.Equal("residential", road.Tags["highway"]);
+        Assert.Contains(road.Fields, field => field.Key == "lanes");
+        Assert.Contains(road.Fields, field => field.Key == "ref");
+        Assert.Contains(road.Fields, field => field.Key == "bridge" && field.Kind == TagPresetFieldKind.Checkbox);
+    }
+
+    [Fact]
+    public void Search_CanSearchPresetsFromAnotherSource() {
+        var xmlPreset = new TagPreset(
+            "xml:Roads/Primary",
+            "Primary Road",
+            TagPresetCategory.Road,
+            TagPresetGeometry.Line,
+            new Dictionary<string, string>(StringComparer.Ordinal) {
+                ["highway"] = "primary"
+            },
+            [new TagPresetField("lanes", "Lanes", TagPresetFieldKind.Number)],
+            ["arterial"]);
+
+        var result = TagPresetCatalog.Search([xmlPreset], "arterial", MapGeometryType.LineString);
+
+        Assert.Same(xmlPreset, Assert.Single(result));
     }
 
     [Theory]

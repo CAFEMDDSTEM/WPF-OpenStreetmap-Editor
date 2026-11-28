@@ -730,28 +730,13 @@
             </Grid>
         </Border>
 
-        <Border x:Name="UploadNotificationBorder"
-                Grid.Row="2"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                MaxWidth="620"
-                MaxHeight="280"
-                Margin="12"
-                Padding="12,8"
-                Background="{DynamicResource Theme.SurfaceBrush}"
-                BorderBrush="{DynamicResource Theme.AccentBrush}"
-                     BorderThickness="1"
-                     CornerRadius="3"
-                     Visibility="Collapsed"
-                     IsHitTestVisible="True"
-                     AutomationProperties.LiveSetting="Polite">
-                <ScrollViewer MaxHeight="260"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <TextBlock x:Name="UploadNotificationTextBlock"
-                               Foreground="{DynamicResource Theme.TextBrush}"
-                               TextWrapping="Wrap" />
-                </ScrollViewer>
-        </Border>
+        <StackPanel x:Name="UploadNotificationStackPanel"
+                    Grid.Row="2"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    MaxWidth="620"
+                    MaxHeight="640"
+                    Margin="12"
+                    AutomationProperties.LiveSetting="Polite" />
     </Grid>
 </Window>

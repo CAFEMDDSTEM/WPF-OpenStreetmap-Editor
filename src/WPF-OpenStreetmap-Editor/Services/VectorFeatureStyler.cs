@@ -8,6 +8,16 @@ internal enum VectorFeatureRenderMode {
     Point
 }
 
+[Flags]
+internal enum VectorFeatureModifier {
+    None = 0,
+    Bridge = 1,
+    Tunnel = 2,
+    Ford = 4,
+    Embankment = 8,
+    Cutting = 16
+}
+
 internal enum VectorPointSymbolKind {
     Circle,
     Place,
@@ -85,7 +95,8 @@ internal enum VectorFeatureStyleKind {
 internal readonly record struct VectorFeatureStyle(
     VectorFeatureStyleKind Kind,
     VectorFeatureRenderMode RenderMode,
-    VectorPointSymbolKind SymbolKind = VectorPointSymbolKind.Circle) {
+    VectorPointSymbolKind SymbolKind = VectorPointSymbolKind.Circle,
+    VectorFeatureModifier Modifiers = VectorFeatureModifier.None) {
     public int LayerOrder => Kind switch {
         VectorFeatureStyleKind.GenericArea => 10,
         VectorFeatureStyleKind.Farmland => 20,
@@ -148,24 +159,52 @@ internal static class VectorFeatureStyler {
                 return new VectorFeatureStyle(VectorFeatureStyleKind.BuiltArea, VectorFeatureRenderMode.Area);
             }
 
-            return new VectorFeatureStyle(GetHighwayKind(highway), VectorFeatureRenderMode.Line);
+            return GetLineStyle(feature, GetHighwayKind(highway));
         }
 
         if (TryGetAttribute(feature, "waterway", out _)) {
-            return new VectorFeatureStyle(VectorFeatureStyleKind.Waterway, VectorFeatureRenderMode.Line);
+            return GetLineStyle(feature, VectorFeatureStyleKind.Waterway);
         }
 
         if (TryGetAttribute(feature, "railway", out var railway) && IsActiveRailway(railway)) {
-            return new VectorFeatureStyle(VectorFeatureStyleKind.Rail, VectorFeatureRenderMode.Line);
+            return GetLineStyle(feature, VectorFeatureStyleKind.Rail);
         }
 
         if (TryGetAttribute(feature, "boundary", out _)) {
-            return new VectorFeatureStyle(VectorFeatureStyleKind.Boundary, VectorFeatureRenderMode.Line);
+            return GetLineStyle(feature, VectorFeatureStyleKind.Boundary);
         }
 
         return feature.GeometryType == MapGeometryType.Polygon
             ? new VectorFeatureStyle(VectorFeatureStyleKind.GenericArea, VectorFeatureRenderMode.Area)
-            : new VectorFeatureStyle(VectorFeatureStyleKind.GenericLine, VectorFeatureRenderMode.Line);
+            : GetLineStyle(feature, VectorFeatureStyleKind.GenericLine);
+    }
+
+    private static VectorFeatureStyle GetLineStyle(MapFeature feature, VectorFeatureStyleKind kind) {
+        return new VectorFeatureStyle(
+            kind,
+            VectorFeatureRenderMode.Line,
+            Modifiers: GetLineModifiers(feature));
+    }
+
+    private static VectorFeatureModifier GetLineModifiers(MapFeature feature) {
+        var modifiers = VectorFeatureModifier.None;
+        if (HasEnabledAttribute(feature, "bridge")) modifiers |= VectorFeatureModifier.Bridge;
+        if (HasEnabledAttribute(feature, "tunnel")) modifiers |= VectorFeatureModifier.Tunnel;
+        if (HasEnabledAttribute(feature, "ford")) modifiers |= VectorFeatureModifier.Ford;
+        if (HasEnabledAttribute(feature, "embankment") || HasAttributeValue(feature, "man_made", "embankment")) {
+            modifiers |= VectorFeatureModifier.Embankment;
+        }
+        if (HasEnabledAttribute(feature, "cutting") || HasAttributeValue(feature, "man_made", "cutting")) {
+            modifiers |= VectorFeatureModifier.Cutting;
+        }
+
+        return modifiers;
+    }
+
+    private static bool HasEnabledAttribute(MapFeature feature, string key) {
+        return TryGetAttribute(feature, key, out var value) &&
+            !string.IsNullOrWhiteSpace(value) &&
+            Normalize(value) is not ("no" or "false" or "0");
     }
 
     private static VectorFeatureStyle GetPointStyle(MapFeature feature) {

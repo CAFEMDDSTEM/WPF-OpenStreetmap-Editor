@@ -356,6 +356,7 @@ public partial class SettingsWindow : Window {
         AutosaveFilesPerLayerTextBox.Text = _workingSettings.AutosaveFilesPerLayer.ToString(CultureInfo.InvariantCulture);
         KeepBackupFileOnSaveCheckBox.IsChecked = _workingSettings.KeepBackupFileOnSave;
         NotifyOnEverySaveCheckBox.IsChecked = _workingSettings.NotifyOnEverySave;
+        DebugModeCheckBox.IsChecked = _workingSettings.DebugMode;
     }
 
     private bool SaveBackupFields() {
@@ -396,6 +397,7 @@ public partial class SettingsWindow : Window {
         _workingSettings.AutosaveFilesPerLayer = filesPerLayer;
         _workingSettings.KeepBackupFileOnSave = KeepBackupFileOnSaveCheckBox.IsChecked == true;
         _workingSettings.NotifyOnEverySave = NotifyOnEverySaveCheckBox.IsChecked == true;
+        _workingSettings.DebugMode = DebugModeCheckBox.IsChecked == true;
         return true;
     }
 

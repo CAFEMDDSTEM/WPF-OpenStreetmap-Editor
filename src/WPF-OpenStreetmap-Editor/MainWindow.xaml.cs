@@ -94,7 +94,8 @@ public partial class MainWindow : Window {
     private CancellationTokenSource? _tileSourceCts;
     private CancellationTokenSource? _autosaveCts;
     private readonly DispatcherTimer _autosaveTimer = new();
-    private readonly DispatcherTimer _uploadNotificationTimer = new() { Interval = TimeSpan.FromSeconds(6) };
+    private readonly List<UploadNotificationToast> _uploadNotifications = [];
+    private const int MaxUploadNotifications = 4;
     private MapLayer? _activeLayer;
     private MapLayer? _fallbackLayer;
     private MapLayer? _stagingLayer;
@@ -146,10 +147,6 @@ public partial class MainWindow : Window {
         _startupPluginActions = startupPluginActions ?? [];
         _startupUpdateCheck = startupUpdateCheck;
         InitializeComponent();
-        _uploadNotificationTimer.Tick += (_, _) => {
-            _uploadNotificationTimer.Stop();
-            UploadNotificationBorder.Visibility = Visibility.Collapsed;
-        };
         DataContext = _viewModel;
         ThemeService.ApplyWindowTheme(this);
         AppSettingsService.EnsureDefaults(_settings);
@@ -179,7 +176,8 @@ public partial class MainWindow : Window {
             _nonTextInputImeGuard?.Dispose();
             _nonTextInputImeGuard = null;
             _autosaveTimer.Stop();
-            _uploadNotificationTimer.Stop();
+            foreach (var notification in _uploadNotifications) notification.Timer.Stop();
+            _uploadNotifications.Clear();
             _autosaveCts?.Cancel();
             _tileSourceCts?.Cancel();
             _aiTagCts?.Cancel();
@@ -2390,14 +2388,6 @@ public partial class MainWindow : Window {
     }
 
     private void ApplyPresetToSelection(TagPreset preset) {
-        if (preset.Tags.Count == 0) {
-            MessageBox.Show(
-                L.GetString("Main.Presets.NoFixedTags"),
-                L.GetString("Main.Presets.MismatchTitle"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
         if (Selection.Count == 0) {
             MessageBox.Show(
                 L.GetString("Main.Presets.SelectFeatureFirst"),
@@ -2414,7 +2404,12 @@ public partial class MainWindow : Window {
             ShowPresetGeometryMismatch(preset);
             return;
         }
-        if (!Editor.Execute(new SetFeaturesAttributesCommand(targets, preset.Tags))) return;
+
+        var dialog = new Views.PresetApplyWindow(preset, targets) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+
+        var patch = TagPresetApplicationService.BuildTagPatch(preset, dialog.FieldValues);
+        if (!Editor.Execute(new PatchFeaturesAttributesCommand(targets, patch))) return;
 
         RefreshFeatureList();
         UpdateVectorLayer();
@@ -4237,7 +4232,7 @@ public partial class MainWindow : Window {
         var geometry = Selection.Features.Select(static feature => feature.GeometryType).Distinct().ToList();
         var geometryFilter = geometry.Count == 1 ? geometry[0] : (MapGeometryType?)null;
         var selectedId = (PresetComboBox.SelectedItem as TagPreset)?.Id;
-        var presets = TagPresetCatalog.Search(PresetSearchTextBox.Text, geometryFilter);
+        var presets = TagPresetCatalog.Search(_presets.Presets, PresetSearchTextBox.Text, geometryFilter);
         PresetComboBox.ItemsSource = presets;
         PresetComboBox.SelectedItem = presets.FirstOrDefault(preset => preset.Id == selectedId) ?? presets.FirstOrDefault();
     }
@@ -4468,6 +4463,9 @@ public partial class MainWindow : Window {
         try {
             IsEnabled = false;
             _viewModel.DocumentStatus = L.GetString("Main.OsmUpload.CreatingChangeset");
+            if (_settings.DebugMode) {
+                ShowUploadNotification(L.GetString("Main.OsmUpload.DebugStarting"), isError: false, TimeSpan.FromSeconds(8));
+            }
             var changesetId = await api.CreateChangesetAsync(
                 account.ApiBaseUrl,
                 credential,
@@ -4499,7 +4497,19 @@ public partial class MainWindow : Window {
                         token);
                     changesetIds.Add(nextChangesetId);
                     return nextChangesetId;
-                });
+                },
+                _settings.DebugMode
+                    ? update => ShowUploadNotification(
+                        L.Format(
+                            "Main.OsmUpload.Progress",
+                            update.CompletedObjectCount,
+                            update.TotalObjectCount,
+                            update.BatchLabel,
+                            update.Operation,
+                            update.BatchObjectCount),
+                        isError: false,
+                        TimeSpan.FromSeconds(8))
+                    : null);
             OsmChangeSerializer.ApplyDiffResult(_document, changes, response);
             Editor.CommandStack.Clear();
             RefreshFeatureList();
@@ -4555,19 +4565,52 @@ public partial class MainWindow : Window {
         }
     }
 
-    private void ShowUploadNotification(string message, bool isError) {
-        UploadNotificationTextBlock.Text = message;
-        UploadNotificationTextBlock.Foreground = isError
-            ? (Brush)FindResource("Theme.ErrorBrush")
-            : (Brush)FindResource("Theme.TextBrush");
-        UploadNotificationBorder.BorderBrush = isError
-            ? (Brush)FindResource("Theme.ErrorBrush")
-            : (Brush)FindResource("Theme.AccentBrush");
-        UploadNotificationBorder.Visibility = Visibility.Visible;
-        _uploadNotificationTimer.Interval = isError ? TimeSpan.FromSeconds(30) : TimeSpan.FromSeconds(6);
-        _uploadNotificationTimer.Stop();
-        _uploadNotificationTimer.Start();
+    private void ShowUploadNotification(string message, bool isError, TimeSpan? duration = null) {
+        if (_uploadNotifications.Count >= MaxUploadNotifications) {
+            RemoveUploadNotification(_uploadNotifications[0]);
+        }
+
+        var foreground = (Brush)FindResource(isError ? "Theme.ErrorBrush" : "Theme.TextBrush");
+        var borderBrush = (Brush)FindResource(isError ? "Theme.ErrorBrush" : "Theme.AccentBrush");
+        var text = new TextBlock {
+            Text = message,
+            Foreground = foreground,
+            TextWrapping = TextWrapping.Wrap
+        };
+        var border = new Border {
+            MaxWidth = 620,
+            MaxHeight = 160,
+            Margin = new Thickness(0, 0, 0, 8),
+            Padding = new Thickness(12, 8, 12, 8),
+            Background = (Brush)FindResource("Theme.SurfaceBrush"),
+            BorderBrush = borderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Child = new ScrollViewer {
+                MaxHeight = 140,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Content = text
+            }
+        };
+        AutomationProperties.SetLiveSetting(border, AutomationLiveSetting.Polite);
+
+        var toast = new UploadNotificationToast(border, new DispatcherTimer {
+            Interval = duration ?? (isError ? TimeSpan.FromSeconds(30) : TimeSpan.FromSeconds(6))
+        });
+        toast.Timer.Tick += (_, _) => RemoveUploadNotification(toast);
+        _uploadNotifications.Add(toast);
+        UploadNotificationStackPanel.Children.Add(border);
+        toast.Timer.Start();
     }
+
+    private void RemoveUploadNotification(UploadNotificationToast notification) {
+        notification.Timer.Stop();
+        _uploadNotifications.Remove(notification);
+        UploadNotificationStackPanel.Children.Remove(notification.Border);
+    }
+
+    private sealed record UploadNotificationToast(Border Border, DispatcherTimer Timer);
 
     private void RefreshRenderedLayerFromStack(MapImageLayer? selectedLayer = null) {
         AppSettingsService.EnsureSinglePrimaryLayer(_settings);

@@ -181,6 +181,9 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="130" />
@@ -377,10 +380,24 @@
                                Grid.ColumnSpan="2"
                                Margin="0,0,0,12" />
                     <CheckBox x:Name="NotifyOnEverySaveCheckBox"
-                              Grid.Row="22"
+                               Grid.Row="22"
+                               Grid.Column="1"
+                               Content="{services:Loc Settings.NotifyOnEverySave}"
+                               Margin="0,0,0,6" />
+                    <Separator Grid.Row="23"
+                               Grid.ColumnSpan="2"
+                               Margin="0,8,0,12" />
+                    <CheckBox x:Name="DebugModeCheckBox"
+                              Grid.Row="24"
                               Grid.Column="1"
-                              Content="{services:Loc Settings.NotifyOnEverySave}"
+                              Content="{services:Loc Settings.DebugMode}"
                               Margin="0,0,0,6" />
+                    <TextBlock Grid.Row="25"
+                               Grid.Column="1"
+                               Foreground="{DynamicResource Theme.MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="{services:Loc Settings.DebugModeHelp}"
+                               Margin="0,0,0,10" />
                 </Grid>
                 </ScrollViewer>
             </TabItem>

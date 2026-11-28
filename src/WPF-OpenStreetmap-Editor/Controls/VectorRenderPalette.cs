@@ -25,26 +25,32 @@ internal sealed record VectorRenderPalette(
     Pen HoverWidePen,
     Brush VertexHandleFill,
     Pen VertexHandlePen,
-    Pen VertexHandleSelectedPen) {
+    Pen VertexHandleSelectedPen,
+    Brush BridgeBrush,
+    Brush TunnelBrush,
+    Brush FordBrush,
+    Brush TerrainMarkBrush) {
     public static VectorRenderPalette Create(Func<string, object?> findResource) {
         var textBrush = FindBrush(findResource, "Theme.TextBrush", SystemColors.WindowTextBrush);
         var borderBrush = FindBrush(findResource, "Theme.BorderBrush", SystemColors.ActiveBorderBrush);
         var surfaceBrush = FindBrush(findResource, "Theme.SurfaceBrush", SystemColors.WindowBrush);
         var mapBrush = FindBrush(findResource, "Theme.MapBackgroundBrush", SystemColors.ControlBrush);
+        var genericAreaFill = FindBrush(findResource, "Theme.Map.GenericAreaFillBrush", mapBrush);
+        var genericAreaStroke = FindBrush(findResource, "Theme.Map.GenericAreaStrokeBrush", borderBrush);
 
-        var genericArea = CreateAreaStyle(findResource, "GenericArea", mapBrush, borderBrush, 0.8);
+        var genericArea = CreateAreaStyle(findResource, "GenericArea", genericAreaFill, genericAreaStroke, 0.8);
         var genericLine = CreateLineStyle(findResource, "GenericLine", textBrush, textBrush, 1.2, 1.2);
         var genericPoint = CreatePointStyle(findResource, "GenericPoint", surfaceBrush, textBrush, 3.5, 1.0);
         var labelBackground = CloneWithOpacity(surfaceBrush, 0.92);
 
         var areaStyles = new Dictionary<VectorFeatureStyleKind, AreaRenderStyle> {
             [VectorFeatureStyleKind.GenericArea] = genericArea,
-            [VectorFeatureStyleKind.Water] = CreateAreaStyle(findResource, "Water", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8),
-            [VectorFeatureStyleKind.Farmland] = CreateAreaStyle(findResource, "Farmland", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8),
-            [VectorFeatureStyleKind.Forest] = CreateAreaStyle(findResource, "Forest", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8),
-            [VectorFeatureStyleKind.Park] = CreateAreaStyle(findResource, "Park", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8),
-            [VectorFeatureStyleKind.BuiltArea] = CreateAreaStyle(findResource, "BuiltArea", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8),
-            [VectorFeatureStyleKind.Building] = CreateAreaStyle(findResource, "Building", genericArea.Fill, genericArea.Stroke?.Brush ?? borderBrush, genericArea.Stroke?.Thickness ?? 0.8)
+            [VectorFeatureStyleKind.Water] = CreateAreaStyle(findResource, "Water", genericAreaFill, genericAreaStroke, 0.8),
+            [VectorFeatureStyleKind.Farmland] = CreateAreaStyle(findResource, "Farmland", genericAreaFill, genericAreaStroke, 0.8),
+            [VectorFeatureStyleKind.Forest] = CreateAreaStyle(findResource, "Forest", genericAreaFill, genericAreaStroke, 0.8),
+            [VectorFeatureStyleKind.Park] = CreateAreaStyle(findResource, "Park", genericAreaFill, genericAreaStroke, 0.8),
+            [VectorFeatureStyleKind.BuiltArea] = CreateAreaStyle(findResource, "BuiltArea", genericAreaFill, genericAreaStroke, 0.8),
+            [VectorFeatureStyleKind.Building] = CreateAreaStyle(findResource, "Building", genericAreaFill, genericAreaStroke, 0.8)
         };
 
         var lineStyles = new Dictionary<VectorFeatureStyleKind, LineRenderStyle> {
@@ -109,7 +115,11 @@ internal sealed record VectorRenderPalette(
             CreatePen(CloneWithOpacity(selectionStroke, 0.55), 8.0),
             vertexHandleFill,
             CreatePen(textBrush, 1.0),
-            CreatePen(selectionStroke, 1.6));
+            CreatePen(selectionStroke, 1.6),
+            CloneWithOpacity(FindBrush(findResource, "Theme.AccentBrush", SystemColors.HighlightBrush), 0.9),
+            CloneWithOpacity(FindBrush(findResource, "Theme.Map.BuildingStrokeBrush", textBrush), 0.9),
+            CloneWithOpacity(FindBrush(findResource, "Theme.Map.WaterwayStrokeBrush", textBrush), 0.9),
+            CloneWithOpacity(borderBrush, 0.85));
     }
 
     public AreaRenderStyle GetAreaStyle(VectorFeatureStyleKind kind) {
@@ -248,6 +258,6 @@ internal sealed record VectorRenderPalette(
     }
 
     private static double GetAreaFillOpacity(string name) {
-        return IsOutlineArea(name) ? 0.04 : 0.12;
+        return IsOutlineArea(name) ? 0.28 : 0.38;
     }
 }

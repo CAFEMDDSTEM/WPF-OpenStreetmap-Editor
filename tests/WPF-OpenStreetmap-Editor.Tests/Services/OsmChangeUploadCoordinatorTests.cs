@@ -13,6 +13,7 @@ public class OsmChangeUploadCoordinatorTests {
         var build = OsmChangeSerializer.Build(document, 10);
         var nextId = 100L;
         var requests = new List<XElement>();
+        var uploadProgress = new List<OsmUploadProgress>();
         var handler = new CapturingHttpHandler(async request => {
             var change = XDocument.Parse(await request.Content!.ReadAsStringAsync());
             requests.Add(change.Root!);
@@ -37,10 +38,14 @@ public class OsmChangeUploadCoordinatorTests {
             document,
             build,
             OsmUploadStrategy.IndividualObjects,
-            OsmChangeUploadCoordinator.DefaultChunkSize);
+            OsmChangeUploadCoordinator.DefaultChunkSize,
+            progress: uploadProgress.Add);
         OsmChangeSerializer.ApplyDiffResult(document, build, response);
 
         Assert.Equal(3, requests.Count);
+        Assert.Equal(3, uploadProgress.Count);
+        Assert.Equal(3, uploadProgress[^1].CompletedObjectCount);
+        Assert.Equal(3, uploadProgress[^1].TotalObjectCount);
         Assert.Equal(["node", "node", "way"], requests.SelectMany(static root => root.Elements().Single().Elements().Select(static item => item.Name.LocalName)));
         var wayRequest = requests[2].Element("create")!.Element("way")!;
         Assert.All(wayRequest.Elements("nd"), node => Assert.True(long.Parse(node.Attribute("ref")!.Value) > 0));

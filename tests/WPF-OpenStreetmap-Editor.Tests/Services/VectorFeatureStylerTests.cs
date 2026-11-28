@@ -96,6 +96,37 @@ public class VectorFeatureStylerTests {
         Assert.Equal(VectorFeatureStyleKind.ServiceRoad, service.Kind);
     }
 
+    [Theory]
+    [InlineData("bridge", "viaduct", nameof(VectorFeatureModifier.Bridge))]
+    [InlineData("tunnel", "culvert", nameof(VectorFeatureModifier.Tunnel))]
+    [InlineData("ford", "stepping_stones", nameof(VectorFeatureModifier.Ford))]
+    [InlineData("embankment", "yes", nameof(VectorFeatureModifier.Embankment))]
+    [InlineData("man_made", "embankment", nameof(VectorFeatureModifier.Embankment))]
+    [InlineData("cutting", "yes", nameof(VectorFeatureModifier.Cutting))]
+    [InlineData("man_made", "cutting", nameof(VectorFeatureModifier.Cutting))]
+    public void GetStyle_ClassifiesOsmLineModifiers(string key, string value, string expectedModifierName) {
+        var feature = Feature(MapGeometryType.LineString, key, value);
+
+        var style = VectorFeatureStyler.GetStyle(feature);
+
+        Assert.Equal(VectorFeatureRenderMode.Line, style.RenderMode);
+        Assert.Equal(Enum.Parse<VectorFeatureModifier>(expectedModifierName), style.Modifiers);
+    }
+
+    [Theory]
+    [InlineData("bridge")]
+    [InlineData("tunnel")]
+    [InlineData("ford")]
+    [InlineData("embankment")]
+    [InlineData("cutting")]
+    public void GetStyle_IgnoresDisabledLineModifiers(string key) {
+        var feature = Feature(MapGeometryType.LineString, key, "no");
+
+        var style = VectorFeatureStyler.GetStyle(feature);
+
+        Assert.Equal(VectorFeatureModifier.None, style.Modifiers);
+    }
+
     private static MapFeature Feature(MapGeometryType geometryType, string key, string value) {
         return new MapFeature {
             GeometryType = geometryType,

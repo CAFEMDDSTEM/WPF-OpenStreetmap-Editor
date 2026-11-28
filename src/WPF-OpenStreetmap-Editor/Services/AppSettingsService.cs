@@ -86,6 +86,7 @@ public sealed class AppSettings {
     public int AutosaveFilesPerLayer { get; set; } = DefaultAutosaveFilesPerLayer;
     public bool KeepBackupFileOnSave { get; set; }
     public bool NotifyOnEverySave { get; set; }
+    public bool DebugMode { get; set; }
     public WorkbenchLayoutSettings WorkbenchLayout { get; set; } = new();
     public List<TileSourcePreset> TileSources { get; set; } = TileSourcePreset.CreateDefaults();
     public List<MapImageLayer> ImageLayers { get; set; } = [];
@@ -143,6 +144,7 @@ public sealed class AppSettings {
             AutosaveFilesPerLayer = AutosaveFilesPerLayer,
             KeepBackupFileOnSave = KeepBackupFileOnSave,
             NotifyOnEverySave = NotifyOnEverySave,
+            DebugMode = DebugMode,
             WorkbenchLayout = WorkbenchLayout.Clone(),
             TileSources = [.. TileSources.Select(static source => source.Clone())],
             ImageLayers = [.. ImageLayers.Select(static layer => layer.Clone())],
