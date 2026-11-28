@@ -463,6 +463,7 @@
     <sys:String x:Key="Osm.Download.Title">下载 OpenStreetMap 数据</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 标准地图</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM 下载范围地图</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">右键拖动以平移 · 左键拖动以选择下载范围</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">搜索地点或地址以将地图居中</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">搜索</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">清除搜索</sys:String>

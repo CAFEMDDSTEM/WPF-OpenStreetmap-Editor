@@ -507,6 +507,7 @@ Downloadseite öffnen?</sys:String>
     <sys:String x:Key="Osm.Download.Title">OpenStreetMap-Daten herunterladen</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">Karte des OSM-Downloadbereichs</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">Rechts ziehen zum Verschieben · Links ziehen zum Auswählen</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">Ort oder Adresse suchen und Karte zentrieren</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">Suchen</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">Suche löschen</sys:String>

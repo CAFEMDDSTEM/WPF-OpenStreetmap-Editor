@@ -74,6 +74,15 @@ public sealed record SegmentHit(
     Point EndScreenPoint);
 
 public static class VectorMapInteraction {
+    private const int MouseWheelDeltaPerStep = 120;
+
+    public static int ConsumeMouseWheelDelta(ref int remainder, int delta) {
+        var total = (long)remainder + delta;
+        var steps = (int)(total / MouseWheelDeltaPerStep);
+        remainder = (int)(total - (long)steps * MouseWheelDeltaPerStep);
+        return steps;
+    }
+
     public static Point GeoToScreen(
         GeoPoint point,
         double centerLatitude,

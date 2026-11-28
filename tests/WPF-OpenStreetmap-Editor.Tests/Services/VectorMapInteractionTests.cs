@@ -223,6 +223,20 @@ public class VectorMapInteractionTests {
         Assert.True(bounds.MinLatitude < bounds.MaxLatitude);
     }
 
+    [Theory]
+    [InlineData(0, 60, 0, 60)]
+    [InlineData(60, 60, 1, 0)]
+    [InlineData(0, -240, -2, 0)]
+    [InlineData(90, -120, 0, -30)]
+    public void ConsumeMouseWheelDelta_AccumulatesPartialDeltas(int initialRemainder, int delta, int expectedSteps, int expectedRemainder) {
+        var remainder = initialRemainder;
+
+        var steps = VectorMapInteraction.ConsumeMouseWheelDelta(ref remainder, delta);
+
+        Assert.Equal(expectedSteps, steps);
+        Assert.Equal(expectedRemainder, remainder);
+    }
+
     [Fact]
     public void GetCenterAfterPan_MovesMapOppositeToDrag() {
         var center = VectorMapInteraction.GetCenterAfterPan(

@@ -17,6 +17,8 @@ public partial class OsmDownloadWindow : Window {
     private const int MinimumZoom = 1;
     private const int MaximumZoom = 19;
     private const int TileWorkerCount = 2;
+    private const double PanRenderThreshold = 160;
+    private const int WheelRenderDelayMilliseconds = 180;
     private readonly Func<GeoBounds, IProgress<OsmDownloadStage>, CancellationToken, Task<bool>> _downloadAsync;
     private readonly TileService _tileService = new();
     private readonly OsmPlaceSearchService _placeSearchService = new();
@@ -24,6 +26,10 @@ public partial class OsmDownloadWindow : Window {
     private int _zoom = MinimumZoom;
     private Point? _selectionStart;
     private Point? _panStart;
+    private Point _panPreviewStart;
+    private Point _lastPanPosition;
+    private Matrix _panBaseTransform = Matrix.Identity;
+    private int _wheelDeltaRemainder;
     private CancellationTokenSource? _renderCts;
     private CancellationTokenSource? _renderDebounceCts;
     private CancellationTokenSource? _downloadCts;
@@ -61,9 +67,11 @@ public partial class OsmDownloadWindow : Window {
         _renderCts = renderCts;
         var ct = renderCts.Token;
         var renderZoom = _zoom;
+        var renderCenter = _center;
+        var renderPanAnchor = _panStart;
         var (centerX, centerY) = GeoConverter.LatLonToPixelXY(
-            _center.Latitude,
-            _center.Longitude,
+            renderCenter.Latitude,
+            renderCenter.Longitude,
             renderZoom);
         var tileRange = TileRenderLayout.GetVisibleTileRange(
             centerX,
@@ -72,12 +80,9 @@ public partial class OsmDownloadWindow : Window {
             viewportHeight,
             renderZoom,
             tileBuffer: 1);
-        var requests = new List<(int X, int Y)>();
-        for (var y = tileRange.StartY; y <= tileRange.EndY; y++) {
-            for (var x = tileRange.StartX; x <= tileRange.EndX; x++) {
-                requests.Add((x, y));
-            }
-        }
+        var requests = TileRenderLayout.EnumerateRequestsByDistance(tileRange, centerX, centerY)
+            .Select(static request => (request.X, request.Y))
+            .ToList();
 
         var tiles = new List<TileRenderItem>();
         var tilesLock = new object();
@@ -121,9 +126,18 @@ public partial class OsmDownloadWindow : Window {
         await Dispatcher.InvokeAsync(() => {
             if (ct.IsCancellationRequested || !ReferenceEquals(_renderCts, renderCts)) return;
 
-            TileLayer.SetTiles(tiles.OrderBy(static tile => tile.Placement.Top).ThenBy(static tile => tile.Placement.Left));
-            if (_panStart is null) {
-                TileLayer.RenderTransform = Transform.Identity;
+            if (tiles.Count > 0) {
+                TileLayer.SetTiles(tiles.OrderBy(static tile => tile.Placement.Top).ThenBy(static tile => tile.Placement.Left));
+                var activePanAnchor = _panStart is null ? null : renderPanAnchor ?? _panStart;
+                if (activePanAnchor is { } anchor) {
+                    _panStart = anchor;
+                    _panPreviewStart = anchor;
+                    _panBaseTransform = Matrix.Identity;
+                    ApplyPanPreview(_lastPanPosition);
+                } else {
+                    _panBaseTransform = Matrix.Identity;
+                    TileLayer.RenderTransform = Transform.Identity;
+                }
             }
             if (tiles.Count == 0 && SelectedBounds is null) {
                 SelectionStatusTextBlock.Text = L.GetString("Osm.Download.TileUnavailable");
@@ -132,10 +146,11 @@ public partial class OsmDownloadWindow : Window {
     }
 
     private void MapViewport_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-        if (_panStart is not null) return;
+        if (_panStart is not null || _selectionStart is not null) return;
         MapViewport.Focus();
-        _selectionStart = e.GetPosition(MapViewport);
-        ShowSelectionRectangle(new Rect(_selectionStart.Value, _selectionStart.Value));
+        var position = e.GetPosition(MapViewport);
+        _selectionStart = position;
+        ShowSelectionRectangle(new Rect(position, position));
         MapViewport.CaptureMouse();
         e.Handled = true;
     }
@@ -162,24 +177,44 @@ public partial class OsmDownloadWindow : Window {
     }
 
     private void MapViewport_MouseRightButtonDown(object sender, MouseButtonEventArgs e) {
-        if (_selectionStart is not null) return;
+        if (_selectionStart is not null || _panStart is not null) return;
         MapViewport.Focus();
-        _panStart = e.GetPosition(MapViewport);
-        MapViewport.Cursor = Cursors.Hand;
+        BeginPan(e.GetPosition(MapViewport));
         MapViewport.CaptureMouse();
         e.Handled = true;
     }
 
     private void MapViewport_MouseRightButtonUp(object sender, MouseButtonEventArgs e) {
+        if (_panStart is null) return;
+        EndPan(e.GetPosition(MapViewport));
+        e.Handled = true;
+    }
+
+    private void BeginPan(Point position) {
+        _panStart = position;
+        _panPreviewStart = position;
+        _lastPanPosition = position;
+        _panBaseTransform = TileLayer.RenderTransform.Value;
+        MapViewport.Cursor = Cursors.Hand;
+    }
+
+    private void ApplyPanPreview(Point position) {
+        var preview = _panBaseTransform;
+        var delta = position - _panPreviewStart;
+        preview.OffsetX += delta.X;
+        preview.OffsetY += delta.Y;
+        TileLayer.RenderTransform = new MatrixTransform(preview);
+    }
+
+    private void EndPan(Point position) {
         if (_panStart is not { } start) return;
-        var delta = e.GetPosition(MapViewport) - start;
+        _center = VectorMapInteraction.GetCenterAfterPan(_center, position - start, _zoom);
         _panStart = null;
+        _panBaseTransform = TileLayer.RenderTransform.Value;
         MapViewport.ReleaseMouseCapture();
         MapViewport.Cursor = Cursors.Cross;
-        _center = VectorMapInteraction.GetCenterAfterPan(_center, delta, _zoom);
         ClearSelection();
         ScheduleRender();
-        e.Handled = true;
     }
 
     private void MapViewport_MouseMove(object sender, MouseEventArgs e) {
@@ -187,13 +222,33 @@ public partial class OsmDownloadWindow : Window {
         if (_selectionStart is { } selectionStart) {
             ShowSelectionRectangle(new Rect(selectionStart, position));
         } else if (_panStart is { } panStart) {
-            var delta = position - panStart;
-            TileLayer.RenderTransform = new TranslateTransform(delta.X, delta.Y);
+            _lastPanPosition = position;
+            ApplyPanPreview(position);
+            var unrenderedDelta = position - panStart;
+            if (unrenderedDelta.Length >= PanRenderThreshold) {
+                _center = VectorMapInteraction.GetCenterAfterPan(_center, unrenderedDelta, _zoom);
+                _panStart = position;
+                ScheduleRender(120);
+            }
         }
     }
 
     private void MapViewport_MouseWheel(object sender, MouseWheelEventArgs e) {
-        ChangeZoom(e.Delta > 0 ? 1 : -1, e.GetPosition(MapViewport));
+        if (_panStart is { } panStart) {
+            var pointer = e.GetPosition(MapViewport);
+            _lastPanPosition = pointer;
+            var delta = pointer - panStart;
+            ApplyPanPreview(pointer);
+            _center = VectorMapInteraction.GetCenterAfterPan(_center, delta, _zoom);
+            _panStart = null;
+            MapViewport.ReleaseMouseCapture();
+            MapViewport.Cursor = Cursors.Cross;
+        }
+
+        var steps = VectorMapInteraction.ConsumeMouseWheelDelta(ref _wheelDeltaRemainder, e.Delta);
+        for (var step = 0; step < Math.Abs(steps); step++) {
+            ChangeZoom(Math.Sign(steps), e.GetPosition(MapViewport), WheelRenderDelayMilliseconds);
+        }
         e.Handled = true;
     }
 
@@ -230,7 +285,7 @@ public partial class OsmDownloadWindow : Window {
         }
     }
 
-    private void ChangeZoom(int delta, Point anchor) {
+    private void ChangeZoom(int delta, Point anchor, int renderDelayMilliseconds = 0) {
         var nextZoom = Math.Clamp(_zoom + delta, MinimumZoom, MaximumZoom);
         if (nextZoom == _zoom) return;
         _center = VectorMapInteraction.GetCenterAfterZoom(
@@ -246,7 +301,7 @@ public partial class OsmDownloadWindow : Window {
         _zoom = nextZoom;
         ClearSelection();
         UpdateZoomText();
-        ScheduleRender(90);
+        ScheduleRender(renderDelayMilliseconds);
     }
 
     private Point GetViewportCenter() {
@@ -369,6 +424,8 @@ public partial class OsmDownloadWindow : Window {
             }
 
             _center = result.Center;
+            TileLayer.RenderTransform = Transform.Identity;
+            _panBaseTransform = Matrix.Identity;
             if (result.Bounds is { IsValid: true } bounds) {
                 _zoom = Math.Clamp(
                     VectorMapInteraction.GetFitZoom(
@@ -433,6 +490,7 @@ public partial class OsmDownloadWindow : Window {
     }
 
     private void ScheduleRender(int delayMilliseconds = 0) {
+        _renderCts?.Cancel();
         _renderDebounceCts?.Cancel();
         _renderDebounceCts?.Dispose();
         var debounceCts = new CancellationTokenSource();

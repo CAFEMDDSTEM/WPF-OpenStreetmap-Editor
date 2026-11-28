@@ -521,6 +521,7 @@
     <sys:String x:Key="Osm.Auth.MissingAuthorizationCode">授權回呼中未包含授權碼。</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 標準</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM 下載區域地圖</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">右鍵拖曳以平移 · 左鍵拖曳以選取下載範圍</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">搜尋地點或地址以將地圖置中</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">搜尋</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">清除搜尋</sys:String>

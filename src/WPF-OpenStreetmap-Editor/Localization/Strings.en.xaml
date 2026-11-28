@@ -519,6 +519,7 @@ Open the download page?</sys:String>
     <sys:String x:Key="Osm.Download.Title">Download OpenStreetMap data</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM download area map</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">Right-drag to pan · Left-drag to select area</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">Search for a place or address to center the map</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">Search</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">Clear search</sys:String>

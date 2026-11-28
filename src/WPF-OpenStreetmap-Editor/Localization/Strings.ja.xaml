@@ -507,6 +507,7 @@
     <sys:String x:Key="Osm.Download.Title">OpenStreetMap データのダウンロード</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap 標準</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">OSM ダウンロード領域マップ</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">右ドラッグで移動 · 左ドラッグで範囲選択</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">場所または住所を検索して地図の中心に移動</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">検索</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">検索をクリア</sys:String>

@@ -518,6 +518,7 @@
     <sys:String x:Key="Osm.Download.Title">Загрузка данных OpenStreetMap</sys:String>
     <sys:String x:Key="Osm.Download.StandardMap">OpenStreetMap Standard</sys:String>
     <sys:String x:Key="Osm.Download.MapAutomationName">Карта области загрузки OSM</sys:String>
+    <sys:String x:Key="Osm.Download.MapGestureHint">Перетаскивание правой кнопкой — панорама · левой — выбор области</sys:String>
     <sys:String x:Key="Osm.Download.SearchTooltip">Поиск места или адреса для центрирования карты</sys:String>
     <sys:String x:Key="Osm.Download.SearchButton">Поиск</sys:String>
     <sys:String x:Key="Osm.Download.ClearSearch">Очистить поиск</sys:String>
